@@ -1,0 +1,77 @@
+:root {
+  /* ── Reference Design Tokens (Cream / Terracotta) ── */
+  --cream:       #F7F5F0;
+  --cream-2:     #F0EDE5;
+  --cream-3:     #E8E3D8;
+  --white:       #FFFFFF;
+  --border:      #E2DDD3;
+  --border-2:    #CEC7BB;
+
+  --ink:         #1A1714;
+  --ink-2:       #6B6560;
+  --ink-3:       #A39C94;
+  --ink-4:       #C4BDB4;
+
+  --accent:      #B85336;
+  --accent-2:    #D4684A;
+  --accent-bg:   #F9EDE9;
+  --accent-dark: #8C3A24;
+
+  --stone:       #7A6E66;
+  --stone-bg:    #EDE9E4;
+
+  --shadow-xs:   0 1px 2px rgba(26,23,20,0.06);
+  --shadow-sm:   0 2px 8px rgba(26,23,20,0.08);
+  --shadow-md:   0 4px 20px rgba(26,23,20,0.10);
+  --shadow-lg:   0 8px 32px rgba(26,23,20,0.12);
+
+  --r:      8px;
+  --r-lg:   12px;
+  --r-xl:   16px;
+  --sidebar: 240px;
+  --ease:    cubic-bezier(.4,0,.2,1);
+
+  /* ── Mapped legacy names (for auth + shared components) ── */
+  --background-color:   var(--cream);
+  --background-subtle:  var(--cream-2);
+  --surface-color:      var(--white);
+  --surface-raised:     var(--white);
+  --text-primary:       var(--ink);
+  --text-secondary:     var(--ink-2);
+  --text-muted:         var(--ink-3);
+  --border-color:       var(--border);
+  --border-subtle:      var(--cream-3);
+
+  --primary-color:      var(--accent);
+  --primary-hover:      var(--accent-dark);
+  --primary-muted:      var(--accent-bg);
+
+  --secondary-color:    var(--stone);
+  --accent-warm:        var(--accent-2);
+  --accent-warm-muted:  var(--accent-bg);
+
+  --error-color:        #ef4444;
+  --success-color:      #22c55e;
+
+  /* ── Dimensions & Spacing ── */
+  --input-height:   48px;
+  --button-height:  48px;
+  --border-radius:  var(--r);
+  --radius-lg:      var(--r-lg);
+  --radius-xl:      var(--r-xl);
+  --spacing-xs:     4px;
+  --spacing-sm:     8px;
+  --spacing-md:     16px;
+  --spacing-lg:     24px;
+  --spacing-xl:     32px;
+  --spacing-2xl:    48px;
+
+  /* ── Typography ── */
+  --font-sans:  'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-mono:  'IBM Plex Mono', monospace;
+
+  /* ── Shadow aliases ── */
+  --shadow-card:       var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-md);
+}
