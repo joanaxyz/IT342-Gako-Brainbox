@@ -1,0 +1,434 @@
+/* ══════════════════════════════════════════════════════
+   Flashcard Player
+   ══════════════════════════════════════════════════════ */
+
+.flashcard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xl);
+  padding: clamp(28px, 4vw, 40px) var(--page-gutter) 0;
+  width: min(100%, var(--page-max-focus));
+  margin: 0 auto;
+  min-height: calc(100vh - var(--page-bottom-clearance));
+}
+
+/* ── Top bar ────────────────────────────────────────── */
+.fc-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fc-progress-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.fc-progress-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+}
+
+.fc-progress-track {
+  width: 100%;
+  height: 5px;
+  background: var(--cream-3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.fc-progress-bar {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 99px;
+  transition: width 0.4s var(--ease);
+}
+
+/* ── Card stage ─────────────────────────────────────── */
+.fc-stage {
+  perspective: 1200px;
+  width: 100%;
+  aspect-ratio: 1.75 / 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fc-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s var(--ease);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.fc-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.fc-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.fc-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.fc-front {
+  background: var(--white);
+}
+
+.fc-back {
+  background: var(--ink);
+  border-color: var(--ink);
+  transform: rotateY(180deg);
+  /* subtle warm overlay for depth */
+  background-image: radial-gradient(ellipse at 70% 30%, rgba(194,65,12,0.08) 0%, transparent 60%);
+}
+
+.fc-face-label {
+  position: absolute;
+  top: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+
+.fc-face-label--back {
+  color: rgba(250, 248, 245, 0.45);
+}
+
+.fc-face-text {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.fc-back .fc-face-text {
+  color: var(--cream);
+  font-size: 1.3rem;
+}
+
+/* ── Keyboard hint row ──────────────────────────────── */
+.fc-hint-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fc-hint-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--ink-4);
+}
+
+.fc-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 1px solid var(--border-2);
+  border-radius: 5px;
+  background: var(--cream-2);
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink-2);
+  box-shadow: 0 1px 0 var(--border-2);
+}
+
+/* ── Nav row ────────────────────────────────────────── */
+.fc-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--spacing-md);
+}
+
+.fc-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r);
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.fc-nav-btn:hover:not(:disabled) {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--cream);
+  box-shadow: var(--shadow-sm);
+}
+
+.fc-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.fc-mark-btns {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.fc-mark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 var(--spacing-lg);
+  border-radius: var(--r);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: background 0.15s var(--ease), box-shadow 0.15s, transform 0.15s var(--ease);
+  background: var(--white);
+}
+
+.fc-mark-unknown {
+  color: var(--error-color);
+  border-color: rgba(220,38,38,0.35);
+}
+
+.fc-mark-unknown:hover {
+  background: #fef2f2;
+  border-color: var(--error-color);
+  box-shadow: 0 2px 12px rgba(220, 38, 38, 0.12);
+  transform: translateY(-1px);
+}
+
+.fc-mark-known {
+  color: var(--success-color);
+  border-color: rgba(22,163,74,0.35);
+}
+
+.fc-mark-known:hover {
+  background: #f0fdf4;
+  border-color: var(--success-color);
+  box-shadow: 0 2px 12px rgba(22, 163, 74, 0.12);
+  transform: translateY(-1px);
+}
+
+/* ── Result screen ──────────────────────────────────── */
+.fc-result-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.fc-result-score-ring {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  animation: scoreIn 0.5s var(--ease) both;
+}
+
+@keyframes scoreIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.fc-result-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.fc-result-sub {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.fc-result-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.fc-result-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.fc-result-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.fc-stat-known  { color: var(--success-color); }
+.fc-stat-unknown { color: var(--error-color); }
+
+.fc-stat-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--font-mono);
+}
+
+.fc-stat-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.fc-result-divider {
+  width: 1px;
+  height: 72px;
+  background: var(--border);
+}
+
+.fc-result-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .fc-top-bar,
+  .fc-nav-row,
+  .fc-result-actions {
+    flex-wrap: wrap;
+  }
+
+  .fc-top-bar > :last-child {
+    display: none;
+  }
+
+  .fc-progress-center {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .fc-stage {
+    aspect-ratio: 1.4 / 1;
+  }
+
+  .fc-mark-btns {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .fc-mark-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .fc-face {
+    padding: var(--spacing-xl);
+  }
+
+  .fc-face-text {
+    font-size: 1.1rem;
+  }
+
+  .fc-back .fc-face-text {
+    font-size: 1.05rem;
+  }
+
+  .fc-result-card {
+    padding: var(--spacing-lg);
+  }
+
+  .fc-result-actions {
+    width: 100%;
+  }
+
+  .fc-result-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Legacy aliases (kept for backward compat) ───── */
+.deck-meta {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Legacy: old flashcard-progress still used in some tests */
+.flashcard-progress {
+  width: 100%;
+  height: 6px;
+  background-color: var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.flashcard-progress-bar {
+  height: 100%;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
