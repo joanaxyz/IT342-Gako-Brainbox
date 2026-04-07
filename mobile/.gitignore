@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Kotlin daemon sessions
+.kotlin/
+
+# Root-level build output
+/build/

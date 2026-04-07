@@ -33,3 +33,9 @@ build/
 .vscode/
 
 .env
+
+# Logs
+*.log
+
+# Nested module builds
+mini-app/target/
