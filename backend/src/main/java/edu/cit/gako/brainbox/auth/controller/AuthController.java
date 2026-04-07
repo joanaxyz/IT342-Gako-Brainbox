@@ -15,7 +15,7 @@ import edu.cit.gako.brainbox.auth.dto.request.ResetPasswordRequest;
 import edu.cit.gako.brainbox.auth.dto.request.VerifyCodeRequest;
 import edu.cit.gako.brainbox.auth.dto.response.LoginResponse;
 import edu.cit.gako.brainbox.auth.dto.response.VerifyCodeResponse;
-import edu.cit.gako.brainbox.auth.service.AuthService;
+import edu.cit.gako.brainbox.auth.service.AuthFacade;
 import edu.cit.gako.brainbox.common.dto.ApiResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +30,7 @@ import java.net.URI;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final AuthService authService;
+    private final AuthFacade authService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
