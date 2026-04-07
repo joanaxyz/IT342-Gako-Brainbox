@@ -1,0 +1,313 @@
+.version-history-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  background-color: var(--white);
+  color: var(--ink);
+  border-left: 1px solid rgba(32, 28, 24, 0.1);
+  box-shadow: -18px 0 36px rgba(24, 18, 14, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: width 0.28s var(--ease);
+}
+
+.version-history-sidebar.expanded {
+  width: 620px;
+}
+
+.version-history-overlay {
+  display: none;
+}
+
+.version-history-header {
+  height: 64px;
+  padding: 0 18px 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(32, 28, 24, 0.08);
+}
+
+.version-history-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.version-history-icon {
+  color: var(--accent);
+}
+
+.version-history-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-history-expand,
+.version-history-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r);
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.version-history-expand:hover,
+.version-history-close:hover {
+  background-color: var(--cream-2);
+  color: var(--ink);
+}
+
+.version-history-filters {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(32, 28, 24, 0.08);
+  background: linear-gradient(180deg, rgba(248, 243, 236, 0.78), rgba(248, 243, 236, 0.46));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.version-history-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.version-history-sidebar.expanded .version-history-filter-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.version-history-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.version-history-field-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.version-history-select,
+.version-history-calendar-input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgba(32, 28, 24, 0.12);
+  border-radius: var(--r);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.875rem;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+
+.version-history-select:focus,
+.version-history-calendar-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.08);
+}
+
+.version-history-date-input-wrap {
+  position: relative;
+}
+
+.version-history-calendar-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--accent);
+  pointer-events: none;
+}
+
+.version-history-calendar-input {
+  padding-left: 38px;
+}
+
+.version-history-filter-summary {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+.version-history-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 0 18px;
+}
+
+.version-history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.version-history-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+  border-left: 3px solid transparent;
+}
+
+.version-history-item:hover {
+  background: rgba(248, 243, 236, 0.82);
+}
+
+.version-history-item.active {
+  background: rgba(194, 65, 12, 0.08);
+  border-left-color: var(--accent);
+}
+
+.version-history-item-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.version-history-item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.version-history-item-stamp {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.version-history-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.76rem;
+  color: var(--ink-3);
+}
+
+.version-history-tag {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(5, 84, 63, 0.12);
+  color: #03543f;
+  font-weight: 700;
+}
+
+.version-history-preview-pill {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(194, 65, 12, 0.12);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.version-history-restore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--white);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.version-history-restore-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.version-history-footer {
+  padding: 14px 20px 18px;
+  border-top: 1px solid rgba(32, 28, 24, 0.08);
+  background: rgba(248, 243, 236, 0.62);
+}
+
+.version-preview-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.version-history-loading,
+.version-history-empty {
+  padding: 28px 20px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+
+.version-history-skeleton-row {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 960px) {
+  .version-history-overlay {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: rgba(32, 28, 24, 0.2);
+    z-index: 999;
+  }
+
+  .version-history-sidebar,
+  .version-history-sidebar.expanded {
+    width: min(92vw, 520px);
+  }
+}
+
+@media (max-width: 640px) {
+  .version-history-sidebar,
+  .version-history-sidebar.expanded {
+    width: 100vw;
+  }
+
+  .version-history-filter-row,
+  .version-history-sidebar.expanded .version-history-filter-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .version-history-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .version-history-restore-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,19 @@
+.register-submit-container {
+    margin-top: var(--spacing-lg);
+}
+
+.register-login-prompt {
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
+
+.register-login-prompt p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.register-login-prompt a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}

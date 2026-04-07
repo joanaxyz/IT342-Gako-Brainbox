@@ -1,0 +1,101 @@
+:root {
+  /* ── Modern Student App Palette (Warm, Clean, Readable) ── */
+  --cream:       #FAF8F5;
+  --cream-2:     #F2EFE9;
+  --cream-3:     #E8E4DC;
+  --white:       #FFFFFF;
+  --border:      #E5E0D8;
+  --border-2:    #D1CBC0;
+
+  --ink:         #1C1917;
+  --ink-2:       #57534E;
+  --ink-3:       #78716C;
+  --ink-4:       #A8A29E;
+
+  --accent:      #C2410C;
+  --accent-2:    #EA580C;
+  --accent-bg:   #FFF7ED;
+  --accent-dark: #9A3412;
+
+  --stone:       #57534E;
+  --stone-bg:    #F5F5F4;
+
+  /* ── Shadows — layered for realism ── */
+  --shadow-xs:   0 1px 2px rgba(28,25,23,0.08);
+  --shadow-sm:   0 2px 8px rgba(28,25,23,0.08), 0 1px 2px rgba(28,25,23,0.04);
+  --shadow-md:   0 8px 24px rgba(28,25,23,0.10), 0 2px 6px rgba(28,25,23,0.05);
+  --shadow-lg:   0 20px 56px rgba(28,25,23,0.14), 0 6px 16px rgba(28,25,23,0.07);
+
+  /* ── Focus rings ── */
+  --ring-accent: 0 0 0 3px rgba(194,65,12,0.14);
+  --ring-ink:    0 0 0 3px rgba(28,25,23,0.08);
+
+  /* ── Blur utilities ── */
+  --blur-sm: blur(8px);
+  --blur-md: blur(16px);
+  --blur-lg: blur(24px);
+
+  /* ── Radius scale ── */
+  --r-sm:   6px;
+  --r:      10px;
+  --r-lg:   14px;
+  --r-xl:   20px;
+
+  --sidebar: 248px;
+  --page-gutter: clamp(20px, 3vw, 48px);
+  --page-max-wide: 1600px;
+  --page-max-focus: 1120px;
+  --page-max-compact: 960px;
+  --app-topbar-height: 64px;
+  --page-bottom-clearance: 168px;
+  --page-bottom-clearance-mobile: 112px;
+
+  /* ── Easing ── */
+  --ease:     cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ── Mapped legacy names (for auth + shared components) ── */
+  --background-color:   var(--cream);
+  --background-subtle:  var(--cream-2);
+  --surface-color:      var(--white);
+  --surface-raised:     var(--white);
+  --text-primary:       var(--ink);
+  --text-secondary:     var(--ink-2);
+  --text-muted:         var(--ink-3);
+  --border-color:       var(--border);
+  --border-subtle:      var(--cream-3);
+
+  --primary-color:      var(--accent);
+  --primary-hover:      var(--accent-dark);
+  --primary-muted:      var(--accent-bg);
+
+  --secondary-color:    var(--stone);
+  --accent-warm:        var(--accent-2);
+  --accent-warm-muted:  var(--accent-bg);
+
+  --error-color:        #DC2626;
+  --success-color:      #16A34A;
+
+  /* ── Dimensions & Spacing ── */
+  --input-height:   44px;
+  --button-height:  44px;
+  --border-radius:  var(--r);
+  --radius-sm:      var(--r-sm);
+  --radius-lg:      var(--r-lg);
+  --radius-xl:      var(--r-xl);
+  --spacing-xs:     4px;
+  --spacing-sm:     8px;
+  --spacing-md:     16px;
+  --spacing-lg:     24px;
+  --spacing-xl:     32px;
+  --spacing-2xl:    48px;
+
+  /* ── Typography ── */
+  --font-sans:  'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-mono:  'IBM Plex Mono', monospace;
+
+  /* ── Shadow aliases ── */
+  --shadow-card:       var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-md);
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Brainbox" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorSecondary">@color/secondary_color</item>
+        <item name="android:statusBarColor">@color/surface_color</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/background_color</item>
+    </style>
+
+    <style name="Theme.Brainbox.Dashboard" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorOnPrimary">@color/white</item>
+    </style>
+
+    <style name="ShapeAppearance.Brainbox.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+</resources>
