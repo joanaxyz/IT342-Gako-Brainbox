@@ -2,7 +2,9 @@ package edu.cit.gako.brainbox.notebook.service;
 
 import edu.cit.gako.brainbox.auth.service.UserService;
 import edu.cit.gako.brainbox.exception.ForbiddenException;
+import edu.cit.gako.brainbox.notebook.builder.NotebookBuilder;
 import edu.cit.gako.brainbox.notebook.dto.request.NotebookRequest;
+import edu.cit.gako.brainbox.notebook.event.NotebookContentSavedEvent;
 import edu.cit.gako.brainbox.notebook.dto.response.NotebookFullResponse;
 import edu.cit.gako.brainbox.notebook.dto.response.NotebookOverviewResponse;
 import edu.cit.gako.brainbox.notebook.entity.Category;
@@ -17,6 +19,7 @@ import edu.cit.gako.brainbox.notebook.repository.NotebookVersionRepository;
 import edu.cit.gako.brainbox.notebook.repository.PlaylistRepository;
 import edu.cit.gako.brainbox.notebook.repository.QuizRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +35,7 @@ public class NotebookService {
     private final NotebookRepository notebookRepository;
     private final CategoryRepository categoryRepository;
     private final UserService userService;
-    private final NotebookVersionSnapshotService notebookVersionSnapshotService;
+    private final ApplicationEventPublisher eventPublisher;
     private final NotebookVersionRepository notebookVersionRepository;
     private final QuizRepository quizRepository;
     private final FlashcardRepository flashcardRepository;
@@ -40,20 +43,22 @@ public class NotebookService {
 
     @Transactional
     public NotebookFullResponse createNotebook(NotebookRequest request, Long userId) {
-        Notebook notebook = new Notebook();
-        notebook.setTitle(request.getTitle());
-        notebook.setContent(request.getContent() != null ? request.getContent() : "");
-
+        Category category = null;
         if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
+            category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new NoSuchElementException("Category not found"));
-            notebook.setCategory(category);
         }
 
-        notebook.setUser(userService.findById(userId));
+        Notebook notebook = new NotebookBuilder()
+                .title(request.getTitle())
+                .content(request.getContent())
+                .category(category)
+                .owner(userService.findById(userId))
+                .build();
+
         Notebook savedNotebook = notebookRepository.saveAndFlush(notebook);
 
-        notebookVersionSnapshotService.createSnapshot(savedNotebook, savedNotebook.getContent());
+        eventPublisher.publishEvent(new NotebookContentSavedEvent(this, savedNotebook, savedNotebook.getContent()));
 
         return mapToFullResponse(savedNotebook);
     }
@@ -151,7 +156,7 @@ public class NotebookService {
 
         notebook.setContent(nextContent);
         Notebook savedNotebook = notebookRepository.saveAndFlush(notebook);
-        notebookVersionSnapshotService.createSnapshot(savedNotebook, savedNotebook.getContent());
+        eventPublisher.publishEvent(new NotebookContentSavedEvent(this, savedNotebook, savedNotebook.getContent()));
         return mapToFullResponse(savedNotebook);
     }
 

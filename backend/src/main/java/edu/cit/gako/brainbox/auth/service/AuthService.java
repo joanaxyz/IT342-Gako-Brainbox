@@ -28,9 +28,14 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+/**
+ * Facade Pattern — concrete facade that orchestrates the authentication subsystem:
+ * JWTService, UserService, CodeService, RefreshTokenService, and EmailService.
+ * AuthController depends on the AuthFacade interface, not this class directly.
+ */
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements AuthFacade {
     private final JWTService jwtService;
     private final UserService userService;
     private final CodeService codeService;
