@@ -1,0 +1,20 @@
+<svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <path
+      d="M156,150l144,-40l120,60l-144,40z"
+      stroke-linejoin="round"
+      stroke-width="8"
+      fill="#C4BDB4"
+      stroke="#1A1714"/>
+  <path
+      d="M276,210l144,-40l0,150l-144,40z"
+      stroke-linejoin="round"
+      stroke-width="8"
+      fill="#1A1714"
+      stroke="#1A1714"/>
+  <path
+      d="M156,150l120,60l0,150l-120,-60z"
+      stroke-linejoin="round"
+      stroke-width="8"
+      fill="#6B6560"
+      stroke="#1A1714"/>
+</svg>
