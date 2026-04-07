@@ -14,9 +14,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * Concrete Adapter: adapts the OpenAI-compatible HTTP proxy to the AiProvider interface.
+ * AiService depends only on AiProvider, keeping it independent of HTTP details.
+ */
 @Component
 @RequiredArgsConstructor
-public class ProxyProvider {
+public class ProxyProvider implements AiProvider {
 
     private static final long MAX_TRANSCRIPTION_BYTES = 25L * 1024L * 1024L;
 
