@@ -1,0 +1,30 @@
+.login-forgot-link {
+    text-align: right;
+    margin-bottom: var(--spacing-md);
+}
+
+.login-forgot-link a {
+    font-size: 0.875rem;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.login-submit-container {
+    margin-top: var(--spacing-lg);
+}
+
+.login-signup-prompt {
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
+
+.login-signup-prompt p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.login-signup-prompt a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}
