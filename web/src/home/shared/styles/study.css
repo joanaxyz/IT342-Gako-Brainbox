@@ -1,0 +1,518 @@
+/* Shared study styles are now in dashboard.css */
+/* This file is kept for backward compatibility */
+
+/* ── Missing classes used in CreateDeckModal / CreateQuizModal ── */
+
+.create-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.create-card-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 1fr 32px;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.create-item-number {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.remove-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r);
+  border: none;
+  background: none;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: all 0.1s;
+  flex-shrink: 0;
+}
+
+.remove-item-btn:hover:not(:disabled) {
+  color: var(--error-color);
+  background: #fef2f2;
+}
+
+.remove-item-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.field-label-optional {
+  font-weight: 400;
+  color: var(--ink-3);
+  font-size: 0.8rem;
+}
+
+/* ── Create question block (quiz) ─────────────────── */
+.create-question-block {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.create-question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.create-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--white);
+  transition: all 0.15s;
+}
+
+.create-option-row.is-correct {
+  border-color: var(--success-color);
+  background: #f0fdf4;
+}
+
+.create-option-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.create-option-letter {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  width: 16px;
+  text-align: center;
+}
+
+.create-option-radio {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--success-color);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.create-hint {
+  font-size: 0.72rem;
+  color: var(--ink-4);
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Textarea ─────────────────────────────────────── */
+.field-textarea {
+  padding: 10px var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 0.9375rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 76px;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+.field-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+/* ── Difficulty chips ─────────────────────────────── */
+.chip-easy {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.chip-medium {
+  background: #fff7ed;
+  color: var(--accent-dark);
+  border: 1px solid #fed7aa;
+}
+
+.chip-hard {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* ── Question type toggle (true/false vs mc) ──────── */
+.qtype-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.qtype-btn {
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border-2);
+  background: var(--white);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.qtype-btn.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--cream);
+}
+
+/* ── Quiz results breakdown ───────────────────────── */
+.quiz-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+  text-align: left;
+  margin-top: var(--spacing-md);
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.quiz-breakdown-item {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quiz-breakdown-item.correct {
+  border-color: var(--success-color);
+  background: #f0fdf4;
+}
+
+.quiz-breakdown-item.incorrect {
+  border-color: var(--error-color);
+  background: #fef2f2;
+}
+
+.quiz-breakdown-q {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.quiz-breakdown-q-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.quiz-breakdown-answer {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quiz-breakdown-your {
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+.quiz-breakdown-correct {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+/* ── Edit deck/quiz action strip on card ──────────── */
+.sc-actions-row {
+  display: flex;
+  gap: 6px;
+}
+
+.sc-action-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r);
+  border: 1px solid var(--border-2);
+  background: var(--white);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.sc-action-btn-icon:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--cream);
+}
+
+.sc-action-btn-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Create Modal ────────────────────────────────────── */
+.create-modal-wide {
+  max-width: 640px !important;
+  width: 92vw !important;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.create-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  overflow-y: auto;
+  padding-right: 4px;
+  max-height: calc(85vh - 160px);
+}
+
+.create-modal-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 520px) {
+  .create-modal-meta { grid-template-columns: 1fr; }
+}
+
+.create-cards-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.create-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.create-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0 6px;
+  margin-left: 6px;
+}
+
+.add-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px dashed var(--border);
+  padding: 5px 12px;
+  border-radius: var(--r);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-item-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.card-item {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  position: relative;
+}
+
+.card-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-item-number {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+}
+
+.remove-card-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: var(--r);
+  color: var(--ink-4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+
+.remove-card-btn:hover {
+  color: var(--error-color);
+  background: #fef2f2;
+}
+
+/* Question options for quiz create */
+.question-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.option-radio {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Notebook filter */
+.study-notebook-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+
+.study-notebook-filter-select {
+  appearance: none;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 5px 24px 5px 10px;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23A39C94' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.study-page-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.study-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(194, 65, 12, 0.18);
+  border-radius: var(--r-lg);
+  background: var(--accent-bg);
+  flex-wrap: wrap;
+}
+
+.study-selection-summary {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.study-selection-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.study-card.is-selectable {
+  cursor: pointer;
+}
+
+.study-card.is-selected {
+  border-color: rgba(194, 65, 12, 0.28);
+  box-shadow: 0 0 0 1px rgba(194, 65, 12, 0.08), var(--shadow-md);
+}
+
+.study-select-btn {
+  flex: 1;
+  border-left: none;
+}
+
+.study-select-btn.is-selected {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+@media (max-width: 640px) {
+  .study-page-actions,
+  .study-selection-actions {
+    width: 100%;
+  }
+
+  .study-page-actions .btn,
+  .study-selection-actions .btn {
+    width: 100%;
+  }
+}
