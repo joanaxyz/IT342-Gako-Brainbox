@@ -1,0 +1,9 @@
+export const DEFAULT_PAPER_WIDTH = 816;
+export const PAPER_ASPECT_RATIO = 1056 / 816;
+export const DEFAULT_PAPER_HEIGHT = Math.round(DEFAULT_PAPER_WIDTH * PAPER_ASPECT_RATIO);
+export const DEFAULT_PAPER_PADDING_X = 72;
+export const DEFAULT_PAPER_PADDING_TOP = 84;
+export const DEFAULT_PAPER_PADDING_BOTTOM = 84;
+export const DEFAULT_PAGE_MARGIN_IN = 0.75;
+export const MIN_PAPER_WIDTH = 620;
+export const MAX_PAPER_WIDTH = 1440;
