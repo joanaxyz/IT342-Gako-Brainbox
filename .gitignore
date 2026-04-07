@@ -1,3 +1,4 @@
+# OS
 .DS_Store
 Thumbs.db
 
@@ -7,32 +8,23 @@ Thumbs.db
 *.swp
 *.swo
 
-# Node / frontend
-node_modules/
-web/node_modules/
-dist/
-web/dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Java / backend
-backend/target/
-*.class
-
 # Environment files
 .env
 .env.*
-web/.env.local
-web/.env.development.local
-web/.env.test.local
-web/.env.production.local
 
 # Logs
 *.log
-backend/*.log
 
 # OS / temp
 tmp/
 temp/
+
+# AI tool artifacts
+.zencoder/
+.zenflow/
+
+# Stray dev files
+fix.js
+TASK_CHECKLIST.md
+authAPI.register(username
+-p/
