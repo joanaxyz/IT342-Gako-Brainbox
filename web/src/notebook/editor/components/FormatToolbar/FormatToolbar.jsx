@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 import {
   AlignCenter,
   AlignJustify,
@@ -20,7 +20,6 @@ import {
   Redo2,
   Rows3,
   Search,
-  Sigma,
   Strikethrough,
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
@@ -81,6 +80,24 @@ const TablePicker = ({ editor, onClose }) => {
   );
 };
 
+const EquationIcon = ({ size = 18, strokeWidth = 1.75 }) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M8 5.5H6.8A1.3 1.3 0 0 0 5.5 6.8v10.4a1.3 1.3 0 0 0 1.3 1.3H8" />
+    <path d="M16 5.5h1.2a1.3 1.3 0 0 1 1.3 1.3v10.4a1.3 1.3 0 0 1-1.3 1.3H16" />
+    <path d="M12 8.25v7.5" />
+  </svg>
+);
+
 const ToolbarButton = ({
   active = false,
   ariaLabel,
@@ -109,34 +126,215 @@ const FormatToolbar = ({
   showLines = false,
   onLinesToggle,
   onInsertPageBreak,
-  onInsertFormula,
+  onInsertEquation,
+  leadingAccessory = null,
 }) => {
   const currentFontSize = editor?.getAttributes('textStyle')?.fontSize || '';
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
   const [menuQuery, setMenuQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [isToolbarScrollDragging, setIsToolbarScrollDragging] = useState(false);
+  const [isToolbarScrollOverflowing, setIsToolbarScrollOverflowing] = useState(false);
   const deferredMenuQuery = useDeferredValue(menuQuery);
   const rootRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const toolbarScrollRef = useRef(null);
+  const toolbarDragStateRef = useRef({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startScrollLeft: 0,
+    hasDragged: false,
+    suppressClick: false,
+  });
+
+  const isSearchActive = isSearchExpanded || menuQuery.trim().length > 0;
+
+  const focusSearchInput = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    });
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (rootRef.current && !rootRef.current.contains(event.target)) {
         setTablePickerOpen(false);
         setMenuQuery('');
+        setIsSearchExpanded(false);
       }
     };
 
-    if (tablePickerOpen || menuQuery.trim()) {
+    if (tablePickerOpen || isSearchActive) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuQuery, tablePickerOpen]);
+  }, [isSearchActive, tablePickerOpen]);
+
+  useEffect(() => {
+    if (!isSearchActive) {
+      return;
+    }
+
+    focusSearchInput();
+  }, [focusSearchInput, isSearchActive]);
+
+  useEffect(() => {
+    const scrollElement = toolbarScrollRef.current;
+
+    if (!scrollElement || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+
+    const updateOverflow = () => {
+      setIsToolbarScrollOverflowing(scrollElement.scrollWidth - scrollElement.clientWidth > 8);
+    };
+
+    updateOverflow();
+
+    const resizeObserver = new ResizeObserver(updateOverflow);
+    resizeObserver.observe(scrollElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const handleToolbarMouseDownCapture = (event) => {
     if (event.target instanceof HTMLElement && event.target.closest('button')) {
       event.preventDefault();
     }
   };
+
+  const handleSearchToggle = useCallback(() => {
+    if (isSearchActive && !menuQuery.trim()) {
+      setIsSearchExpanded(false);
+      searchInputRef.current?.blur();
+      return;
+    }
+
+    setIsSearchExpanded(true);
+    focusSearchInput();
+  }, [focusSearchInput, isSearchActive, menuQuery]);
+
+  const handleToolbarScrollPointerDown = useCallback((event) => {
+    const scrollElement = toolbarScrollRef.current;
+
+    if (!scrollElement) {
+      return;
+    }
+
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (target instanceof HTMLElement && target.closest('input, select, [data-no-toolbar-drag="true"]')) {
+      return;
+    }
+
+    toolbarDragStateRef.current = {
+      active: true,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: scrollElement.scrollLeft,
+      hasDragged: false,
+      suppressClick: toolbarDragStateRef.current.suppressClick,
+    };
+
+    scrollElement.setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const finishToolbarScrollDrag = useCallback((pointerId) => {
+    const scrollElement = toolbarScrollRef.current;
+
+    if (scrollElement && pointerId !== null && pointerId !== undefined) {
+      scrollElement.releasePointerCapture?.(pointerId);
+    }
+
+    if (toolbarDragStateRef.current.hasDragged) {
+      toolbarDragStateRef.current.suppressClick = true;
+      window.setTimeout(() => {
+        toolbarDragStateRef.current.suppressClick = false;
+      }, 0);
+    }
+
+    toolbarDragStateRef.current.active = false;
+    toolbarDragStateRef.current.pointerId = null;
+    toolbarDragStateRef.current.hasDragged = false;
+    setIsToolbarScrollDragging(false);
+  }, []);
+
+  const handleToolbarScrollPointerMove = useCallback((event) => {
+    const scrollElement = toolbarScrollRef.current;
+    const dragState = toolbarDragStateRef.current;
+
+    if (!scrollElement || !dragState.active || dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragState.startX;
+
+    if (!dragState.hasDragged && Math.abs(deltaX) > 6) {
+      dragState.hasDragged = true;
+      setIsToolbarScrollDragging(true);
+    }
+
+    if (!dragState.hasDragged) {
+      return;
+    }
+
+    scrollElement.scrollLeft = dragState.startScrollLeft - deltaX;
+    event.preventDefault();
+  }, []);
+
+  const handleToolbarScrollPointerUp = useCallback((event) => {
+    const dragState = toolbarDragStateRef.current;
+
+    if (!dragState.active || dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    finishToolbarScrollDrag(event.pointerId);
+  }, [finishToolbarScrollDrag]);
+
+  const handleToolbarScrollClickCapture = useCallback((event) => {
+    if (!toolbarDragStateRef.current.suppressClick) {
+      return;
+    }
+
+    toolbarDragStateRef.current.suppressClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleToolbarScrollWheel = useCallback((event) => {
+    const scrollElement = toolbarScrollRef.current;
+
+    if (!scrollElement || !isToolbarScrollOverflowing) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (target instanceof HTMLElement && target.closest('input, select')) {
+      return;
+    }
+
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      ? event.deltaX
+      : event.deltaY;
+
+    if (!delta) {
+      return;
+    }
+
+    scrollElement.scrollLeft += delta;
+    event.preventDefault();
+  }, [isToolbarScrollOverflowing]);
 
   const runToolbarAction = (action) => {
     if (!action) {
@@ -299,10 +497,10 @@ const FormatToolbar = ({
       run: () => setTablePickerOpen(true),
     },
     {
-      label: 'Insert formula',
+      label: 'Insert equation',
       shortcut: 'Ctrl/Cmd+Alt+M',
-      keywords: 'math latex equation',
-      run: () => onInsertFormula?.(),
+      keywords: 'math latex inline display',
+      run: () => onInsertEquation?.(),
     },
     {
       label: 'Superscript',
@@ -349,14 +547,31 @@ const FormatToolbar = ({
         aria-label="Formatting"
         onMouseDownCapture={handleToolbarMouseDownCapture}
       >
-        <div className="format-toolbar-search-wrap">
-          <label className="format-toolbar-search" htmlFor="format-toolbar-search">
-            <Search size={15} />
+        {leadingAccessory && (
+          <div className="format-toolbar-leading-accessory" data-no-toolbar-drag="true">
+            {leadingAccessory}
+          </div>
+        )}
+
+        <div className={`format-toolbar-search-wrap ${isSearchActive ? 'is-open' : ''}`}>
+          <div className="format-toolbar-search">
+            <button
+              type="button"
+              className="format-toolbar-search-toggle"
+              onClick={handleSearchToggle}
+              aria-label={isSearchActive ? 'Collapse search' : 'Expand search'}
+              title={isSearchActive ? 'Collapse search' : 'Search toolbar commands'}
+              data-no-toolbar-drag="true"
+            >
+              <Search size={15} />
+            </button>
             <input
+              ref={searchInputRef}
               id="format-toolbar-search"
               type="search"
               value={menuQuery}
               onChange={(event) => setMenuQuery(event.target.value)}
+              onFocus={() => setIsSearchExpanded(true)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && filteredCommands[0]) {
                   event.preventDefault();
@@ -365,12 +580,15 @@ const FormatToolbar = ({
 
                 if (event.key === 'Escape') {
                   setMenuQuery('');
+                  setIsSearchExpanded(false);
                 }
               }}
               placeholder="Search menus"
               aria-label="Search toolbar commands"
+              aria-hidden={!isSearchActive}
+              tabIndex={isSearchActive ? 0 : -1}
             />
-          </label>
+          </div>
 
           {filteredCommands.length > 0 && (
             <div className="format-toolbar-search-results">
@@ -391,7 +609,16 @@ const FormatToolbar = ({
           )}
         </div>
 
-        <div className="format-toolbar-scroll">
+        <div
+          ref={toolbarScrollRef}
+          className={`format-toolbar-scroll ${isToolbarScrollOverflowing ? 'is-scrollable' : ''} ${isToolbarScrollDragging ? 'is-dragging' : ''}`.trim()}
+          onPointerDown={handleToolbarScrollPointerDown}
+          onPointerMove={handleToolbarScrollPointerMove}
+          onPointerUp={handleToolbarScrollPointerUp}
+          onPointerCancel={handleToolbarScrollPointerUp}
+          onClickCapture={handleToolbarScrollClickCapture}
+          onWheel={handleToolbarScrollWheel}
+        >
           <ToolbarButton
             onClick={() => editor?.chain().focus().undo().run()}
             disabled={!editor || !editor?.can().undo()}
@@ -421,8 +648,8 @@ const FormatToolbar = ({
               aria-label="Font family"
             >
               {EDITOR_FONTS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label} - {option.hint}
+                <option key={option.value} value={option.value} title={`${option.label} - ${option.hint}`}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -702,13 +929,14 @@ const FormatToolbar = ({
           <ToolbarButton
             onClick={() => {
               setTablePickerOpen(false);
-              onInsertFormula?.();
+              onInsertEquation?.();
             }}
             disabled={!editor}
-            title="Insert formula (Ctrl/Cmd+Alt+M)"
-            ariaLabel="Insert formula"
+            title="Insert equation (Ctrl/Cmd+Alt+M)"
+            ariaLabel="Insert equation"
+            className="format-toolbar-btn--equation"
           >
-            <Sigma size={18} strokeWidth={1.75} />
+            <EquationIcon size={18} strokeWidth={1.75} />
           </ToolbarButton>
           <ToolbarButton
             onClick={() => editor?.chain().focus().unsetAllMarks().clearNodes().run()}

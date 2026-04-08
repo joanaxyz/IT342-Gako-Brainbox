@@ -18,6 +18,7 @@ public class EditorModePromptBuilder extends AiPromptBuilder {
 
     @Override
     protected String buildModeBlock() {
-        return "---\nASSISTANT MODE: editor\n\nYou may use editor actions when the user clearly wants notebook content changed.\n\n";
+        return "---\nASSISTANT MODE: editor\n\nYou may use editor actions when the user clearly wants notebook content changed.\n"
+            + "- Summaries, explanations, study guides, and similar study aids should stay in chat with action \"none\" unless the user explicitly asks to write them into the notebook.\n\n";
     }
 }

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNotebook, useCategory, usePlaylist } from '../../notebook/shared/hooks/hooks';
 import { useAudioPlayer } from '../../common/hooks/hooks';
 import { TrackRowSkeleton, PlaylistSidebarSkeleton } from '../../common/components/Skeleton';
+import SortSelect from '../../common/components/SortSelect';
+import SortDirectionToggle from '../../common/components/SortDirectionToggle';
 import { countWordsFromHtml } from '../../notebook/shared/utils/notebookPages';
 import '../dashboard/styles/dashboard.css';
 
@@ -79,27 +81,16 @@ const getNotebookWordCount = (notebook) =>
   notebook.wordCount ?? countWordsFromHtml(notebook.content || '');
 
 const SORT_OPTIONS = [
-  { value: 'recent', label: 'Recently updated' },
-  { value: 'az', label: 'A – Z' },
-  { value: 'za', label: 'Z – A' },
-  { value: 'sections', label: 'Most sections' },
+  { value: 'updatedAt', label: 'Recently updated' },
+  { value: 'title', label: 'Title' },
+  { value: 'wordCount', label: 'Word count' },
 ];
 
-const PLAYLIST_SORT_OPTIONS = SORT_OPTIONS.map((option) => {
-  if (option.value === 'sections') {
-    return { value: 'words', label: 'Most words' };
-  }
-
-  if (option.value === 'az') {
-    return { ...option, label: 'A - Z' };
-  }
-
-  if (option.value === 'za') {
-    return { ...option, label: 'Z - A' };
-  }
-
-  return option;
-});
+const DEFAULT_SORT_DIRECTIONS = {
+  updatedAt: 'desc',
+  title: 'asc',
+  wordCount: 'desc',
+};
 
 const CreatePlaylistModal = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
@@ -199,7 +190,8 @@ const Playlists = () => {
   const { play, addToQueue, currentNotebook, isPlaying, togglePlay } = useAudioPlayer();
 
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState('updatedAt');
+  const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTIONS.updatedAt);
   const [selectedUuid, setSelectedUuid] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [addToModal, setAddToModal] = useState(null);
@@ -225,6 +217,11 @@ const Playlists = () => {
   const handleDeletePlaylist = async (playlistUuid) => {
     await deletePlaylist(playlistUuid);
     if (selectedUuid === playlistUuid) setSelectedUuid('all');
+  };
+
+  const handleSortChange = (nextSortBy) => {
+    setSortBy(nextSortBy);
+    setSortDirection(DEFAULT_SORT_DIRECTIONS[nextSortBy]);
   };
 
   const selectedPlaylist = selectedUuid !== 'all' ? playlists.find((pl) => pl.uuid === selectedUuid) : null;
@@ -253,14 +250,27 @@ const Playlists = () => {
     }
 
     if (!selectedPlaylist) {
-      if (sortBy === 'recent') result.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-      else if (sortBy === 'az') result.sort((a, b) => a.title.localeCompare(b.title));
-      else if (sortBy === 'za') result.sort((a, b) => b.title.localeCompare(a.title));
-      else if (sortBy === 'words') result.sort((a, b) => getNotebookWordCount(b) - getNotebookWordCount(a));
+      if (sortBy === 'updatedAt') {
+        result.sort((a, b) => {
+          const comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          return sortDirection === 'asc' ? comparison : -comparison;
+        });
+      } else if (sortBy === 'title') {
+        result.sort((a, b) => (
+          sortDirection === 'asc'
+            ? a.title.localeCompare(b.title)
+            : b.title.localeCompare(a.title)
+        ));
+      } else if (sortBy === 'wordCount') {
+        result.sort((a, b) => {
+          const comparison = getNotebookWordCount(a) - getNotebookWordCount(b);
+          return sortDirection === 'asc' ? comparison : -comparison;
+        });
+      }
     }
 
     return result;
-  }, [notebooks, notebooksById, search, sortBy, selectedPlaylist]);
+  }, [notebooks, notebooksById, search, sortBy, sortDirection, selectedPlaylist]);
 
   const handlePlay = (nb) => {
     if (currentNotebook?.uuid === nb.uuid) togglePlay(nb);
@@ -318,11 +328,21 @@ const Playlists = () => {
           <div className="pl-toolbar-spacer" />
 
           {!selectedPlaylist && (
-            <select className="ref-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              {PLAYLIST_SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <>
+              <SortSelect
+                ariaLabel="Sort notebooks by"
+                options={SORT_OPTIONS}
+                value={sortBy}
+                onChange={handleSortChange}
+              />
+              <SortDirectionToggle
+                direction={sortDirection}
+                label="Playlist notebook sort direction"
+                onToggle={() => setSortDirection((currentDirection) => (
+                  currentDirection === 'asc' ? 'desc' : 'asc'
+                ))}
+              />
+            </>
           )}
 
           <div className="input-wrap pl-toolbar-search">

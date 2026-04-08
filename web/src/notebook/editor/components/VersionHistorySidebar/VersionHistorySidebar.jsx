@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   History,
   RotateCcw,
   X,
@@ -108,7 +106,6 @@ const VersionHistorySidebarContent = ({
   isLoading,
 }) => {
   const [selectedVersionId, setSelectedVersionId] = useState(null);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [customDate, setCustomDate] = useState(today);
 
@@ -154,21 +151,13 @@ const VersionHistorySidebarContent = ({
   return (
     <>
       <div className="version-history-overlay" onClick={onClose} aria-hidden="true" />
-      <aside className={`version-history-sidebar ${isExpanded ? 'expanded' : ''}`} role="dialog" aria-label="Version history">
+      <aside className="version-history-sidebar" role="dialog" aria-label="Version history">
         <div className="version-history-header">
           <div className="version-history-title">
             <History size={18} className="version-history-icon" />
             <span>Version History</span>
           </div>
           <div className="version-history-header-actions">
-            <button
-              type="button"
-              className="version-history-expand"
-              onClick={() => setIsExpanded((expandedValue) => !expandedValue)}
-              aria-label={isExpanded ? 'Collapse history' : 'Expand history'}
-            >
-              {isExpanded ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-            </button>
             <button
               type="button"
               className="version-history-close"
@@ -277,7 +266,7 @@ const VersionHistorySidebarContent = ({
           <div className="version-history-footer">
             <div className="version-preview-hint">
               <Calendar size={14} />
-              <span>Preview stays visible behind this panel while you compare versions.</span>
+              <span>Selecting a version opens a comparison view so you can review it cleanly.</span>
             </div>
           </div>
         )}

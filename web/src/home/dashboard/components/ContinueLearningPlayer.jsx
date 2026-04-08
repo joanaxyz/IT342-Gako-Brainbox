@@ -1,15 +1,15 @@
 import { Play, Pause, SkipBack, SkipForward, MoreVertical, ExternalLink, Settings2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { formatUpdatedAt } from '../../../common/utils/date';
 import { useState, useRef, useEffect } from 'react';
 import { useAudioPlayer } from '../../../common/hooks/hooks';
+import { getNotebookLinkProps, openNotebookInNewTab } from '../../../notebook/shared/utils/notebookNavigation';
 
 const ContinueLearningPlayer = ({ notebook }) => {
     const { isPlaying, progress, togglePlay, currentNotebook, stopPlayback } = useAudioPlayer();
     const [showMenu, setShowMenu] = useState(false);
     const [backgroundAudioEnabled, setBackgroundAudioEnabled] = useState(true);
     const menuRef = useRef(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -35,7 +35,7 @@ const ContinueLearningPlayer = ({ notebook }) => {
 
     return (
         <div className="dashboard-player-card">
-            <Link to={`/notebook/${notebook.uuid}`} className="dashboard-player-info">
+            <Link {...getNotebookLinkProps(notebook.uuid)} className="dashboard-player-info">
                 <div className="dashboard-player-text">
                     <h3 className="dashboard-player-title">{notebook.title}</h3>
                     <p className="dashboard-player-subtitle">
@@ -74,7 +74,7 @@ const ContinueLearningPlayer = ({ notebook }) => {
                     
                     {showMenu && (
                         <div className="player-dropdown-menu">
-                            <button onClick={() => navigate(`/notebook/${notebook.uuid}`)}>
+                            <button onClick={() => openNotebookInNewTab(notebook.uuid)}>
                                 <ExternalLink size={16} />
                                 Open Notebook
                             </button>

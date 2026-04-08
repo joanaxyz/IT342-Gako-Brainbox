@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from "react-router-dom";
 import Modal from "../../../common/components/Modal";
 import FieldInput from '../../../common/components/FieldInput';
 import { useNotebook, useCategory } from "../../../notebook/shared/hooks/hooks";
 import { useNotification } from "../../../common/hooks/hooks";
+import { openNotebookInNewTab } from '../../../notebook/shared/utils/notebookNavigation';
 
 const NewNotebookForm = ({ onClose, initialCategoryId = null }) => {
-    const navigate = useNavigate();
     const [notebookTitle, setNotebookTitle] = useState('');
     const [selectedCategoryId, setSelectedCategoryId] = useState(() => (
         initialCategoryId ? String(initialCategoryId) : ''
@@ -31,7 +30,7 @@ const NewNotebookForm = ({ onClose, initialCategoryId = null }) => {
                 onClose();
                 setNotebookTitle('');
                 setSelectedCategoryId('');
-                navigate(`/notebook/${response.data.uuid}`, { state: { title } });
+                openNotebookInNewTab(response.data.uuid);
             } else {
                 addNotification(response.message || 'Failed to create notebook.', 'error');
             }

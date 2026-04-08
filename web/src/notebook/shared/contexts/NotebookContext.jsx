@@ -139,20 +139,6 @@ export const NotebookProvider = ({ children }) => {
   const currentNotebook = currentNotebookQuery.data || null;
   const versions = versionsQuery.data ?? EMPTY_ITEMS;
 
-  const versionCache = useMemo(() => {
-    const cachedEntries = queryClient.getQueriesData({
-      predicate: (query) => query.queryKey?.[0] === queryKeys.notebooks.all[0] && query.queryKey?.[1] === 'versions',
-    });
-
-    return cachedEntries.reduce((cache, [key, value]) => {
-      const versionId = key?.[4];
-      if (typeof versionId === 'number' && value) {
-        cache[versionId] = value;
-      }
-      return cache;
-    }, {});
-  }, [queryClient]);
-
   const setNotebookDetail = useCallback((notebook) => {
     const normalizedNotebook = normalizeNotebook(notebook);
     queryClient.setQueryData(queryKeys.notebooks.detail(normalizedNotebook.uuid), normalizedNotebook);
@@ -443,6 +429,21 @@ export const NotebookProvider = ({ children }) => {
     async () => {
       const versionKey = queryKeys.notebooks.version(notebookUuid, versionId);
 
+      if (!forceRefresh) {
+        const cachedVersion = queryClient.getQueryData(versionKey);
+
+        if (cachedVersion) {
+          return {
+            success: true,
+            status: 200,
+            data: cachedVersion,
+            error: null,
+            timestamp: null,
+            message: null,
+          };
+        }
+      }
+
       if (forceRefresh) {
         await queryClient.invalidateQueries({ queryKey: versionKey });
       }
@@ -530,7 +531,6 @@ export const NotebookProvider = ({ children }) => {
     notebooks,
     notebooksLoading: notebooks.length === 0 && (notebooksQuery.isLoading || notebooksQuery.isFetching),
     notebookCache: currentNotebook ? { [currentNotebook.uuid]: currentNotebook } : {},
-    versionCache,
     currentNotebook,
     recentlyEditedLoading: recentlyEditedNotebooks.length === 0 && (recentlyEditedQuery.isLoading || recentlyEditedQuery.isFetching),
     recentlyEditedNotebooks,
@@ -561,7 +561,6 @@ export const NotebookProvider = ({ children }) => {
     recentlyEditedNotebooks,
     recentlyEditedQuery.isFetching,
     recentlyEditedQuery.isLoading,
-    versionCache,
     recentlyReviewedNotebooks,
     recentlyReviewedQuery.isFetching,
     recentlyReviewedQuery.isLoading,

@@ -11,11 +11,6 @@
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  transition: width 0.28s var(--ease);
-}
-
-.version-history-sidebar.expanded {
-  width: 620px;
 }
 
 .version-history-overlay {
@@ -50,7 +45,6 @@
   gap: 8px;
 }
 
-.version-history-expand,
 .version-history-close {
   width: 36px;
   height: 36px;
@@ -65,7 +59,6 @@
   transition: background 0.16s var(--ease), color 0.16s var(--ease);
 }
 
-.version-history-expand:hover,
 .version-history-close:hover {
   background-color: var(--cream-2);
   color: var(--ink);
@@ -84,10 +77,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
-}
-
-.version-history-sidebar.expanded .version-history-filter-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .version-history-field {
@@ -284,21 +273,14 @@
     z-index: 999;
   }
 
-  .version-history-sidebar,
-  .version-history-sidebar.expanded {
+  .version-history-sidebar {
     width: min(92vw, 520px);
   }
 }
 
 @media (max-width: 640px) {
-  .version-history-sidebar,
-  .version-history-sidebar.expanded {
+  .version-history-sidebar {
     width: 100vw;
-  }
-
-  .version-history-filter-row,
-  .version-history-sidebar.expanded .version-history-filter-row {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .version-history-item {

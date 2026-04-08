@@ -1,22 +1,24 @@
 import AiAssistantSidebar from './AiAssistantSidebar';
-import { EDITOR_AI_TOOLS } from './editorAiTools';
 
 const AiSidebar = ({
   isOpen,
   onClose,
   activeToolKey = 'chat',
   onActiveToolChange,
-  onAiUpdateContent,
-  hasProposedChanges,
   notebookUuid,
-  getEditorSelection,
+  getSelectionText,
   getAiSelections,
-  onRequestEditorFocus,
   isToolHelpOpen,
   onToolHelpClose,
+  mode = 'editor',
+  quickTools = [],
+  contained = false,
+  onAiUpdateContent,
+  hasProposedChanges = false,
   pendingProposalSourceId,
   acceptedCheckpointEvent,
   onRestoreCheckpoint,
+  className = '',
 }) => (
   <AiAssistantSidebar
     isOpen={isOpen}
@@ -24,20 +26,19 @@ const AiSidebar = ({
     notebookUuid={notebookUuid}
     activeToolKey={activeToolKey}
     onActiveToolChange={onActiveToolChange}
-    mode="editor"
-    title=""
-    introMessage=""
-    quickTools={EDITOR_AI_TOOLS}
-    getSelectionText={getEditorSelection}
+    mode={mode}
+    quickTools={quickTools}
+    getSelectionText={getSelectionText}
     getAiSelections={getAiSelections}
-    onRequestEditorFocus={onRequestEditorFocus}
     isToolHelpOpen={isToolHelpOpen}
     onToolHelpClose={onToolHelpClose}
-    onApplyEditorContent={onAiUpdateContent}
-    hasProposedChanges={hasProposedChanges}
+    contained={contained}
+    onApplyEditorContent={mode === 'editor' ? onAiUpdateContent : undefined}
+    hasProposedChanges={mode === 'editor' ? hasProposedChanges : false}
     pendingProposalSourceId={pendingProposalSourceId}
     acceptedCheckpointEvent={acceptedCheckpointEvent}
     onRestoreCheckpoint={onRestoreCheckpoint}
+    className={className}
   />
 );
 
