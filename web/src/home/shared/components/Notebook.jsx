@@ -1,9 +1,10 @@
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { BookOpen, Clock, FileText, MoreVertical, FolderInput, Trash2, Play, ExternalLink } from 'lucide-react';
 import { formatUpdatedAt } from "../../../common/utils/date";
 import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer } from "../../../common/hooks/hooks";
 import { useNotebook, useCategory } from "../../../notebook/shared/hooks/hooks";
+import { getNotebookLinkProps, openNotebookInNewTab } from '../../../notebook/shared/utils/notebookNavigation';
 
 const getCategoryColor = (categoryName) => {
     if (!categoryName) return '#94a3b8'; // gray
@@ -28,7 +29,6 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showCategoryMove, setShowCategoryMove] = useState(false);
     const menuRef = useRef(null);
-    const navigate = useNavigate();
     const { togglePlay, currentNotebook, isPlaying } = useAudioPlayer();
     const { updateNotebook, deleteNotebook } = useNotebook();
     const { categories } = useCategory();
@@ -71,7 +71,7 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
         <div className="notebook-card-container">
             <div className={`${cardClass}`}>
                 {isLibrary ? (
-                    <Link to={`/notebook/${notebook.uuid}`} className="library-card-body">
+                    <Link {...getNotebookLinkProps(notebook.uuid)} className="library-card-body">
                         <h3>{notebook.title}</h3>
                         <div className="notebook-category">
                             <span className="category-dot" style={{ backgroundColor: getCategoryColor(notebook.categoryName) }}></span>
@@ -87,7 +87,7 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
                             <div className="library-card-footer-actions">
                                 <button
                                     className="library-open-btn"
-                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/notebook/${notebook.uuid}`); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); openNotebookInNewTab(notebook.uuid); }}
                                     aria-label="Open notebook"
                                 >
                                     <ExternalLink size={13} />
@@ -105,7 +105,7 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
                     </Link>
                 ) : isRecent ? (
                     <div className="recent-card-content">
-                        <Link to={`/notebook/${notebook.uuid}`} className="recent-card-header">
+                        <Link {...getNotebookLinkProps(notebook.uuid)} className="recent-card-header">
                             <div className={iconClass}>
                                 <BookOpen size={20} />
                             </div>
@@ -119,7 +119,7 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
                         </Link>
                         <div className="recent-card-footer">
                             <div className="recent-card-actions">
-                                <button className="recent-action-btn" onClick={() => navigate(`/notebook/${notebook.uuid}`)}>
+                                <button className="recent-action-btn" onClick={() => openNotebookInNewTab(notebook.uuid)}>
                                     <FileText size={14} />
                                     <span>Open</span>
                                 </button>
@@ -133,7 +133,7 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
                         </div>
                     </div>
                 ) : (
-                    <Link to={`/notebook/${notebook.uuid}`} className="continue-card-link-wrapper">
+                    <Link {...getNotebookLinkProps(notebook.uuid)} className="continue-card-link-wrapper">
                         <div className={iconClass}>
                             <BookOpen size={22} strokeWidth={1.75} />
                         </div>

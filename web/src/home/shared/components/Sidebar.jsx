@@ -5,6 +5,7 @@ import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { useNotebook } from '../../../notebook/shared/hooks/hooks';
 import ConfirmModal from '../../../common/components/ConfirmModal';
 import { useSettingsModal } from '../../../common/contexts/SettingsModalContext';
+import { getNotebookLinkProps } from '../../../notebook/shared/utils/notebookNavigation';
 
 const NAV_SECTIONS = [
   {
@@ -181,7 +182,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           {recentNotebooks.map((nb) => (
             <NavLink
               key={nb.uuid}
-              to={`/notebook/${nb.uuid}`}
+              {...getNotebookLinkProps(nb.uuid)}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
               onClick={onClose}
             >

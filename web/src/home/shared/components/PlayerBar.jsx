@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Play, Pause, SkipForward, ListMusic, ChevronDown, RotateCcw, Volume2, VolumeX, Repeat, Captions } from 'lucide-react';
 import { useAudioPlayer } from '../../../common/hooks/hooks';
-import { buildWordStartPositions } from '../../../common/audio/playbackModel';
+import TtsWordTracker from '../../../common/audio/TtsWordTracker';
+import { buildPlaybackWordRanges } from '../../../common/audio/playbackModel';
 import '../styles/player.css';
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -51,48 +52,15 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
   const [showSubtitle, setShowSubtitle] = useState(() =>
     localStorage.getItem('playerShowSubtitle') === 'true'
   );
-  const subtitleRef = useRef(null);
-  const activeWordElRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem('playerShowSubtitle', showSubtitle);
   }, [showSubtitle]);
 
-  // Words from the currently-playing notebook's full text
-  const words = useMemo(() =>
-    currentFullText ? currentFullText.split(' ').filter(Boolean) : [],
+  const subtitleWordRanges = useMemo(() =>
+    buildPlaybackWordRanges(currentFullText, { blockId: 'player-subtitle' }),
     [currentFullText]
   );
-
-  // Cumulative start positions for binary search
-  const wordStartPositions = useMemo(() => {
-    return buildWordStartPositions(currentFullText);
-  }, [currentFullText]);
-
-  // Which word index is currently being spoken
-  const currentWordIdx = useMemo(() => {
-    if (!wordStartPositions.length) return 0;
-    let lo = 0, hi = wordStartPositions.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi + 1) >> 1;
-      if (wordStartPositions[mid] <= currentCharOffset) lo = mid;
-      else hi = mid - 1;
-    }
-    return lo;
-  }, [wordStartPositions, currentCharOffset]);
-
-  // Scroll subtitle strip to keep active word visible — done imperatively for perf
-  useEffect(() => {
-    if (!showSubtitle || !subtitleRef.current) return;
-    const container = subtitleRef.current;
-    if (activeWordElRef.current) activeWordElRef.current.classList.remove('subtitle-word--active');
-    const active = container.querySelector(`[data-wi="${currentWordIdx}"]`);
-    if (active) {
-      active.classList.add('subtitle-word--active');
-      activeWordElRef.current = active;
-      container.scrollLeft = Math.max(0, active.offsetLeft - container.clientWidth * 0.2);
-    }
-  }, [currentWordIdx, showSubtitle]);
 
   useEffect(() => {
     if (!showVolume) return;
@@ -176,7 +144,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
             {volume === 0 && <span className="player-volume-muted">Muted</span>}
           </div>
         )}
-        <div className="player-bar-container">
+        <div className="player-bar-container player-bar-container--review">
           <div className="player-seek-row">
             <span className="player-timestamp">{formatTime(displayTime)}</span>
             <div
@@ -192,23 +160,8 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
             </div>
             <span className="player-timestamp">{formatTime(durationSec)}</span>
           </div>
-          <div className="player-content">
-            <div className="player-info">
-              <div className="player-album-art">
-                <div className="art-placeholder">
-                  {currentNotebook ? currentNotebook.title.charAt(0) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <div className="player-text">
-                <div className="player-title">{currentNotebook ? currentNotebook.title : 'No audio playing'}</div>
-                <div className="player-subtitle">{currentNotebook ? 'Reviewing notebook' : 'Play a notebook to get started'}</div>
-              </div>
-            </div>
-            <div className="player-controls">
+          <div className="player-content player-content--review">
+            <div className="player-controls player-controls--review">
               <button
                 className={`player-btn${loop ? ' active' : ''}`}
                 onClick={toggleLoop}
@@ -232,7 +185,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
                 {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
               </button>
             </div>
-            <div className="player-extras">
+            <div className="player-extras player-extras--review">
               <button className="player-btn player-speed-btn" onClick={cycleSpeed}
                 title={`Speed: ${rate}× — click to change`}>
                 {rate === 1 ? '1×' : `${rate}×`}
@@ -301,12 +254,17 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
 
       <div className="player-bar-wrapper">
         {/* Subtitle / teleprompter strip — shown above the player pill */}
-        {showSubtitle && words.length > 0 && (
-          <div ref={subtitleRef} className="player-subtitle-strip">
-            {words.map((word, i) => (
-              <span key={i} data-wi={i} className="subtitle-word">{word}</span>
-            ))}
-          </div>
+        {showSubtitle && subtitleWordRanges.length > 0 && (
+          <TtsWordTracker
+            variant="subtitle"
+            className="player-subtitle-strip"
+            wordClassName="subtitle-word"
+            activeWordClassName="subtitle-word--active"
+            wordRanges={subtitleWordRanges}
+            activeOffset={currentCharOffset}
+            isActive={Boolean(currentNotebook?.uuid)}
+            autoScrollAxis="x"
+          />
         )}
 
         <div className="player-bar-container">

@@ -34,14 +34,59 @@ export const EDITOR_AI_TOOLS = [
     key: 'summarize',
     label: 'Summarize',
     icon: BookText,
-    prompt: 'Summarize this note and add the summary to the top of my note. Format it as a strong study aid with a concise heading, short overview paragraph, and bullets or a small table when comparison helps.',
-    description: 'Compress the note into a shorter study version.',
+    prompt: 'Summarize this note in the AI chat sidebar only. Do not rewrite, prepend, append, or otherwise change the notebook content unless I explicitly ask you to write the summary into the note. Format the response as a strong study aid with a concise heading, short overview paragraph, and bullets or a small table when comparison helps.',
+    description: 'Compress the note into a shorter study version in chat only.',
   },
   {
     key: 'explain',
     label: 'Explain',
     icon: Lightbulb,
     prompt: 'Explain the core concepts in this note.',
+    description: 'Break down difficult concepts in clearer language.',
+  },
+  {
+    key: 'quiz',
+    label: 'Quiz',
+    icon: FileQuestionMark,
+    prompt: 'Generate a quiz with 8 multiple choice questions from this note.',
+    description: 'Turn the current note into a quiz draft.',
+  },
+  {
+    key: 'flashcards',
+    label: 'Flashcards',
+    icon: Layers,
+    prompt: 'Generate study flashcards from this note.',
+    description: 'Convert the note into flashcards for review.',
+  },
+];
+
+export const REVIEW_AI_TOOLS = [
+  {
+    key: 'chat',
+    label: 'Chat',
+    icon: MessagesSquare,
+    prompt: '',
+    description: 'Ask open-ended review questions about the current note.',
+  },
+  {
+    key: 'study-guide',
+    label: 'Study Guide',
+    icon: NotebookPen,
+    prompt: 'Turn this note into a concise study guide with key ideas, important terms, and a short list of review questions. Keep the response in chat only and do not rewrite the notebook itself.',
+    description: 'Create a compact review guide without editing the note.',
+  },
+  {
+    key: 'summarize',
+    label: 'Summarize',
+    icon: BookText,
+    prompt: 'Summarize this note in the AI chat sidebar only. Do not rewrite or otherwise change the notebook content. Format the response as a strong study aid with a concise heading, short overview paragraph, and bullets or a small table when comparison helps.',
+    description: 'Compress the note into a shorter study version in chat only.',
+  },
+  {
+    key: 'explain',
+    label: 'Explain',
+    icon: Lightbulb,
+    prompt: 'Explain the core concepts in this note in simpler language and call out the hardest ideas to remember.',
     description: 'Break down difficult concepts in clearer language.',
   },
   {

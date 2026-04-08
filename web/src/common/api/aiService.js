@@ -34,17 +34,6 @@ export const aiAPI = {
 
   deleteConversation: (uuid) => apiCall(`/ai/conversations/${uuid}`, 'DELETE'),
 
-  transcribeAudio: (file, language = '') => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    if (language) {
-      formData.append('language', language);
-    }
-
-    return apiCall('/ai/transcriptions', 'POST', formData);
-  },
-
   getAiConfig: () => apiCall('/ai/config', 'GET'),
 
   listAiConfigs: () => apiCall('/ai/config/list', 'GET'),

@@ -1,10 +1,11 @@
 import { Extension, findParentNodeClosestToPos } from '@tiptap/core';
 import { TableView as BaseTableView } from '@tiptap/extension-table';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
-import { TableMap } from '@tiptap/pm/tables';
+import { TableMap, columnResizingPluginKey } from '@tiptap/pm/tables';
 
 const TABLE_META = 'brainbox-table-normalized';
 const tablePluginKey = new PluginKey('brainboxTableEnhancements');
+const tableResizeOverlayKey = new PluginKey('brainboxTableResizeOverlay');
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -83,6 +84,26 @@ const getStoredColumnWidths = (tableNode, cellMinWidth) => {
   return widths;
 };
 
+const hasExplicitColumnWidths = (tableNode) => {
+  const row = tableNode.firstChild;
+
+  if (!row) {
+    return false;
+  }
+
+  let hasExplicitWidths = false;
+
+  row.forEach((cell) => {
+    const storedWidths = Array.isArray(cell.attrs.colwidth) ? cell.attrs.colwidth : [];
+
+    if (storedWidths.some(isFiniteNumber)) {
+      hasExplicitWidths = true;
+    }
+  });
+
+  return hasExplicitWidths;
+};
+
 const normalizeColumnWidths = (widths, targetWidth, cellMinWidth) => {
   if (widths.length === 0) {
     return widths;
@@ -124,6 +145,117 @@ const normalizeColumnWidths = (widths, targetWidth, cellMinWidth) => {
   return scaledWidths;
 };
 
+const getPreviousTableWidth = (tableNode, fallbackWidth) => {
+  const storedWidth = isFiniteNumber(tableNode?.attrs?.tableWidth) ? Math.round(tableNode.attrs.tableWidth) : null;
+  return storedWidth ?? fallbackWidth;
+};
+
+const getPairLockedColumnWidths = (currentWidths, previousWidths, previousTableNode, availableWidth, cellMinWidth) => {
+  if (!previousTableNode || currentWidths.length !== previousWidths.length || currentWidths.length === 0) {
+    return null;
+  }
+
+  const changedColumns = currentWidths
+    .map((width, index) => (width !== previousWidths[index] ? index : null))
+    .filter((value) => Number.isInteger(value));
+
+  if (changedColumns.length !== 1) {
+    return null;
+  }
+
+  const changedIndex = changedColumns[0];
+  const minimumWidth = currentWidths.length * cellMinWidth;
+  const previousTotalWidth = previousWidths.reduce((sum, value) => sum + value, 0);
+  const lockedWidth = clamp(
+    getPreviousTableWidth(previousTableNode, previousTotalWidth),
+    minimumWidth,
+    availableWidth,
+  );
+
+  if (changedIndex < currentWidths.length - 1) {
+    const nextIndex = changedIndex + 1;
+    const adjustedWidths = [...currentWidths];
+    const delta = adjustedWidths[changedIndex] - previousWidths[changedIndex];
+
+    adjustedWidths[nextIndex] = previousWidths[nextIndex] - delta;
+
+    if (adjustedWidths[nextIndex] < cellMinWidth) {
+      const overflow = cellMinWidth - adjustedWidths[nextIndex];
+      adjustedWidths[nextIndex] = cellMinWidth;
+      adjustedWidths[changedIndex] = Math.max(cellMinWidth, adjustedWidths[changedIndex] - overflow);
+    }
+
+    const adjustedTotalWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+    const difference = lockedWidth - adjustedTotalWidth;
+
+    if (difference !== 0) {
+      adjustedWidths[nextIndex] = Math.max(cellMinWidth, adjustedWidths[nextIndex] + difference);
+    }
+
+    return {
+      targetWidth: lockedWidth,
+      widths: adjustedWidths,
+    };
+  }
+
+  const adjustedWidths = [...currentWidths];
+  const currentTotalWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+  const targetWidth = clamp(currentTotalWidth, minimumWidth, availableWidth);
+
+  if (currentTotalWidth !== targetWidth) {
+    adjustedWidths[changedIndex] = Math.max(
+      cellMinWidth,
+      adjustedWidths[changedIndex] - (currentTotalWidth - targetWidth),
+    );
+  }
+
+  return {
+    targetWidth,
+    widths: adjustedWidths,
+  };
+};
+
+const getLockedPreviewWidths = (baseWidths, changedIndex, desiredWidth, cellMinWidth, lockedWidth) => {
+  if (!Array.isArray(baseWidths) || changedIndex < 0 || changedIndex >= baseWidths.length) {
+    return null;
+  }
+
+  const adjustedWidths = [...baseWidths];
+  adjustedWidths[changedIndex] = desiredWidth;
+
+  if (changedIndex < adjustedWidths.length - 1) {
+    const nextIndex = changedIndex + 1;
+    const delta = adjustedWidths[changedIndex] - baseWidths[changedIndex];
+
+    adjustedWidths[nextIndex] = baseWidths[nextIndex] - delta;
+
+    if (adjustedWidths[nextIndex] < cellMinWidth) {
+      const overflow = cellMinWidth - adjustedWidths[nextIndex];
+      adjustedWidths[nextIndex] = cellMinWidth;
+      adjustedWidths[changedIndex] = Math.max(cellMinWidth, adjustedWidths[changedIndex] - overflow);
+    }
+
+    const adjustedTotalWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+    const difference = lockedWidth - adjustedTotalWidth;
+
+    if (difference !== 0) {
+      adjustedWidths[nextIndex] = Math.max(cellMinWidth, adjustedWidths[nextIndex] + difference);
+    }
+
+    return {
+      widths: adjustedWidths,
+      targetWidth: lockedWidth,
+    };
+  }
+
+  const targetWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+
+  return {
+    widths: adjustedWidths,
+    targetWidth,
+  };
+};
+
 const applyColumnWidths = (tr, tableNode, tablePos, widths) => {
   const map = TableMap.get(tableNode);
   const firstColumnByCellPos = new Map();
@@ -160,7 +292,7 @@ const applyColumnWidths = (tr, tableNode, tablePos, widths) => {
   });
 };
 
-const normalizeTableNode = (tr, tableNode, tablePos, containerWidth, cellMinWidth) => {
+const normalizeTableNode = (tr, tableNode, previousTableNode, tablePos, containerWidth, cellMinWidth) => {
   const columnCount = getColumnCount(tableNode);
 
   if (columnCount === 0) {
@@ -170,14 +302,32 @@ const normalizeTableNode = (tr, tableNode, tablePos, containerWidth, cellMinWidt
   const minimumWidth = columnCount * cellMinWidth;
   const availableWidth = Math.max(minimumWidth, containerWidth || minimumWidth);
   const currentWidths = getStoredColumnWidths(tableNode, cellMinWidth);
+  const previousWidths = previousTableNode ? getStoredColumnWidths(previousTableNode, cellMinWidth) : [];
   const currentTotalWidth = currentWidths.reduce((sum, value) => sum + value, 0);
   const storedWidth = isFiniteNumber(tableNode.attrs.tableWidth) ? Math.round(tableNode.attrs.tableWidth) : null;
-  const targetWidth = clamp(
-    storedWidth ?? Math.min(currentTotalWidth || minimumWidth, availableWidth),
-    minimumWidth,
-    availableWidth,
-  );
-  const nextWidths = normalizeColumnWidths(currentWidths, targetWidth, cellMinWidth);
+  const lockedResize = hasExplicitColumnWidths(tableNode)
+    ? getPairLockedColumnWidths(
+      currentWidths,
+      previousWidths,
+      previousTableNode,
+      availableWidth,
+      cellMinWidth,
+    )
+    : null;
+  const targetWidth = lockedResize
+    ? lockedResize.targetWidth
+    : hasExplicitColumnWidths(tableNode)
+      ? clamp(
+        currentTotalWidth || storedWidth || minimumWidth,
+        minimumWidth,
+        availableWidth,
+      )
+      : clamp(
+        storedWidth ?? availableWidth,
+        minimumWidth,
+        availableWidth,
+      );
+  const nextWidths = lockedResize?.widths || normalizeColumnWidths(currentWidths, targetWidth, cellMinWidth);
   const nextAlign = normalizeTableAlign(tableNode.attrs.tableAlign);
   const shouldUpdateTable = tableNode.attrs.tableWidth !== targetWidth || tableNode.attrs.tableAlign !== nextAlign;
   const shouldUpdateWidths = nextWidths.some((value, index) => value !== currentWidths[index]);
@@ -259,13 +409,17 @@ const normalizeSelectionAfterTable = (tr) => {
   return false;
 };
 
-const getContainerWidth = (editor, fallbackWidth) => {
+const getContainerWidth = (editor, fallbackWidth, preferredWidth) => {
+  if (isFiniteNumber(preferredWidth)) {
+    return Math.round(preferredWidth);
+  }
+
   const width = editor?.view?.dom?.clientWidth;
   return isFiniteNumber(width) ? Math.round(width) : fallbackWidth;
 };
 
-const normalizeTablesInDoc = (tr, doc, editor, cellMinWidth) => {
-  const containerWidth = getContainerWidth(editor, null);
+const normalizeTablesInDoc = (tr, doc, previousDoc, editor, cellMinWidth) => {
+  const containerWidth = getContainerWidth(editor, null, editor?.extensionStorage?.tableEnhancements?.containerWidth);
   let didChange = false;
 
   doc.descendants((node, pos) => {
@@ -273,10 +427,114 @@ const normalizeTablesInDoc = (tr, doc, editor, cellMinWidth) => {
       return;
     }
 
-    didChange = normalizeTableNode(tr, node, pos, containerWidth, cellMinWidth) || didChange;
+    const previousNode = previousDoc?.nodeAt(pos)?.type?.name === 'table'
+      ? previousDoc.nodeAt(pos)
+      : null;
+
+    didChange = normalizeTableNode(tr, node, previousNode, pos, containerWidth, cellMinWidth) || didChange;
   });
 
   return didChange;
+};
+
+const getResolvedTableCellElement = (view, pos) => {
+  const domNode = view.nodeDOM(pos);
+
+  if (domNode instanceof HTMLElement) {
+    return domNode.closest('td, th');
+  }
+
+  const domAtPos = view.domAtPos(pos);
+  const directChild = domAtPos?.node?.childNodes?.[domAtPos.offset];
+  const candidate = directChild instanceof HTMLElement
+    ? directChild
+    : domAtPos?.node instanceof HTMLElement
+      ? domAtPos.node
+      : domAtPos?.node?.parentElement;
+
+  return candidate?.closest?.('td, th') || null;
+};
+
+const getActiveResizeGuideElements = (view, handlePos) => {
+  if (!view || !Number.isInteger(handlePos) || handlePos < 0) {
+    return null;
+  }
+
+  const cellElement = getResolvedTableCellElement(view, handlePos);
+
+  if (!(cellElement instanceof HTMLElement)) {
+    return null;
+  }
+
+  const tableElement = cellElement.closest('table');
+  const wrapperElement = tableElement?.closest('.brainbox-table-wrapper, .tableWrapper');
+  const handleElement = cellElement.querySelector('.column-resize-handle');
+
+  if (!(tableElement instanceof HTMLTableElement) || !(wrapperElement instanceof HTMLElement)) {
+    return null;
+  }
+
+  return {
+    cellElement,
+    handleElement: handleElement instanceof HTMLElement ? handleElement : null,
+    tableElement,
+    wrapperElement,
+  };
+};
+
+const applyLiveResizePreview = (view, pluginState, cellMinWidth, pointerX) => {
+  if (!pluginState?.dragging || !Number.isFinite(pointerX)) {
+    return;
+  }
+
+  const elements = getActiveResizeGuideElements(view, pluginState.activeHandle);
+
+  if (!elements) {
+    return;
+  }
+
+  const $cell = view.state.doc.resolve(pluginState.activeHandle);
+  const tableNode = $cell.node(-1);
+  const map = TableMap.get(tableNode);
+  const tableStart = $cell.start(-1);
+  const columnIndex = map.colCount($cell.pos - tableStart) + $cell.nodeAfter.attrs.colspan - 1;
+  const baseWidths = getStoredColumnWidths(tableNode, cellMinWidth);
+  const tableWidth = getPreviousTableWidth(
+    tableNode,
+    baseWidths.reduce((sum, value) => sum + value, 0),
+  );
+  const desiredWidth = Math.max(cellMinWidth, pluginState.dragging.startWidth + (pointerX - pluginState.dragging.startX));
+  const preview = getLockedPreviewWidths(baseWidths, columnIndex, desiredWidth, cellMinWidth, tableWidth);
+
+  if (!preview) {
+    return;
+  }
+
+  Array.from(elements.tableElement.querySelectorAll('colgroup > col')).forEach((colElement, index) => {
+    if (!(colElement instanceof HTMLTableColElement)) {
+      return;
+    }
+
+    const nextWidth = preview.widths[index];
+
+    if (Number.isFinite(nextWidth)) {
+      colElement.style.width = `${nextWidth}px`;
+      colElement.style.minWidth = `${nextWidth}px`;
+    }
+  });
+
+  elements.tableElement.style.width = `${preview.targetWidth}px`;
+  elements.tableElement.style.minWidth = `${preview.targetWidth}px`;
+};
+
+const syncResizeGuide = (view, cellMinWidth, pointerX) => {
+  const pluginState = columnResizingPluginKey.getState(view.state);
+
+  if (!pluginState || pluginState.activeHandle < 0) {
+    return;
+  }
+
+  applyLiveResizePreview(view, pluginState, cellMinWidth, pointerX);
 };
 
 export class BrainboxTableView extends BaseTableView {
@@ -303,15 +561,17 @@ export class BrainboxTableView extends BaseTableView {
     const tableWidth = isFiniteNumber(node.attrs.tableWidth) ? Math.round(node.attrs.tableWidth) : null;
 
     this.dom.dataset.tableAlign = tableAlign;
+    this.dom.style.width = 'max-content';
+    this.dom.style.maxWidth = '100%';
+    this.dom.style.overflowX = 'auto';
+    this.dom.style.overflowY = 'visible';
+    this.dom.style.marginLeft = tableAlign === 'left' ? '0' : 'auto';
+    this.dom.style.marginRight = tableAlign === 'center' ? 'auto' : '0';
     this.table.dataset.tableAlign = tableAlign;
     this.table.style.tableLayout = 'fixed';
-    this.table.style.maxWidth = '100%';
-    this.table.style.marginRight = tableAlign === 'center' ? 'auto' : '0';
-    this.table.style.marginLeft = tableAlign === 'left' ? '0' : 'auto';
-
-    if (tableAlign === 'center') {
-      this.table.style.marginRight = 'auto';
-    }
+    this.table.style.maxWidth = 'none';
+    this.table.style.marginLeft = '0';
+    this.table.style.marginRight = '0';
 
     if (tableWidth) {
       this.table.style.width = `${tableWidth}px`;
@@ -328,7 +588,16 @@ export const TableEnhancements = Extension.create({
   addOptions() {
     return {
       cellMinWidth: 96,
+      containerWidth: null,
     };
+  },
+
+  onCreate() {
+    this.storage.containerWidth = this.options.containerWidth;
+  },
+
+  onUpdate() {
+    this.storage.containerWidth = this.options.containerWidth;
   },
 
   addGlobalAttributes() {
@@ -384,7 +653,13 @@ export const TableEnhancements = Extension.create({
         () =>
         ({ state, dispatch }) => {
           const tr = state.tr;
-          const didNormalizeWidths = normalizeTablesInDoc(tr, state.doc, this.editor, this.options.cellMinWidth);
+          const didNormalizeWidths = normalizeTablesInDoc(
+            tr,
+            state.doc,
+            null,
+            this.editor,
+            this.options.cellMinWidth,
+          );
           const didInsertParagraph = ensureParagraphAfterTables(tr, state.doc, state.schema);
           const didNormalizeSelection = normalizeSelectionAfterTable(tr);
 
@@ -417,7 +692,13 @@ export const TableEnhancements = Extension.create({
           }
 
           const tr = newState.tr;
-          const didNormalizeWidths = normalizeTablesInDoc(tr, newState.doc, this.editor, this.options.cellMinWidth);
+          const didNormalizeWidths = normalizeTablesInDoc(
+            tr,
+            newState.doc,
+            _oldState.doc,
+            this.editor,
+            this.options.cellMinWidth,
+          );
           const didInsertParagraph = ensureParagraphAfterTables(tr, newState.doc, newState.schema);
           const didNormalizeSelection = normalizeSelectionAfterTable(tr);
 
@@ -427,6 +708,60 @@ export const TableEnhancements = Extension.create({
 
           tr.setMeta(TABLE_META, true);
           return tr;
+        },
+      }),
+      new Plugin({
+        key: tableResizeOverlayKey,
+        view: (view) => {
+          let animationFrameId = null;
+          let lastPointerX = null;
+
+          const sync = (pointerX = lastPointerX) => {
+            syncResizeGuide(view, this.options.cellMinWidth, pointerX);
+          };
+          const scheduleSync = (pointerX) => {
+            if (Number.isFinite(pointerX)) {
+              lastPointerX = pointerX;
+            }
+
+            if (animationFrameId !== null) {
+              return;
+            }
+
+            animationFrameId = window.requestAnimationFrame(() => {
+              animationFrameId = null;
+              sync();
+            });
+          };
+          const handleMouseMove = (event) => {
+            const pluginState = columnResizingPluginKey.getState(view.state);
+
+            if (!pluginState?.dragging) {
+              return;
+            }
+
+            scheduleSync(event.clientX);
+          };
+          const handleViewportChange = () => scheduleSync();
+
+          window.addEventListener('mousemove', handleMouseMove);
+          window.addEventListener('scroll', handleViewportChange, true);
+          window.addEventListener('resize', handleViewportChange);
+
+          scheduleSync();
+
+          return {
+            update: () => scheduleSync(),
+            destroy: () => {
+              if (animationFrameId !== null) {
+                window.cancelAnimationFrame(animationFrameId);
+              }
+
+              window.removeEventListener('mousemove', handleMouseMove);
+              window.removeEventListener('scroll', handleViewportChange, true);
+              window.removeEventListener('resize', handleViewportChange);
+            },
+          };
         },
       }),
     ];

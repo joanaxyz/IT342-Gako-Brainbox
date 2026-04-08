@@ -263,6 +263,7 @@ export const createEditorExtensions = ({
   enableAiSelectionHighlight = true,
   enableTableNormalization = true,
   cellMinWidth = 96,
+  tableContainerWidth = null,
 } = {}) => {
   const extensions = [
     StarterKit,
@@ -298,7 +299,10 @@ export const createEditorExtensions = ({
   ];
 
   if (enableTableNormalization) {
-    extensions.push(TableEnhancements.configure({ cellMinWidth }));
+    extensions.push(TableEnhancements.configure({
+      cellMinWidth,
+      containerWidth: tableContainerWidth,
+    }));
   }
 
   if (enableAiHighlight) {

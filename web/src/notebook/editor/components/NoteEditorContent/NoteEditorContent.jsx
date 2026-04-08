@@ -77,6 +77,7 @@ const NoteEditorContent = forwardRef(({
   const lastAppliedContentSyncTokenRef = useRef(contentSyncToken);
   const suppressExternalUpdateRef = useRef(false);
   const isEditable = !readOnly;
+  const bodyWidth = Math.max(160, paperWidth - (DEFAULT_PAPER_PADDING_X * 2));
 
   const [surfaceHeight, setSurfaceHeight] = useState(paperHeight);
 
@@ -85,7 +86,8 @@ const NoteEditorContent = forwardRef(({
     enableAiSelectionHighlight: !readOnly,
     enableTableNormalization: !readOnly,
     cellMinWidth: TABLE_CELL_MIN_WIDTH,
-  }), [readOnly]);
+    tableContainerWidth: bodyWidth,
+  }), [bodyWidth, readOnly]);
 
   const scratchExtensions = useMemo(() => createEditorExtensions({
     enableAiHighlight: false,
@@ -187,6 +189,29 @@ const NoteEditorContent = forwardRef(({
       },
     },
   }, [editorExtensions, emitSelectionState, isEditable, storageKey, updateOutline]);
+
+  const insertEquation = useCallback((kind = 'auto') => {
+    if (!editor) {
+      return;
+    }
+
+    const { selection } = editor.state;
+    const isEmptyParagraph = selection.empty
+      && selection.$from.parent.type.name === 'paragraph'
+      && selection.$from.parent.textContent.trim().length === 0;
+    const shouldInsertBlock = kind === 'block' || (kind === 'auto' && isEmptyParagraph);
+    const range = {
+      from: selection.from,
+      to: selection.to,
+    };
+
+    if (shouldInsertBlock) {
+      editor.chain().focus().insertBlockMath({ latex: '', range }).run();
+      return;
+    }
+
+    editor.chain().focus().insertInlineMath({ latex: '', range }).run();
+  }, [editor]);
 
   const applyExternalContent = useCallback((nextContent) => {
     if (!editor || editor.isDestroyed) {
@@ -447,23 +472,7 @@ const NoteEditorContent = forwardRef(({
       editor.chain().focus().insertTable({ rows, cols, withHeaderRow }).run();
       editor.commands.normalizeTables?.();
     },
-    insertFormula: (kind = 'auto') => {
-      if (!editor) {
-        return;
-      }
-
-      const isEmptyParagraph = editor.state.selection.empty
-        && editor.state.selection.$from.parent.type.name === 'paragraph'
-        && editor.state.selection.$from.parent.textContent.trim().length === 0;
-      const shouldInsertBlock = kind === 'block' || (kind === 'auto' && isEmptyParagraph);
-
-      if (shouldInsertBlock) {
-        editor.chain().focus().insertBlockMath({ latex: '' }).run();
-        return;
-      }
-
-      editor.chain().focus().insertInlineMath({ latex: '' }).run();
-    },
+    insertEquation,
     getSelectedText: () => {
       if (!editor) {
         return '';
@@ -736,6 +745,7 @@ const NoteEditorContent = forwardRef(({
     buildAiHighlightRangesFromDescriptors,
     emitSelectionState,
     getTopLevelBlockRanges,
+    insertEquation,
     resolveAiSelectionTargets,
     scratchExtensions,
     scrollToHeading,
@@ -744,7 +754,6 @@ const NoteEditorContent = forwardRef(({
   const effectiveZoom = zoom;
   const scaledWidth = Math.round(paperWidth * effectiveZoom);
   const scaledHeight = Math.round(surfaceHeight * effectiveZoom);
-  const bodyWidth = Math.max(160, paperWidth - (DEFAULT_PAPER_PADDING_X * 2));
   const paperStyles = {
     '--document-paper-width': `${paperWidth}px`,
     '--document-paper-height': `${paperHeight}px`,

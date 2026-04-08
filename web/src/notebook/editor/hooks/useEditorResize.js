@@ -10,6 +10,7 @@ import {
 const STORAGE_KEY = 'noteEditorPaperWidth';
 const LEGACY_STORAGE_KEY = 'noteEditorMaxWidth';
 const CONTAINER_GUTTER_PX = 48;
+const MIN_AVAILABLE_PAPER_WIDTH = 160;
 
 const clampPaperWidth = (value, minWidth, maxWidth) => (
   Math.round(Math.min(maxWidth, Math.max(minWidth, value)))
@@ -20,8 +21,13 @@ const getAvailablePaperWidth = (container, zoom, minWidth, maxWidth) => {
     return maxWidth;
   }
 
-  const nextWidth = (container.clientWidth - CONTAINER_GUTTER_PX) / Math.max(zoom, 0.01);
-  return clampPaperWidth(nextWidth, minWidth, maxWidth);
+  const nextWidth = Math.max(
+    MIN_AVAILABLE_PAPER_WIDTH,
+    (container.clientWidth - CONTAINER_GUTTER_PX) / Math.max(zoom, 0.01),
+  );
+  const effectiveMinWidth = Math.min(minWidth, nextWidth);
+
+  return clampPaperWidth(nextWidth, effectiveMinWidth, maxWidth);
 };
 
 export const useEditorResize = (

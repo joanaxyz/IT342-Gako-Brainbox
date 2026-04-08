@@ -39,7 +39,8 @@ export const useAiConfig = () => {
     cachedUserId === userId ? cachedSelectedId : null
   ));
   const [loading, setLoading] = useState(() => {
-    if (!isAuthReady || !userId) return false;
+    if (!isAuthReady) return true;
+    if (!userId) return false;
     return cachedUserId !== userId || cachedConfig === undefined;
   });
 
@@ -85,19 +86,14 @@ export const useAiConfig = () => {
         const res = await aiAPI.listAiConfigs();
         if (cancelled) return;
 
-        console.log('[useAiConfig] listAiConfigs response:', res);
-
         if (res.success && res.data) {
           applyListPayload(res.data);
-          console.log('[useAiConfig] loaded configs:', cachedConfigs.length, 'selectedId:', cachedSelectedId);
         } else {
-          console.warn('[useAiConfig] listAiConfigs failed or returned no data:', res);
           cachedConfigs = [];
           cachedSelectedId = null;
           cachedConfig = null;
         }
-      } catch (err) {
-        console.error('[useAiConfig] listAiConfigs threw:', err);
+      } catch {
         if (!cancelled) {
           cachedConfigs = [];
           cachedSelectedId = null;
@@ -173,18 +169,14 @@ export const useAiConfig = () => {
   const refetch = useCallback(async () => {
     try {
       const res = await aiAPI.listAiConfigs();
-      console.log('[useAiConfig] refetch response:', res);
       if (res.success && res.data) {
         applyListPayload(res.data);
-        console.log('[useAiConfig] refetch loaded configs:', cachedConfigs.length, 'selectedId:', cachedSelectedId);
       } else {
-        console.warn('[useAiConfig] refetch failed or returned no data:', res);
         cachedConfigs = [];
         cachedSelectedId = null;
         cachedConfig = null;
       }
-    } catch (err) {
-      console.error('[useAiConfig] refetch threw:', err);
+    } catch {
       cachedConfigs = [];
       cachedSelectedId = null;
       cachedConfig = null;

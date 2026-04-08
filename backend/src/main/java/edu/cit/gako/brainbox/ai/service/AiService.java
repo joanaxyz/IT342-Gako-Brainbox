@@ -3,7 +3,6 @@ package edu.cit.gako.brainbox.ai.service;
 import edu.cit.gako.brainbox.ai.dto.*;
 import edu.cit.gako.brainbox.ai.dto.request.AiRequest;
 import edu.cit.gako.brainbox.ai.dto.response.AiResponse;
-import edu.cit.gako.brainbox.ai.dto.response.SpeechTranscriptionResponse;
 import edu.cit.gako.brainbox.ai.entity.AiConfig;
 import edu.cit.gako.brainbox.ai.prompt.AiPromptBuilder;
 import edu.cit.gako.brainbox.ai.prompt.EditorModePromptBuilder;
@@ -16,7 +15,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -84,12 +82,6 @@ public class AiService {
         } catch (Exception e) {
             throw new RuntimeException("Error communicating with AI service", e);
         }
-    }
-
-    public SpeechTranscriptionResponse transcribeAudio(MultipartFile file, String language, Long userId) {
-        AiConfig config = aiConfigService.getConfigEntity(userId);
-        String apiKey = aiConfigService.decryptApiKey(config);
-        return proxyProvider.transcribeAudio(config.getProxyUrl(), apiKey, file, language);
     }
 
     // ── Response parsing ──

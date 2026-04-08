@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
 import { formatUpdatedAt } from '../../../common/utils/date';
+import { openNotebookInNewTab } from '../../../notebook/shared/utils/notebookNavigation';
 
 const EditIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -16,16 +16,14 @@ const ArrowRight = () => (
 );
 
 const ReviewCard = ({ notebook }) => {
-  const navigate = useNavigate();
-
   const handleEdit = (e) => {
     e.stopPropagation();
-    navigate(`/notebook/${notebook.uuid}`);
+    openNotebookInNewTab(notebook.uuid);
   };
 
   const handleReview = (e) => {
     e.stopPropagation();
-    navigate(`/notebook/${notebook.uuid}`, { state: { mode: 'review' } });
+    openNotebookInNewTab(notebook.uuid, { mode: 'review' });
   };
 
   return (

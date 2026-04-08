@@ -1,26 +1,17 @@
 import { CircleHelp } from 'lucide-react';
 
-const buildTooltip = (label, description) => (
-  description ? `${label}\n${description}` : label
-);
-
 const AiToolRail = ({
   tools = [],
   activeToolKey = 'chat',
   onSelectTool,
   onToggleHelp,
   isHelpOpen = false,
-  isOpen = false,
 }) => {
-  if (!isOpen) {
-    return null;
-  }
-
   const filteredTools = tools.filter((tool) => tool.key !== 'chat');
 
   return (
-    <aside className="ai-tool-rail is-open" aria-label="AI tools">
-      <div className="ai-tool-rail-group">
+    <div className="editor-ai-rail" role="toolbar" aria-label="AI tools">
+      <div className="editor-ai-rail-group">
         {filteredTools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeToolKey === tool.key;
@@ -29,7 +20,7 @@ const AiToolRail = ({
             <button
               key={tool.key}
               type="button"
-              className={`ai-tool-rail-btn ${isActive ? 'is-active' : ''}`}
+              className={`editor-ai-rail-btn ${isActive ? 'is-active' : ''}`}
               onClick={() => onSelectTool?.(tool.key)}
               aria-label={tool.label}
               aria-pressed={isActive}
@@ -41,11 +32,11 @@ const AiToolRail = ({
         })}
       </div>
 
-      <div className="ai-tool-rail-footer">
-        <span className="ai-tool-rail-divider" aria-hidden="true" />
+      <div className="editor-ai-rail-footer">
+        <span className="editor-ai-rail-divider" aria-hidden="true" />
         <button
           type="button"
-          className={`ai-tool-rail-btn ai-tool-rail-btn--help ${isHelpOpen ? 'is-active' : ''}`}
+          className={`editor-ai-rail-btn editor-ai-rail-btn--help ${isHelpOpen ? 'is-active' : ''}`}
           onClick={() => onToggleHelp?.()}
           aria-label="How to use AI tools"
           aria-pressed={isHelpOpen}
@@ -54,7 +45,7 @@ const AiToolRail = ({
           <CircleHelp size={18} />
         </button>
       </div>
-    </aside>
+    </div>
   );
 };
 

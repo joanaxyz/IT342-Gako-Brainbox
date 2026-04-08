@@ -4,6 +4,7 @@ import { formatUpdatedAt } from '../../../common/utils/date';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAudioPlayer } from '../../../common/hooks/hooks';
 import { useNotebook } from '../../../notebook/shared/hooks/hooks';
+import { getNotebookLinkProps } from '../../../notebook/shared/utils/notebookNavigation';
 
 const FolderView = ({ notebooks, categories, selectedCategoryId, onSelectCategory }) => {
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -104,7 +105,7 @@ const FolderView = ({ notebooks, categories, selectedCategoryId, onSelectCategor
           {notebooks.map(notebook => (
             <tr key={notebook.uuid} className={`folder-view-row notebook-row ${currentNotebook?.uuid === notebook.uuid && isPlaying ? 'is-playing' : ''}`}>
               <td className="col-name">
-                <Link to={`/notebook/${notebook.uuid}`} className="notebook-link">
+                <Link {...getNotebookLinkProps(notebook.uuid)} className="notebook-link">
                   <FileText size={18} className="file-icon" />
                   <span>{notebook.title}</span>
                   {currentNotebook?.uuid === notebook.uuid && isPlaying && (

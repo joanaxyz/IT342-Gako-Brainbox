@@ -29,7 +29,6 @@ const createScopedState = (scopeKey) => ({
   pendingProposalSourceId: null,
   pendingAiSelectionIds: [],
   clearAllAiSelectionsOnAccept: false,
-  proposalToken: 0,
   proposalRenderToken: 0,
   proposalComparisonSession: null,
   proposalChanges: [],
@@ -37,8 +36,6 @@ const createScopedState = (scopeKey) => ({
   proposalWorkingChangedBlockIndexes: [],
   proposalWorkingBlockIndexesByChange: [],
   activeProposalChangeIndex: -1,
-  isProposalComparisonCollapsed: false,
-  isProposalEditorPreviewMode: false,
 });
 
 const buildProposalSessionState = (baseState, originalContent, proposedContent) => {
@@ -57,8 +54,6 @@ const buildProposalSessionState = (baseState, originalContent, proposedContent) 
     proposalWorkingChangedBlockIndexes: resolvedState.workingChangedBlockIndexes,
     proposalWorkingBlockIndexesByChange: resolvedState.workingBlockIndexesByChange,
     activeProposalChangeIndex: clampChangeIndex(0, comparisonSession.changes.length),
-    isProposalComparisonCollapsed: false,
-    isProposalEditorPreviewMode: false,
   };
 };
 
@@ -97,15 +92,12 @@ export const useAiProposalState = ({
     pendingProposalSourceId,
     pendingAiSelectionIds,
     clearAllAiSelectionsOnAccept,
-    proposalToken,
     proposalRenderToken,
     proposalChanges,
     proposalChangeDecisions,
     proposalWorkingChangedBlockIndexes,
     proposalWorkingBlockIndexesByChange,
     activeProposalChangeIndex,
-    isProposalComparisonCollapsed,
-    isProposalEditorPreviewMode,
   } = activeState;
 
   const updateScopedState = useCallback((updater) => {
@@ -153,7 +145,6 @@ export const useAiProposalState = ({
         pendingProposalSourceId: sourceMessageId,
         pendingAiSelectionIds: Array.isArray(normalizedOptions.aiSelectionIds) ? normalizedOptions.aiSelectionIds : [],
         clearAllAiSelectionsOnAccept: Boolean(normalizedOptions.clearAllAiSelections),
-        proposalToken: previousState.proposalToken + 1,
         proposalRenderToken: previousState.proposalRenderToken + 1,
       };
     });
@@ -174,8 +165,6 @@ export const useAiProposalState = ({
     proposalWorkingChangedBlockIndexes: [],
     proposalWorkingBlockIndexesByChange: [],
     activeProposalChangeIndex: -1,
-    isProposalComparisonCollapsed: false,
-    isProposalEditorPreviewMode: false,
   }), [scopeKey]);
 
   const handleAcceptAiChange = useCallback(() => {
@@ -195,30 +184,6 @@ export const useAiProposalState = ({
       ...previousState,
       scopeKey,
       activeEditor: editor,
-    }));
-  }, [scopeKey, updateScopedState]);
-
-  const setProposalComparisonCollapsed = useCallback((value) => {
-    updateScopedState((previousState) => ({
-      ...previousState,
-      scopeKey,
-      isProposalComparisonCollapsed: typeof value === 'function'
-        ? Boolean(value(previousState.isProposalComparisonCollapsed))
-        : Boolean(value),
-      isProposalEditorPreviewMode: previousState.isProposalEditorPreviewMode,
-    }));
-  }, [scopeKey, updateScopedState]);
-
-  const setProposalEditorPreviewMode = useCallback((value) => {
-    updateScopedState((previousState) => ({
-      ...previousState,
-      scopeKey,
-      isProposalEditorPreviewMode: typeof value === 'function'
-        ? value(previousState.isProposalEditorPreviewMode)
-        : Boolean(value),
-      isProposalComparisonCollapsed: typeof value === 'function'
-        ? previousState.isProposalComparisonCollapsed
-        : (value ? true : previousState.isProposalComparisonCollapsed),
     }));
   }, [scopeKey, updateScopedState]);
 
@@ -263,7 +228,6 @@ export const useAiProposalState = ({
     pendingProposalSourceId,
     pendingAiSelectionIds,
     clearAllAiSelectionsOnAccept,
-    proposalToken,
     proposalRenderToken,
     proposalChanges,
     proposalChangeDecisions,
@@ -271,11 +235,7 @@ export const useAiProposalState = ({
     proposalWorkingBlockIndexesByChange,
     activeProposalChangeIndex,
     activeProposalWorkingBlockIndexes,
-    isProposalComparisonCollapsed,
-    isProposalEditorPreviewMode,
     setActiveEditor,
-    setProposalComparisonCollapsed,
-    setProposalEditorPreviewMode,
     setActiveProposalChangeIndex,
     setProposalChangeDecision,
     handleAiUpdateContent,
