@@ -5,20 +5,25 @@ import EditDeckPage from './components/EditDeckPage';
 import { useNotebook, useFlashcard } from '../../notebook/shared/hooks/hooks';
 import ConfirmModal from '../../common/components/ConfirmModal';
 import SortSelect from '../../common/components/SortSelect';
+import SortDirectionToggle from '../../common/components/SortDirectionToggle';
 import { useNotification } from '../../common/hooks/hooks';
 import { StudyCardSkeleton } from '../../common/components/Skeleton';
 import '../dashboard/styles/dashboard.css';
 import '../shared/styles/study.css';
 
+const getMasteryClass = (pct) => pct >= 60 ? 'good' : pct >= 35 ? 'mid' : 'low';
+
 const SORT_OPTIONS = [
-  { value: 'recent', label: 'Most recent' },
-  { value: 'az', label: 'A – Z' },
-  { value: 'za', label: 'Z – A' },
-  { value: 'most', label: 'Most cards' },
-  { value: 'least', label: 'Fewest cards' },
+  { value: 'updatedAt', label: 'Recently updated' },
+  { value: 'title', label: 'Title' },
+  { value: 'cardCount', label: 'Card count' },
 ];
 
-const getMasteryClass = (pct) => pct >= 60 ? 'good' : pct >= 35 ? 'mid' : 'low';
+const DEFAULT_SORT_DIRECTIONS = {
+  updatedAt: 'desc',
+  title: 'asc',
+  cardCount: 'desc',
+};
 
 const ArrowRight = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -118,7 +123,8 @@ const Flashcards = () => {
   const [activeDeck, setActiveDeck] = useState(null);
   const [editDeck, setEditDeck] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState('updatedAt');
+  const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTIONS.updatedAt);
   const [selectedNotebookId, setSelectedNotebookId] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -130,6 +136,11 @@ const Flashcards = () => {
   useEffect(() => {
     fetchFlashcards();
   }, [fetchFlashcards]);
+
+  const handleSortChange = (nextSortBy) => {
+    setSortBy(nextSortBy);
+    setSortDirection(DEFAULT_SORT_DIRECTIONS[nextSortBy]);
+  };
 
   const notebookPills = useMemo(() => {
     const ids = new Set(flashcards.filter((d) => d.notebookUuid).map((d) => d.notebookUuid));
@@ -149,12 +160,27 @@ const Flashcards = () => {
     } else if (selectedNotebookId !== 'all') {
       result = result.filter((d) => d.notebookUuid === selectedNotebookId);
     }
-    if (sortBy === 'az') result.sort((a, b) => a.title.localeCompare(b.title));
-    else if (sortBy === 'za') result.sort((a, b) => b.title.localeCompare(a.title));
-    else if (sortBy === 'most') result.sort((a, b) => b.cardCount - a.cardCount);
-    else if (sortBy === 'least') result.sort((a, b) => a.cardCount - b.cardCount);
+
+    if (sortBy === 'updatedAt') {
+      result.sort((a, b) => {
+        const comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    } else if (sortBy === 'title') {
+      result.sort((a, b) => (
+        sortDirection === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title)
+      ));
+    } else if (sortBy === 'cardCount') {
+      result.sort((a, b) => {
+        const comparison = a.cardCount - b.cardCount;
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
     return result;
-  }, [flashcards, search, sortBy, selectedNotebookId]);
+  }, [flashcards, search, sortBy, sortDirection, selectedNotebookId]);
 
   const grouped = useMemo(() => {
     if (selectedNotebookId !== 'all') return null;
@@ -326,7 +352,19 @@ const Flashcards = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <SortSelect options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+        <SortSelect
+          ariaLabel="Sort flashcards by"
+          options={SORT_OPTIONS}
+          value={sortBy}
+          onChange={handleSortChange}
+        />
+        <SortDirectionToggle
+          direction={sortDirection}
+          label="Flashcard sort direction"
+          onToggle={() => setSortDirection((currentDirection) => (
+            currentDirection === 'asc' ? 'desc' : 'asc'
+          ))}
+        />
       </div>
 
       <div className="pill-row mb-20">

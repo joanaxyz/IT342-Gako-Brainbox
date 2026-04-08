@@ -324,27 +324,25 @@
 /* Column resize handle — TipTap places this inside th/td */
 .note-editor-body .column-resize-handle {
   position: absolute;
-  right: -2px;
+  right: -6px;
   top: 0;
   bottom: 0;
-  width: 4px;
-  background-color: var(--accent, #b07a46);
+  width: 12px;
+  background: transparent;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: none;
   z-index: 20;
-}
-
-/* Show handle on cell hover */
-.note-editor-body th:hover .column-resize-handle,
-.note-editor-body td:hover .column-resize-handle {
-  opacity: 1;
 }
 
 /* Cursor hint when TipTap is in resize mode */
 .note-editor-body.resize-cursor,
 .note-editor-body.resize-cursor * {
   cursor: col-resize !important;
+}
+
+.note-editor-body .column-resize-dragging::before {
+  display: none;
 }
 
 .note-editor-body .selectedCell::after {
@@ -428,37 +426,39 @@
 
 .note-editor-body .tableWrapper,
 .note-editor-body .brainbox-table-wrapper {
-  width: 100%;
+  box-sizing: border-box;
+  width: max-content;
   max-width: 100%;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
   margin: 0.95rem 0;
-  padding: 10px 12px;
-  border-radius: 18px;
-  transition: background 0.16s var(--ease, ease), box-shadow 0.16s var(--ease, ease);
+  padding: 0;
+  border-radius: 0;
+  position: relative;
+  transition: none;
 }
 
 .note-editor-body .tableWrapper:hover,
 .note-editor-body .brainbox-table-wrapper:hover {
-  background: rgba(0, 0, 0, 0.015);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  background: transparent;
+  box-shadow: none;
 }
 
 .note-editor-body .tableWrapper:has(.selectedCell),
 .note-editor-body .brainbox-table-wrapper:has(.selectedCell) {
-  background: rgba(59, 130, 246, 0.04);
-  box-shadow:
-    inset 0 0 0 1px rgba(59, 130, 246, 0.14),
-    0 18px 34px -30px rgba(28, 25, 23, 0.3);
+  background: transparent;
+  box-shadow: none;
 }
 
 .note-editor-body table,
 .note-editor-body .brainbox-table {
   table-layout: fixed;
   width: auto;
-  max-width: 100%;
-  min-width: 0 !important;
+  max-width: none;
+  min-width: auto;
   border-radius: 14px;
   overflow: hidden;
+  margin: 0;
 }
 
 .note-editor-body table[data-table-align="center"],
@@ -479,11 +479,20 @@
   padding: 0.72em 0.78em;
 }
 
+.note-editor-body td:focus-within,
+.note-editor-body th:focus-within {
+  background-color: rgba(17, 24, 39, 0.05);
+}
+
+.note-editor-body th:focus-within {
+  background-color: rgba(17, 24, 39, 0.08);
+}
+
 .note-editor-body .column-resize-handle {
-  width: 6px;
-  right: -3px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(194, 65, 12, 0.14), rgba(194, 65, 12, 0.4));
+  width: 12px;
+  right: -6px;
+  border-radius: 0;
+  background: transparent;
 }
 
 .note-editor-body .selectedCell::after {
@@ -514,46 +523,117 @@
 }
 
 .brainbox-math-node {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 0 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(28, 25, 23, 0.08);
-  background: rgba(255, 247, 237, 0.92);
+  justify-content: center;
+  max-width: 100%;
+  min-height: 1.5em;
+  padding: 0.05rem 0.18rem;
+  border-radius: 6px;
   color: var(--ink);
-  cursor: pointer;
+  cursor: text;
+  vertical-align: middle;
+  transition: background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.brainbox-math-node--inline {
+  min-width: 1.2rem;
 }
 
 .brainbox-math-node--block {
   width: 100%;
   display: flex;
+  margin: 0.95rem 0;
+  padding: 0.18rem 0;
+}
+
+.brainbox-math-node-preview {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding: 12px;
-  margin: 0.9rem 0;
+  min-height: 1.3rem;
+  max-width: 100%;
+}
+
+.brainbox-math-node--block .brainbox-math-node-preview {
+  width: 100%;
+  min-height: 2rem;
+}
+
+.brainbox-math-node:not(.is-editing):hover {
+  background: rgba(74, 124, 220, 0.08);
 }
 
 .brainbox-math-node.is-empty .brainbox-math-node-preview {
-  color: var(--ink-3);
-  font-size: 0.82rem;
-  font-style: italic;
+  position: relative;
+  min-width: 1rem;
+}
+
+.brainbox-math-node.is-empty .brainbox-math-node-preview::before,
+.brainbox-math-node.is-empty .brainbox-math-node-preview::after,
+.brainbox-math-node.is-editing::before,
+.brainbox-math-node.is-editing::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0.42rem;
+  height: 1.05rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.brainbox-math-node.is-empty .brainbox-math-node-preview::before,
+.brainbox-math-node.is-editing::before {
+  left: 0.22rem;
+  border-left: 1.75px solid rgba(74, 124, 220, 0.82);
+  border-top: 1.75px solid rgba(74, 124, 220, 0.82);
+  border-bottom: 1.75px solid rgba(74, 124, 220, 0.82);
+  border-radius: 4px 0 0 4px;
+}
+
+.brainbox-math-node.is-empty .brainbox-math-node-preview::after,
+.brainbox-math-node.is-editing::after {
+  right: 0.22rem;
+  border-top: 1.75px solid rgba(74, 124, 220, 0.82);
+  border-right: 1.75px solid rgba(74, 124, 220, 0.82);
+  border-bottom: 1.75px solid rgba(74, 124, 220, 0.82);
+  border-radius: 0 4px 4px 0;
 }
 
 .brainbox-math-node.is-editing {
-  width: auto;
-  min-width: 180px;
-  background: rgba(255, 255, 255, 0.98);
-  border-color: rgba(194, 65, 12, 0.16);
-  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 255, 0.96));
+  box-shadow: inset 0 0 0 1px rgba(74, 124, 220, 0.12);
+}
+
+.brainbox-math-node--inline.is-editing {
+  min-width: 1.7rem;
+  padding: 0.08rem 0.78rem;
+}
+
+.brainbox-math-node--block.is-editing {
+  min-height: 3rem;
+  padding: 0.55rem 1.15rem;
+  box-shadow:
+    0 14px 26px -24px rgba(74, 124, 220, 0.6),
+    inset 0 0 0 1px rgba(74, 124, 220, 0.14);
 }
 
 .brainbox-math-node-editor {
   display: none;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 .brainbox-math-node.is-editing .brainbox-math-node-editor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brainbox-math-node--block.is-editing .brainbox-math-node-editor {
   display: block;
+  width: 100%;
 }
 
 .brainbox-math-node.is-editing .brainbox-math-node-preview {
@@ -561,19 +641,37 @@
 }
 
 .brainbox-math-node-input {
-  width: 100%;
+  min-width: 0;
   border: none;
   outline: none;
   resize: none;
   background: transparent;
   color: var(--ink);
+  caret-color: #4a7cdc;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   line-height: 1.5;
+  padding: 0;
+  margin: 0;
+}
+
+.brainbox-math-node--inline .brainbox-math-node-input {
+  width: auto;
+}
+
+.brainbox-math-node--block .brainbox-math-node-input {
+  width: 100%;
+  min-height: 2.1rem;
+  text-align: center;
 }
 
 .brainbox-math-node-preview .katex {
-  font-size: 1.02em;
+  font-size: 1.04em;
+  max-width: 100%;
+}
+
+.brainbox-math-node--block .brainbox-math-node-preview .katex-display {
+  margin: 0;
 }
 
 .note-editor-content.is-ai-selection-mode .note-editor-paper {

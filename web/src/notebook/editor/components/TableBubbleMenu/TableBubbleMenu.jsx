@@ -1,191 +1,402 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  ChevronRight,
-  Columns3,
-  LayoutGrid,
-  Rows3,
-  Trash2,
-} from 'lucide-react';
+import { findParentNodeClosestToPos } from '@tiptap/core';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-const SUBMENU_ITEMS = {
-  row: [
-    { label: 'Insert row above', icon: Rows3, action: (e) => e.chain().focus().addRowBefore().run() },
-    { label: 'Insert row below', icon: Rows3, action: (e) => e.chain().focus().addRowAfter().run() },
-    { label: 'Delete row', icon: Trash2, action: (e) => e.chain().focus().deleteRow().run(), danger: true },
-  ],
-  column: [
-    { label: 'Insert column left', icon: Columns3, action: (e) => e.chain().focus().addColumnBefore().run() },
-    { label: 'Insert column right', icon: Columns3, action: (e) => e.chain().focus().addColumnAfter().run() },
-    { label: 'Delete column', icon: Trash2, action: (e) => e.chain().focus().deleteColumn().run(), danger: true },
-  ],
+const MENU_WIDTH = 320;
+
+const clampMenuPosition = (x, y) => ({
+  x: Math.max(12, Math.min(x, window.innerWidth - MENU_WIDTH - 12)),
+  y: Math.max(12, Math.min(y, window.innerHeight - 24)),
+});
+
+const getFirstTableCell = (wrapper) => {
+  const cell = wrapper?.querySelector('th, td');
+  return cell instanceof HTMLElement ? cell : null;
+};
+
+const getCellFromSelection = (editor) => {
+  const domAtPos = editor?.view?.domAtPos?.(editor.state.selection.from);
+
+  if (!domAtPos) {
+    return null;
+  }
+
+  const directChild = domAtPos.node?.childNodes?.[domAtPos.offset];
+  const candidate = directChild instanceof HTMLElement
+    ? directChild
+    : domAtPos.node instanceof HTMLElement
+      ? domAtPos.node
+      : domAtPos.node?.parentElement;
+
+  const cell = candidate?.closest?.('td, th');
+  return cell instanceof HTMLElement ? cell : null;
+};
+
+const isSameAnchor = (left, right) => left?.wrapper === right?.wrapper && left?.cell === right?.cell;
+
+const resolveTableAnchorFromTarget = (target, root) => {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+
+  const wrapper = target.closest('.brainbox-table-wrapper, .tableWrapper');
+
+  if (!(wrapper instanceof HTMLElement) || !root.contains(wrapper)) {
+    return null;
+  }
+
+  const cell = target.closest('th, td') || getFirstTableCell(wrapper);
+
+  if (!(cell instanceof HTMLElement)) {
+    return null;
+  }
+
+  return { wrapper, cell };
+};
+
+const resolveSelectionTableAnchor = (editor) => {
+  const tableNode = findParentNodeClosestToPos(editor.state.selection.$from, (node) => node.type.name === 'table');
+
+  if (!tableNode) {
+    return null;
+  }
+
+  const wrapper = editor.view.nodeDOM(tableNode.pos);
+
+  if (!(wrapper instanceof HTMLElement)) {
+    return null;
+  }
+
+  const cell = getCellFromSelection(editor) || getFirstTableCell(wrapper);
+
+  if (!cell) {
+    return null;
+  }
+
+  return { wrapper, cell };
+};
+
+const resolveTableContext = (editor, anchor) => {
+  if (!editor || !anchor?.cell) {
+    return null;
+  }
+
+  try {
+    const position = editor.view.posAtDOM(anchor.cell, 0);
+    const $pos = editor.state.doc.resolve(position);
+    const tableNode = findParentNodeClosestToPos($pos, (node) => node.type.name === 'table');
+
+    if (!tableNode) {
+      return null;
+    }
+
+    return {
+      ...anchor,
+      tableNode: tableNode.node,
+      focusPos: Math.min(position + 1, editor.state.doc.content.size),
+    };
+  } catch {
+    return null;
+  }
+};
+
+const tableHasHeaderRow = (tableNode) => {
+  const firstRow = tableNode?.firstChild;
+
+  if (!firstRow || firstRow.childCount === 0) {
+    return false;
+  }
+
+  let hasHeaderCells = true;
+
+  firstRow.forEach((cell) => {
+    hasHeaderCells = hasHeaderCells && cell.type.name === 'tableHeader';
+  });
+
+  return hasHeaderCells;
 };
 
 const TableBubbleMenu = ({ editor }) => {
-  const [position, setPosition] = useState(null);
-  const [submenu, setSubmenu] = useState(null);
+  const [anchor, setAnchor] = useState(null);
+  const [buttonPosition, setButtonPosition] = useState(null);
+  const [menuPosition, setMenuPosition] = useState(null);
   const menuRef = useRef(null);
 
   const close = useCallback(() => {
-    setPosition(null);
-    setSubmenu(null);
+    setMenuPosition(null);
   }, []);
 
-  useEffect(() => {
-    if (!editor || editor.isDestroyed) return;
+  const tableContext = resolveTableContext(editor, anchor);
+  const hasHeaderRow = tableHasHeaderRow(tableContext?.tableNode);
 
-    let dom;
-    try {
-      dom = editor.view.dom;
-    } catch {
+  const syncAnchorFromSelection = useCallback(() => {
+    if (!editor || editor.isDestroyed) {
       return;
     }
-    if (!dom) return;
 
-    const handleContextMenu = (event) => {
-      const tableCell = event.target.closest('td, th');
-      if (!tableCell || !dom.contains(tableCell)) return;
+    const nextAnchor = resolveSelectionTableAnchor(editor);
 
-      event.preventDefault();
-      setPosition({ x: event.clientX, y: event.clientY });
-      setSubmenu(null);
-    };
+    setAnchor((previousAnchor) => {
+      if (nextAnchor) {
+        return isSameAnchor(previousAnchor, nextAnchor) ? previousAnchor : nextAnchor;
+      }
 
-    dom.addEventListener('contextmenu', handleContextMenu);
-    return () => dom.removeEventListener('contextmenu', handleContextMenu);
-  }, [editor]);
+      return menuPosition ? previousAnchor : null;
+    });
+  }, [editor, menuPosition]);
 
   useEffect(() => {
-    if (!position) return;
+    if (!editor || editor.isDestroyed) {
+      return undefined;
+    }
 
-    const handleClick = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+    const dom = editor.view.dom;
+
+    const handlePointerOver = (event) => {
+      const nextAnchor = resolveTableAnchorFromTarget(event.target, dom);
+
+      setAnchor((previousAnchor) => {
+        if (nextAnchor) {
+          return isSameAnchor(previousAnchor, nextAnchor) ? previousAnchor : nextAnchor;
+        }
+
+        if (menuPosition) {
+          return previousAnchor;
+        }
+
+        const selectionAnchor = resolveSelectionTableAnchor(editor);
+        return isSameAnchor(previousAnchor, selectionAnchor) ? previousAnchor : selectionAnchor;
+      });
+    };
+    const handleMouseLeave = () => {
+      if (menuPosition) {
+        return;
+      }
+
+      const selectionAnchor = resolveSelectionTableAnchor(editor);
+      setAnchor((previousAnchor) => (
+        isSameAnchor(previousAnchor, selectionAnchor) ? previousAnchor : selectionAnchor
+      ));
+    };
+
+    const handleContextMenu = (event) => {
+      const nextAnchor = resolveTableAnchorFromTarget(event.target, dom);
+
+      if (!nextAnchor) {
+        return;
+      }
+
+      event.preventDefault();
+      setAnchor(nextAnchor);
+      setMenuPosition(clampMenuPosition(event.clientX + 4, event.clientY + 4));
+    };
+
+    const handleEditorUpdate = () => {
+      syncAnchorFromSelection();
+    };
+
+    dom.addEventListener('mouseover', handlePointerOver);
+    dom.addEventListener('mouseleave', handleMouseLeave);
+    dom.addEventListener('contextmenu', handleContextMenu);
+    editor.on('selectionUpdate', handleEditorUpdate);
+    editor.on('update', handleEditorUpdate);
+
+    syncAnchorFromSelection();
+
+    return () => {
+      dom.removeEventListener('mouseover', handlePointerOver);
+      dom.removeEventListener('mouseleave', handleMouseLeave);
+      dom.removeEventListener('contextmenu', handleContextMenu);
+      editor.off('selectionUpdate', handleEditorUpdate);
+      editor.off('update', handleEditorUpdate);
+    };
+  }, [editor, menuPosition, syncAnchorFromSelection]);
+
+  useEffect(() => {
+    if (!anchor?.wrapper) {
+      setButtonPosition(null);
+      return undefined;
+    }
+
+    const syncButtonPosition = () => {
+      const rect = anchor.wrapper.getBoundingClientRect();
+
+      if (rect.width <= 0 || rect.height <= 0) {
+        setButtonPosition(null);
+        return;
+      }
+
+      setButtonPosition({
+        top: Math.max(8, Math.round(rect.top + 6)),
+        left: Math.min(window.innerWidth - 36, Math.round(rect.right + 8)),
+      });
+    };
+
+    syncButtonPosition();
+    window.addEventListener('scroll', syncButtonPosition, true);
+    window.addEventListener('resize', syncButtonPosition);
+
+    return () => {
+      window.removeEventListener('scroll', syncButtonPosition, true);
+      window.removeEventListener('resize', syncButtonPosition);
+    };
+  }, [anchor]);
+
+  useEffect(() => {
+    if (!menuPosition) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      const clickedTrigger = event.target instanceof HTMLElement
+        && event.target.closest('.table-dropdown-trigger');
+
+      if (!clickedTrigger && menuRef.current && !menuRef.current.contains(event.target)) {
         close();
       }
     };
 
-    const handleKey = (event) => {
-      if (event.key === 'Escape') close();
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        close();
+      }
     };
 
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleKey);
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [position, close]);
+  }, [close, menuPosition]);
 
-  if (!editor || !position) return null;
+  const openMenuFromButton = useCallback(() => {
+    if (!buttonPosition) {
+      return;
+    }
 
-  const runAction = (action) => {
+    syncAnchorFromSelection();
+    setMenuPosition((currentPosition) => (
+      currentPosition
+        ? null
+        : clampMenuPosition(buttonPosition.left + 28 - MENU_WIDTH, buttonPosition.top + 36)
+    ));
+  }, [buttonPosition, syncAnchorFromSelection]);
+
+  const runAction = useCallback((action) => {
+    if (!editor || !tableContext) {
+      return;
+    }
+
+    editor.chain().focus(tableContext.focusPos).run();
     action(editor);
     close();
-  };
+    syncAnchorFromSelection();
+  }, [close, editor, syncAnchorFromSelection, tableContext]);
 
-  const tableAlign = editor.getAttributes('table').tableAlign;
+  const menuItems = useMemo(() => [
+    {
+      label: hasHeaderRow ? 'Remove title row' : 'Insert title row',
+      icon: hasHeaderRow ? Trash2 : Plus,
+      action: (instance) => instance.chain().focus().toggleHeaderRow().run(),
+      danger: hasHeaderRow,
+    },
+    { divider: true },
+    {
+      label: 'Insert row above',
+      icon: Plus,
+      action: (instance) => instance.chain().focus().addRowBefore().run(),
+    },
+    {
+      label: 'Insert row below',
+      icon: Plus,
+      action: (instance) => instance.chain().focus().addRowAfter().run(),
+    },
+    {
+      label: 'Insert column to the left',
+      icon: Plus,
+      action: (instance) => instance.chain().focus().addColumnBefore().run(),
+    },
+    {
+      label: 'Insert column to the right',
+      icon: Plus,
+      action: (instance) => instance.chain().focus().addColumnAfter().run(),
+    },
+    { divider: true },
+    {
+      label: 'Delete row',
+      icon: Trash2,
+      action: (instance) => instance.chain().focus().deleteRow().run(),
+      danger: true,
+    },
+    {
+      label: 'Delete column',
+      icon: Trash2,
+      action: (instance) => instance.chain().focus().deleteColumn().run(),
+      danger: true,
+    },
+    {
+      label: 'Delete table',
+      icon: Trash2,
+      action: (instance) => instance.chain().focus().deleteTable().run(),
+      danger: true,
+    },
+  ], [hasHeaderRow]);
 
-  return (
-    <div
-      ref={menuRef}
-      className="table-dropdown-menu"
-      style={{ top: position.y, left: position.x }}
-    >
-      <button
-        type="button"
-        className="table-dropdown-item table-dropdown-item--parent"
-        onMouseEnter={() => setSubmenu('row')}
-      >
-        <Rows3 size={14} />
-        <span>Row</span>
-        <ChevronRight size={12} className="table-dropdown-chevron" />
-      </button>
+  if (!editor || typeof document === 'undefined') {
+    return null;
+  }
 
-      <button
-        type="button"
-        className="table-dropdown-item table-dropdown-item--parent"
-        onMouseEnter={() => setSubmenu('column')}
-      >
-        <Columns3 size={14} />
-        <span>Column</span>
-        <ChevronRight size={12} className="table-dropdown-chevron" />
-      </button>
+  return createPortal(
+    <>
+      {buttonPosition && tableContext && (
+        <button
+          type="button"
+          className={`table-dropdown-trigger${menuPosition ? ' is-open' : ''}`}
+          style={{ top: buttonPosition.top, left: buttonPosition.left }}
+          aria-label="Open table options"
+          title="Table options"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={openMenuFromButton}
+        >
+          <ChevronDown size={14} />
+        </button>
+      )}
 
-      <div className="table-dropdown-divider" />
+      {menuPosition && tableContext && (
+        <div
+          ref={menuRef}
+          className="table-dropdown-menu"
+          style={{ top: menuPosition.y, left: menuPosition.x }}
+        >
+          {menuItems.map((item, index) => {
+            if (item.divider) {
+              return <div key={`divider-${index}`} className="table-dropdown-divider" />;
+            }
 
-      <button
-        type="button"
-        className={`table-dropdown-item ${tableAlign === 'left' ? 'is-active' : ''}`}
-        onClick={() => runAction((e) => e.chain().focus().setTableAlignment('left').run())}
-        onMouseEnter={() => setSubmenu(null)}
-      >
-        <AlignLeft size={14} />
-        <span>Align left</span>
-      </button>
-      <button
-        type="button"
-        className={`table-dropdown-item ${tableAlign === 'center' ? 'is-active' : ''}`}
-        onClick={() => runAction((e) => e.chain().focus().setTableAlignment('center').run())}
-        onMouseEnter={() => setSubmenu(null)}
-      >
-        <AlignCenter size={14} />
-        <span>Center</span>
-      </button>
-      <button
-        type="button"
-        className={`table-dropdown-item ${tableAlign === 'right' ? 'is-active' : ''}`}
-        onClick={() => runAction((e) => e.chain().focus().setTableAlignment('right').run())}
-        onMouseEnter={() => setSubmenu(null)}
-      >
-        <AlignRight size={14} />
-        <span>Align right</span>
-      </button>
-
-      <div className="table-dropdown-divider" />
-
-      <button
-        type="button"
-        className="table-dropdown-item"
-        onClick={() => runAction((e) => e.chain().focus().toggleHeaderRow().run())}
-        onMouseEnter={() => setSubmenu(null)}
-      >
-        <LayoutGrid size={14} />
-        <span>Toggle header row</span>
-      </button>
-
-      <div className="table-dropdown-divider" />
-
-      <button
-        type="button"
-        className="table-dropdown-item table-dropdown-item--danger"
-        onClick={() => runAction((e) => e.chain().focus().deleteTable().run())}
-        onMouseEnter={() => setSubmenu(null)}
-      >
-        <Trash2 size={14} />
-        <span>Delete table</span>
-      </button>
-
-      {submenu && SUBMENU_ITEMS[submenu] && (
-        <div className="table-dropdown-submenu">
-          {SUBMENU_ITEMS[submenu].map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.label}
                 type="button"
-                className={`table-dropdown-item ${item.danger ? 'table-dropdown-item--danger' : ''}`}
+                className={`table-dropdown-item${item.danger ? ' table-dropdown-item--danger' : ''}`}
                 onClick={() => runAction(item.action)}
               >
-                <Icon size={14} />
+                <Icon size={15} />
                 <span>{item.label}</span>
               </button>
             );
           })}
         </div>
       )}
-    </div>
+    </>,
+    document.body,
   );
 };
 

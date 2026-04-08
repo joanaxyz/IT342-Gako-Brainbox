@@ -6,6 +6,7 @@ import {
   useCallback,
   useMemo,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlertCircle,
   CheckCircle2,
@@ -23,6 +24,7 @@ import { aiAPI } from '../../../../common/utils/api.jsx';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { useFlashcard, useQuiz } from '../../../shared/hooks/hooks';
 import AiSettingsModal from './AiSettingsModal';
+import AiSettingsModal from './AiSettingsModal';
 
 const createMessageId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -38,16 +40,6 @@ const normalizeMessages = (items = []) => items.map((entry) => ({
   content: entry.content,
   checkpoint: entry.checkpoint ?? null,
 }));
-
-const buildInitialMessages = (introMessage) => {
-  if (!introMessage) {
-    return [];
-  }
-
-  return normalizeMessages([
-    { role: 'assistant', content: introMessage },
-  ]);
-};
 
 const buildFallbackConversationTitle = (value) => {
   const normalized = value
@@ -77,7 +69,7 @@ const sanitizeConversationTitle = (value, messages = []) => {
 };
 
 const EDIT_INTENT_PATTERN = /\b(improve|expand|rewrite|reword|edit|polish|refine|fix|shorten|condense|tighten|clarify|revise|replace|update|clean up|make (?:this|it)|turn (?:this|it)|write (?:this|it)|add .*?(?:into|to) (?:the )?(?:note|document))\b/i;
-const EDIT_TOOL_KEYS = new Set(['improve', 'expand', 'summarize']);
+const EDIT_TOOL_KEYS = new Set(['improve', 'expand']);
 
 const hasEditIntent = (value, activeToolKey, mode, isToolTriggered = false) => {
   if (mode !== 'editor') {
@@ -116,12 +108,19 @@ const formatCheckpointTime = (isoString) => {
   }).format(new Date(isoString));
 };
 
-const TOOL_INSTRUCTIONS = [
+const EDITOR_TOOL_INSTRUCTIONS = [
   'Pick a tool from the rail to choose the kind of help you want.',
   'Select text and click Add in the editor if you want saved AI highlights for targeted edits.',
   'If nothing is selected, the editor will ask whether the AI should use the whole note instead.',
   'Use Clear to remove saved AI highlights when you want a fresh target set.',
   'Review AI proposals before accepting them into the note.',
+];
+
+const REVIEW_TOOL_INSTRUCTIONS = [
+  'Pick a tool from the rail to choose the kind of review help you want.',
+  'Select a passage in the note if you want the AI to focus on that exact section.',
+  'Use Summarize, Study Guide, Explain, Quiz, and Flashcards to turn the note into review material.',
+  'Review mode keeps the notebook itself unchanged.',
 ];
 
 const AiAssistantSidebar = ({
@@ -131,14 +130,12 @@ const AiAssistantSidebar = ({
   activeToolKey = 'chat',
   onActiveToolChange,
   mode = 'editor',
-  title = 'AI Assistant',
-  introMessage = "Hello! I'm your AI study assistant. How can I help you with this notebook today?",
   quickTools = [],
   getSelectionText,
   getAiSelections,
-  onRequestEditorFocus,
   isToolHelpOpen = false,
   onToolHelpClose,
+  contained = false,
   onApplyEditorContent,
   hasProposedChanges = false,
   pendingProposalSourceId = null,
@@ -147,8 +144,9 @@ const AiAssistantSidebar = ({
   className = '',
 }) => {
   const [showAiSettings, setShowAiSettings] = useState(false);
+  const [showAiSettings, setShowAiSettings] = useState(false);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState(() => buildInitialMessages(introMessage));
+  const [messages, setMessages] = useState([]);
   const [historyQuery, setHistoryQuery] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState(null);
@@ -161,7 +159,6 @@ const AiAssistantSidebar = ({
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [conversationTitle, setConversationTitle] = useState('New chat');
-  const [pendingScopeConfirmation, setPendingScopeConfirmation] = useState(null);
 
   const deferredHistoryQuery = useDeferredValue(historyQuery);
   const filteredConversations = useMemo(() => {
@@ -182,6 +179,10 @@ const AiAssistantSidebar = ({
   const { addNotification } = useNotification();
   const { createQuiz } = useQuiz();
   const { createFlashcard } = useFlashcard();
+  const resolvedToolInstructions = mode === 'review'
+    ? REVIEW_TOOL_INSTRUCTIONS
+    : EDITOR_TOOL_INSTRUCTIONS;
+  const sidebarLabel = mode === 'review' ? 'Review AI assistant' : 'AI assistant';
 
   useEffect(() => {
     const messageList = messagesListRef.current;
@@ -197,7 +198,7 @@ const AiAssistantSidebar = ({
   }, [messages, isTyping, pendingQuiz, pendingFlashcard]);
 
   useEffect(() => {
-    setMessages(buildInitialMessages(introMessage));
+    setMessages([]);
     setMessage('');
     setError(null);
     setPendingQuiz(null);
@@ -206,9 +207,8 @@ const AiAssistantSidebar = ({
     setActiveConvUuid(null);
     setHistoryQuery('');
     setConversationTitle('New chat');
-    setPendingScopeConfirmation(null);
     setIsHistoryModalOpen(false);
-  }, [introMessage, notebookUuid]);
+  }, [notebookUuid]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -235,7 +235,7 @@ const AiAssistantSidebar = ({
       return undefined;
     }
 
-    const isOverlayMode = window.matchMedia('(max-width: 1280px)').matches;
+    const isOverlayMode = !contained && window.matchMedia('(max-width: 1280px)').matches;
     if (!isOverlayMode) {
       return undefined;
     }
@@ -246,7 +246,7 @@ const AiAssistantSidebar = ({
     return () => {
       document.body.style.overflow = overflow;
     };
-  }, [isOpen]);
+  }, [contained, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -384,8 +384,6 @@ const AiAssistantSidebar = ({
     ) {
       resolvedSelectionMode = 'document';
     }
-
-    setPendingScopeConfirmation(null);
 
     const userMessage = {
       id: createMessageId(),
@@ -525,7 +523,6 @@ const AiAssistantSidebar = ({
       setPendingQuiz(null);
       setPendingFlashcard(null);
       setCreatedQuiz(null);
-      setPendingScopeConfirmation(null);
       setIsHistoryModalOpen(false);
     } catch {
       addNotification('Failed to load conversation', 'error', 3000);
@@ -549,7 +546,7 @@ const AiAssistantSidebar = ({
   };
 
   const handleNewChat = () => {
-    setMessages(buildInitialMessages(introMessage));
+    setMessages([]);
     setMessage('');
     setError(null);
     setPendingQuiz(null);
@@ -557,7 +554,6 @@ const AiAssistantSidebar = ({
     setCreatedQuiz(null);
     setActiveConvUuid(null);
     setConversationTitle('New chat');
-    setPendingScopeConfirmation(null);
     setIsHistoryModalOpen(false);
     onActiveToolChange?.('chat');
   };
@@ -605,40 +601,102 @@ const AiAssistantSidebar = ({
     }
   };
 
-  const handleUseWholeNote = () => {
-    if (!pendingScopeConfirmation?.query) {
-      return;
-    }
+  const historyModal = isHistoryModalOpen && typeof document !== 'undefined'
+    ? createPortal(
+      <>
+        <button
+          type="button"
+          className="ai-history-modal-backdrop"
+          onClick={() => setIsHistoryModalOpen(false)}
+          aria-label="Close history"
+        />
+        <div className="ai-history-modal" role="dialog" aria-modal="true" aria-label="Chat history">
+          <div className="ai-history-modal-header">
+            <div className="ai-history-modal-copy">
+              <span className="ai-section-label">Saved conversations</span>
+              <strong>History</strong>
+            </div>
+            <button
+              type="button"
+              className="ai-sidebar-icon-btn"
+              onClick={() => setIsHistoryModalOpen(false)}
+              aria-label="Close history"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-    setMessage('');
-    void handleSendMessage(pendingScopeConfirmation.query, {
-      selectionMode: 'document',
-      skipIntentGuard: true,
-      toolLabel: pendingScopeConfirmation.toolLabel,
-      toolTriggered: Boolean(pendingScopeConfirmation.toolLabel),
-    });
-  };
+          <label className="ai-tool-search ai-history-search" htmlFor={`ai-history-search-${mode}`}>
+            <Search size={15} />
+            <input
+              id={`ai-history-search-${mode}`}
+              type="search"
+              value={historyQuery}
+              onChange={(event) => setHistoryQuery(event.target.value)}
+              placeholder="Search sessions..."
+            />
+          </label>
 
-  const handleSelectText = () => {
-    onRequestEditorFocus?.();
-    addNotification('Select the passage you want to edit, then run the tool again or add it as an AI highlight.', 'success', 2800);
-    setPendingScopeConfirmation(null);
-  };
+          {isLoadingHistory && (
+            <div className="ai-history-loading">Loading...</div>
+          )}
+
+          {!isLoadingHistory && filteredConversations.length === 0 && (
+            <div className="ai-history-empty">
+              {deferredHistoryQuery.trim()
+                ? 'No matching conversations.'
+                : 'No saved conversations yet. Start chatting and your conversations will appear here.'}
+            </div>
+          )}
+
+          <div className="ai-history-list">
+            {filteredConversations.map((conversation) => (
+              <div
+                key={conversation.uuid}
+                className={`ai-history-item ${activeConvUuid === conversation.uuid ? 'is-active' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="ai-history-item-main"
+                  onClick={() => handleLoadConversation(conversation)}
+                >
+                  <div className="ai-history-item-body">
+                    <span className="ai-history-item-title">{conversation.title || 'Untitled'}</span>
+                    <span className="ai-history-item-time">{formatRelativeTime(conversation.updatedAt)}</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="ai-history-item-delete"
+                  onClick={(event) => handleDeleteConversation(conversation.uuid, event)}
+                  aria-label="Delete conversation"
+                  title="Delete"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>,
+      document.body,
+    )
+    : null;
 
   return (
     <>
-      {isOpen && (
+      {!contained && isOpen && (
         <button
           type="button"
           className="ai-sidebar-backdrop"
           onClick={onClose}
-          aria-label={`Close ${title}`}
+          aria-label={`Close ${sidebarLabel}`}
         />
       )}
       <aside
-        className={`ai-sidebar ${className} ${isOpen ? 'open' : ''} ${hasProposedChanges ? 'with-proposal' : ''}`.trim()}
+        className={`ai-sidebar ${className} ${(contained || isOpen) ? 'open' : ''} ${hasProposedChanges ? 'with-proposal' : ''}`.trim()}
         role="dialog"
-        aria-label={title}
+        aria-label={sidebarLabel}
         aria-modal="false"
       >
         <div className="ai-sidebar-inner">
@@ -648,13 +706,14 @@ const AiAssistantSidebar = ({
                 <Sparkles size={14} className="ai-sparkle-icon" />
               </div>
               <div className="ai-sidebar-heading-copy">
-                {title && <span className="ai-sidebar-heading-kicker">{title}</span>}
                 <strong className="ai-sidebar-heading-title">{conversationTitle}</strong>
               </div>
             </div>
             <div className="ai-sidebar-header-actions">
               <button
                 type="button"
+                className={`ai-sidebar-icon-btn${showAiSettings ? ' is-active' : ''}`}
+                onClick={() => setShowAiSettings((v) => !v)}
                 className={`ai-sidebar-icon-btn${showAiSettings ? ' is-active' : ''}`}
                 onClick={() => setShowAiSettings((v) => !v)}
                 aria-label="AI provider settings"
@@ -688,6 +747,9 @@ const AiAssistantSidebar = ({
             <AiSettingsModal isOpen={showAiSettings} onClose={() => setShowAiSettings(false)} />
             <div className="ai-chat-container">
               {isToolHelpOpen && (
+            <AiSettingsModal isOpen={showAiSettings} onClose={() => setShowAiSettings(false)} />
+            <div className="ai-chat-container">
+              {isToolHelpOpen && (
                   <section className="ai-tool-help-card">
                     <div className="ai-tool-help-header">
                       <div className="ai-tool-help-copy">
@@ -704,7 +766,7 @@ const AiAssistantSidebar = ({
                       </button>
                     </div>
                     <ol className="ai-tool-help-list">
-                      {TOOL_INSTRUCTIONS.map((instruction) => (
+                      {resolvedToolInstructions.map((instruction) => (
                         <li key={instruction}>{instruction}</li>
                       ))}
                     </ol>
@@ -899,88 +961,11 @@ const AiAssistantSidebar = ({
                   </div>
                 </div>
             </div>
+            </div>
           </div>
-
-          {isHistoryModalOpen && (
-            <>
-              <button
-                type="button"
-                className="ai-history-modal-backdrop"
-                onClick={() => setIsHistoryModalOpen(false)}
-                aria-label="Close history"
-              />
-              <div className="ai-history-modal" role="dialog" aria-label="Chat history">
-                <div className="ai-history-modal-header">
-                  <div className="ai-history-modal-copy">
-                    <span className="ai-section-label">Saved conversations</span>
-                    <strong>History</strong>
-                  </div>
-                  <button
-                    type="button"
-                    className="ai-sidebar-icon-btn"
-                    onClick={() => setIsHistoryModalOpen(false)}
-                    aria-label="Close history"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <label className="ai-tool-search ai-history-search" htmlFor={`ai-history-search-${mode}`}>
-                  <Search size={15} />
-                  <input
-                    id={`ai-history-search-${mode}`}
-                    type="search"
-                    value={historyQuery}
-                    onChange={(event) => setHistoryQuery(event.target.value)}
-                    placeholder="Search sessions..."
-                  />
-                </label>
-
-                {isLoadingHistory && (
-                  <div className="ai-history-loading">Loading...</div>
-                )}
-
-                {!isLoadingHistory && filteredConversations.length === 0 && (
-                  <div className="ai-history-empty">
-                    {deferredHistoryQuery.trim()
-                      ? 'No matching conversations.'
-                      : 'No saved conversations yet. Start chatting and your conversations will appear here.'}
-                  </div>
-                )}
-
-                <div className="ai-history-list">
-                  {filteredConversations.map((conversation) => (
-                    <div
-                      key={conversation.uuid}
-                      className={`ai-history-item ${activeConvUuid === conversation.uuid ? 'is-active' : ''}`}
-                    >
-                      <button
-                        type="button"
-                        className="ai-history-item-main"
-                        onClick={() => handleLoadConversation(conversation)}
-                      >
-                        <div className="ai-history-item-body">
-                          <span className="ai-history-item-title">{conversation.title || 'Untitled'}</span>
-                          <span className="ai-history-item-time">{formatRelativeTime(conversation.updatedAt)}</span>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        className="ai-history-item-delete"
-                        onClick={(event) => handleDeleteConversation(conversation.uuid, event)}
-                        aria-label="Delete conversation"
-                        title="Delete"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </aside>
+      {historyModal}
     </>
   );
 };

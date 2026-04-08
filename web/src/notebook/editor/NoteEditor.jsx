@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PanelLeftOpen } from 'lucide-react';
 import { useBlocker, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useNotebook, useCategory } from '../shared/hooks/hooks';
 import { useNoteEditorData } from './hooks/useNoteEditorData';
@@ -11,103 +12,34 @@ import EditorNavbar from './components/EditorNavbar/EditorNavbar';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
 import NoteEditorContent from './components/NoteEditorContent/NoteEditorContent';
 import OutlineNav from './components/OutlineNav/OutlineNav';
-import AiSidebar from './components/AiSidebar/AiSidebar';
 import { EDITOR_AI_TOOLS } from './components/AiSidebar/editorAiTools';
-import AiToolRail from './components/AiToolRail/AiToolRail';
+import EditorAiSidebar from './components/EditorAiSidebar/EditorAiSidebar';
+import EditorCanvasToolbar from './components/EditorCanvasToolbar/EditorCanvasToolbar';
 import AiProposalOverlay from './components/AiProposalOverlay/AiProposalOverlay';
 import VersionHistorySidebar from './components/VersionHistorySidebar/VersionHistorySidebar';
+import VersionPreviewOverlay from './components/VersionPreviewOverlay/VersionPreviewOverlay';
 import ReviewMode from './components/ReviewMode/ReviewMode';
 import { useAudioPlayer, useNotification } from '../../common/hooks/hooks';
-import { Highlighter, Trash2 } from 'lucide-react';
 import './editor.css';
-
-const EditorCanvasControls = ({
-  zoomLevel,
-  onZoomChange,
-  onZoomStep,
-  hasTextSelection = false,
-  aiSelectionCount = 0,
-  onAddAiSelection,
-  onClearAiSelections,
-  isAiSelectionDisabled = false,
-}) => (
-  <div className="editor-canvas-toolbar">
-    <div className="editor-canvas-toolbar-main">
-      <div className="editor-canvas-toolbar-divider" />
-
-      <span className="editor-canvas-group-label">Zoom</span>
-
-      <div className="editor-canvas-zoom">
-        <button
-          type="button"
-          className="editor-canvas-zoom-btn"
-          onClick={() => onZoomStep(-0.1)}
-          aria-label="Zoom out"
-        >
-          -
-        </button>
-        <input
-          className="editor-canvas-zoom-slider"
-          type="range"
-          min="60"
-          max="160"
-          step="10"
-          value={Math.round(zoomLevel * 100)}
-          onChange={(event) => onZoomChange(Number(event.target.value) / 100)}
-          aria-label="Zoom"
-        />
-        <button
-          type="button"
-          className="editor-canvas-zoom-btn"
-          onClick={() => onZoomStep(0.1)}
-          aria-label="Zoom in"
-        >
-          +
-        </button>
-        <span className="editor-canvas-zoom-label">{Math.round(zoomLevel * 100)}%</span>
-      </div>
-    </div>
-
-    <div className="editor-canvas-toolbar-end">
-      <span className="editor-canvas-group-label">AI highlights</span>
-      <div className="editor-canvas-ai-selection">
-        <button
-          type="button"
-          className={`editor-canvas-ai-btn ${hasTextSelection ? 'is-armed' : ''}`}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onAddAiSelection}
-          disabled={isAiSelectionDisabled}
-          aria-label="Add current selection as an AI highlight"
-          title={hasTextSelection ? 'Save the current selection for AI editing' : 'Select text in the editor first'}
-        >
-          <Highlighter size={16} />
-          <span>Add</span>
-          {aiSelectionCount > 0 && (
-            <strong>{aiSelectionCount}</strong>
-          )}
-        </button>
-        <button
-          type="button"
-          className="editor-canvas-ai-btn editor-canvas-ai-btn--ghost"
-          onClick={onClearAiSelections}
-          disabled={isAiSelectionDisabled || aiSelectionCount === 0}
-          aria-label="Clear AI highlights"
-          title="Clear saved AI highlights"
-        >
-          <Trash2 size={15} />
-          <span>Clear</span>
-        </button>
-      </div>
-    </div>
-  </div>
-);
 
 const NoteEditor = () => {
   const { id: notebookUuid } = useParams();
-  const { state: locationState } = useLocation();
+  const { state: locationState, search } = useLocation();
   const navigate = useNavigate();
   const editorRef = useRef(null);
   const editorContainerRef = useRef(null);
+  const editorLocationState = useMemo(() => {
+    const mode = new URLSearchParams(search).get('mode') || locationState?.mode;
+
+    if (!mode) {
+      return locationState;
+    }
+
+    return {
+      ...(locationState || {}),
+      mode,
+    };
+  }, [locationState, search]);
 
   const {
     currentNotebook,
@@ -119,7 +51,6 @@ const NoteEditor = () => {
     fetchVersion,
     createVersion,
     restoreVersion,
-    versionCache,
     markNotebookReviewed,
   } = useNotebook();
   const { categories, fetchCategories } = useCategory();
@@ -133,8 +64,7 @@ const NoteEditor = () => {
     fetchCategories(false);
   }, [fetchCategories]);
 
-  const [previewContent, setPreviewContent] = useState(null);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [versionPreview, setVersionPreview] = useState(null);
   const [outline, setOutline] = useState([]);
   const [reviewContent, setReviewContent] = useState('');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -143,6 +73,7 @@ const NoteEditor = () => {
   const [acceptedCheckpointEvent, setAcceptedCheckpointEvent] = useState(null);
   const [aiToolKey, setAiToolKey] = useState('chat');
   const [isAiToolHelpOpen, setIsAiToolHelpOpen] = useState(false);
+  const [isNavigatorMobileOpen, setIsNavigatorMobileOpen] = useState(false);
   const [inlineProposalAnchor, setInlineProposalAnchor] = useState(null);
   const [aiSelectionState, setAiSelectionState] = useState({
     hasTextSelection: false,
@@ -158,8 +89,10 @@ const NoteEditor = () => {
 
   useEffect(() => {
     setAcceptedCheckpointEvent(null);
+    setVersionPreview(null);
     setAiToolKey('chat');
     setIsAiToolHelpOpen(false);
+    setIsNavigatorMobileOpen(false);
     setInlineProposalAnchor(null);
     setAiSelectionState({
       hasTextSelection: false,
@@ -180,7 +113,7 @@ const NoteEditor = () => {
     showLines,
     setShowLines,
     fontFamily,
-  } = useNoteEditorPreferences(locationState);
+  } = useNoteEditorPreferences(editorLocationState);
 
   const {
     documentContent,
@@ -194,7 +127,7 @@ const NoteEditor = () => {
   } = useNoteEditorPersistence({
     editorRef,
     currentNotebook: routeNotebook,
-    isPreviewMode,
+    isPreviewMode: false,
     updateNotebookContent,
   });
 
@@ -210,11 +143,7 @@ const NoteEditor = () => {
     proposalChanges,
     activeProposalChangeIndex,
     activeProposalWorkingBlockIndexes,
-    isProposalComparisonCollapsed,
-    isProposalEditorPreviewMode,
     setActiveEditor,
-    setProposalComparisonCollapsed,
-    setProposalEditorPreviewMode,
     setActiveProposalChangeIndex,
     setProposalChangeDecision,
     handleAiUpdateContent,
@@ -223,7 +152,7 @@ const NoteEditor = () => {
   } = useAiProposalState({
     editorRef,
     currentNotebookUuid: routeNotebook?.uuid,
-    isPreviewMode,
+    isPreviewMode: false,
   });
 
   const {
@@ -256,15 +185,21 @@ const NoteEditor = () => {
       return;
     }
 
-    const content = editorRef.current?.getHTML?.() ?? documentContent ?? '';
-    setReviewContent(content);
-  }, [documentContent, isReviewModeOpen]);
+    const content = editorRef.current?.getHTML?.()
+      ?? (reviewContent
+        ? null
+        : (documentContent ?? routeNotebook?.content ?? ''));
+
+    if (typeof content === 'string') {
+      setReviewContent(content);
+    }
+  }, [documentContent, isReviewModeOpen, reviewContent, routeNotebook?.content]);
 
   useEffect(() => {
-    if (isPreviewMode || aiProposedContent !== null) {
+    if (aiProposedContent !== null) {
       setActiveEditor(null);
     }
-  }, [aiProposedContent, isPreviewMode, setActiveEditor]);
+  }, [aiProposedContent, setActiveEditor]);
 
   const handleUpdateNotebookTitle = useCallback(async (newTitle) => {
     if (!routeNotebook?.uuid) {
@@ -302,8 +237,8 @@ const NoteEditor = () => {
     editorRef.current?.insertPageBreak?.();
   }, []);
 
-  const handleInsertFormula = useCallback(() => {
-    editorRef.current?.insertFormula?.();
+  const handleInsertEquation = useCallback(() => {
+    editorRef.current?.insertEquation?.();
   }, []);
 
   const handleAddAiSelection = useCallback(() => {
@@ -330,13 +265,13 @@ const NoteEditor = () => {
   }, [addNotification]);
 
   const handleSaveNotebook = useCallback(async () => {
-    if (!routeNotebook?.uuid || isPreviewMode) {
+    if (!routeNotebook?.uuid) {
       return null;
     }
 
     const content = editorRef.current?.getHTML?.() ?? documentContent ?? '';
     return saveDocument(content);
-  }, [documentContent, isPreviewMode, routeNotebook?.uuid, saveDocument]);
+  }, [documentContent, routeNotebook?.uuid, saveDocument]);
 
   const handleImportContent = useCallback((filename, rawText) => {
     if (!editorRef.current) {
@@ -367,12 +302,12 @@ const NoteEditor = () => {
   );
 
   const hasUnsavedDocumentChanges = useCallback(() => {
-    if (!routeNotebook?.uuid || isPreviewMode) {
+    if (!routeNotebook?.uuid) {
       return false;
     }
 
     return getCurrentDocumentContent() !== (routeNotebook.content ?? '');
-  }, [getCurrentDocumentContent, isPreviewMode, routeNotebook?.content, routeNotebook?.uuid]);
+  }, [getCurrentDocumentContent, routeNotebook?.content, routeNotebook?.uuid]);
 
   const saveCurrentDocumentIfNeeded = useCallback(async () => {
     if (!hasUnsavedDocumentChanges()) {
@@ -453,7 +388,7 @@ const NoteEditor = () => {
       editorRef.current?.restoreViewportScroll?.(scrollTop);
     });
 
-    if (routeNotebook?.uuid && !isPreviewMode) {
+    if (routeNotebook?.uuid) {
       const saveResponse = await saveDocument(acceptedContent);
 
       if (saveResponse && !saveResponse.success) {
@@ -491,7 +426,6 @@ const NoteEditor = () => {
     clearAllAiSelectionsOnAccept,
     createVersion,
     handleDocumentChange,
-    isPreviewMode,
     pendingAiSelectionIds,
     pendingProposalSourceId,
     routeNotebook?.uuid,
@@ -504,7 +438,7 @@ const NoteEditor = () => {
     onAcceptAiChange: handleAcceptAiChange,
     onRevertAiChange: handleRevertAiChange,
     onInsertPageBreak: handleInsertPageBreak,
-    onInsertFormula: handleInsertFormula,
+    onInsertEquation: handleInsertEquation,
     onSave: handleSaveNotebook,
   });
 
@@ -526,6 +460,7 @@ const NoteEditor = () => {
       return;
     }
 
+    setVersionPreview(null);
     setIsHistoryOpen(true);
     setIsVersionsLoading(true);
 
@@ -541,21 +476,19 @@ const NoteEditor = () => {
       return;
     }
 
-    const versionId = Number(version.id);
+    const response = await fetchVersion(routeNotebook.uuid, Number(version.id), false);
 
-    if (versionCache[versionId]) {
-      setPreviewContent(versionCache[versionId].content);
-      setIsPreviewMode(true);
+    if (response.success) {
+      setVersionPreview({
+        version,
+        content: response.data?.content ?? '',
+      });
+      setIsHistoryOpen(false);
       return;
     }
 
-    const response = await fetchVersion(routeNotebook.uuid, versionId);
-
-    if (response.success) {
-      setPreviewContent(response.data.content);
-      setIsPreviewMode(true);
-    }
-  }, [fetchVersion, routeNotebook?.uuid, versionCache]);
+    addNotification(response.message || 'Failed to load version preview', 'error', 3000);
+  }, [addNotification, fetchVersion, routeNotebook?.uuid]);
 
   const handleRestoreVersion = useCallback(async (version) => {
     if (!routeNotebook?.uuid || !version.id) {
@@ -574,8 +507,7 @@ const NoteEditor = () => {
     if (response.success) {
       addNotification('Notebook restored to selected version', 'success', 3000);
       setIsHistoryOpen(false);
-      setIsPreviewMode(false);
-      setPreviewContent(null);
+      setVersionPreview(null);
       return;
     }
 
@@ -592,13 +524,10 @@ const NoteEditor = () => {
 
   const handleCloseHistory = useCallback(() => {
     setIsHistoryOpen(false);
-    setIsPreviewMode(false);
-    setPreviewContent(null);
   }, []);
 
   const handleClearPreview = useCallback(() => {
-    setIsPreviewMode(false);
-    setPreviewContent(null);
+    setVersionPreview(null);
   }, []);
 
   const handleAiToolSelect = useCallback((toolKey) => {
@@ -614,23 +543,32 @@ const NoteEditor = () => {
     setIsAiToolHelpOpen((currentValue) => !currentValue);
   }, [setAiSidebarOpen]);
 
-  const isAiProposalOpen = aiProposedContent !== null && aiOriginalContent !== null && !isPreviewMode;
-  const isAiProposalPreviewActive = isAiProposalOpen && isProposalEditorPreviewMode;
-  const editorSurfaceState = isPreviewMode
-    ? 'preview'
-    : isAiProposalPreviewActive
-      ? `ai_preview_${proposalRenderToken}`
-      : isAiProposalOpen
-        ? 'ai_locked'
-        : 'document';
+  const handleReviewModeToggle = useCallback((nextValue) => {
+    if (nextValue) {
+      setReviewContent(getCurrentDocumentContent());
+    }
+
+    setIsReviewModeOpen(nextValue);
+    setIsAiToolHelpOpen(false);
+
+    if (nextValue) {
+      setIsHistoryOpen(false);
+    }
+  }, [getCurrentDocumentContent, setIsReviewModeOpen]);
+
+  const isAiProposalOpen = aiProposedContent !== null && aiOriginalContent !== null;
+  const editorSurfaceState = isAiProposalOpen
+    ? `ai_preview_${proposalRenderToken}`
+    : 'document';
   const editorKey = `${routeNotebook?.uuid ?? notebookUuid}_${editorSurfaceState}`;
   const editorStorageKey = routeNotebook?.uuid || notebookUuid;
   const isDocumentHydrated = hydratedNotebookUuid === routeNotebook?.uuid;
-  const initialContent = isPreviewMode
-    ? (previewContent || '')
-    : isAiProposalPreviewActive
-      ? (aiWorkingContent || aiProposedContent || '')
-      : (isDocumentHydrated ? (documentContent || '') : (routeNotebook?.content || ''));
+  const editorContentSyncToken = isAiProposalOpen
+    ? proposalRenderToken
+    : contentSyncToken;
+  const initialContent = isAiProposalOpen
+    ? (aiWorkingContent || aiProposedContent || '')
+    : (isDocumentHydrated ? (documentContent || '') : (routeNotebook?.content || ''));
 
   const toolbar = (
     <FormatToolbar
@@ -638,14 +576,26 @@ const NoteEditor = () => {
       font={editorFont}
       onFontChange={setEditorFont}
       onInsertPageBreak={handleInsertPageBreak}
-      onInsertFormula={handleInsertFormula}
+      onInsertEquation={handleInsertEquation}
       showLines={showLines}
       onLinesToggle={() => setShowLines((value) => !value)}
+      leadingAccessory={(
+        <button
+          type="button"
+          className={`outline-toolbar-toggle ${isNavigatorMobileOpen ? 'is-active' : ''}`.trim()}
+          onClick={() => setIsNavigatorMobileOpen((value) => !value)}
+          aria-label={isNavigatorMobileOpen ? 'Close navigator' : 'Open navigator'}
+          title={isNavigatorMobileOpen ? 'Close navigator' : 'Open navigator'}
+        >
+          <PanelLeftOpen size={17} />
+          <span className="outline-toolbar-toggle-count">{outline.length}</span>
+        </button>
+      )}
     />
   );
 
   useEffect(() => {
-    if (!isAiProposalPreviewActive) {
+    if (!isAiProposalOpen) {
       editorRef.current?.clearAiHighlights?.();
       setInlineProposalAnchor(null);
       return;
@@ -672,12 +622,12 @@ const NoteEditor = () => {
     activeProposalChangeIndex,
     activeProposalWorkingBlockIndexes,
     proposalChanges,
-    isAiProposalPreviewActive,
+    isAiProposalOpen,
     proposalRenderToken,
   ]);
 
   useEffect(() => {
-    if (!isAiProposalPreviewActive) {
+    if (!isAiProposalOpen) {
       setInlineProposalAnchor(null);
       return undefined;
     }
@@ -726,7 +676,7 @@ const NoteEditor = () => {
   }, [
     activeProposalChangeIndex,
     activeProposalWorkingBlockIndexes,
-    isAiProposalPreviewActive,
+    isAiProposalOpen,
     proposalRenderToken,
   ]);
 
@@ -738,21 +688,17 @@ const NoteEditor = () => {
         isBackHomeDisabled={isSavingBeforeExit}
         onTitleChange={handleUpdateNotebookTitle}
         onSave={handleSaveNotebook}
-        isSaveDisabled={!routeNotebook?.uuid || isPreviewMode || isAiProposalOpen || saveStatus === 'saved' || saveStatus === 'saving'}
+        isSaveDisabled={!routeNotebook?.uuid || isAiProposalOpen || saveStatus === 'saved' || saveStatus === 'saving'}
         saveStatus={saveStatus}
         saveErrorMessage={saveErrorMessage}
         isReviewModeOpen={isReviewModeOpen}
-        onReviewModeToggle={setIsReviewModeOpen}
+        onReviewModeToggle={handleReviewModeToggle}
         onHistoryOpen={handleOpenHistory}
         categories={categories}
         notebookCategoryId={routeNotebook?.categoryId ?? null}
         onCategoryChange={handleUpdateNotebookCategory}
         onImportContent={handleImportContent}
-        getExportContent={() => (
-          isPreviewMode
-            ? (previewContent || '')
-            : (editorRef.current?.getHTML?.() ?? documentContent ?? '')
-        )}
+        getExportContent={getCurrentDocumentContent}
         getExportLayout={() => ({
           paperWidth,
           paperHeight,
@@ -760,128 +706,156 @@ const NoteEditor = () => {
         })}
         isAiSidebarOpen={aiSidebarOpen}
         onAiSidebarToggle={setAiSidebarOpen}
+        showHomeButton
+        showNotebookInfo
+        showImportAction={!isReviewModeOpen}
+        showExportAction={!isReviewModeOpen}
+        showSaveAction={!isReviewModeOpen}
+        showHistoryAction={!isReviewModeOpen}
+        showAiToggle
+        showCategoryBadge={!isReviewModeOpen}
+        showSaveStatus={!isReviewModeOpen}
+        titleEditable={!isReviewModeOpen}
       />
 
-      <div className="editor-toolbar-shell">
-        {toolbar}
-      </div>
+      {!isReviewModeOpen && (
+        <div className="editor-toolbar-shell">
+          {toolbar}
+        </div>
+      )}
 
-      <div className="editor-body">
-        <OutlineNav outline={outline} onSelect={handleSelectHeading} />
-
-        <main className="editor-main">
-          <div className={`editor-container ${isAiProposalOpen ? 'has-ai-overlay' : ''}`} ref={editorContainerRef}>
-            <section className="editor-primary-panel">
-              {(isPreviewMode || routeNotebook) && (
-                <NoteEditorContent
-                  key={editorKey}
-                  storageKey={editorStorageKey}
-                  ref={editorRef}
-                  content={initialContent}
-                  contentSyncToken={isAiProposalPreviewActive ? proposalRenderToken : contentSyncToken}
-                  onUpdateContent={handleDocumentChange}
-                  onBlur={handleBlurSave}
-                  onFocus={setActiveEditor}
-                  onSelectionStateChange={setAiSelectionState}
-                  fontFamily={fontFamily}
-                  paperWidth={paperWidth}
-                  paperHeight={paperHeight}
-                  zoom={zoomLevel}
-                  showLines={showLines}
-                  onOutlineChange={setOutline}
-                  readOnly={isPreviewMode || isAiProposalOpen}
-                  onPaperResizeStart={handlePaperResizeStart}
-                  isPaperResizing={isPaperResizing}
-                />
-              )}
-            </section>
-
-            <AiProposalOverlay
-              isOpen={isAiProposalOpen}
-              isCollapsed={isProposalComparisonCollapsed}
-              isPreviewInEditor={isProposalEditorPreviewMode}
-              originalContent={aiOriginalContent}
-              proposedContent={aiProposedContent}
-              workingContent={aiWorkingContent}
-              changes={proposalChanges}
-              activeChangeIndex={activeProposalChangeIndex}
-              proposalRenderToken={proposalRenderToken}
-              fontFamily={fontFamily}
-              paperWidth={paperWidth}
-              paperHeight={paperHeight}
-              onActiveChangeIndexChange={setActiveProposalChangeIndex}
-              onChangeDecision={setProposalChangeDecision}
-              onSetCollapsed={setProposalComparisonCollapsed}
-              onSetPreviewInEditor={setProposalEditorPreviewMode}
-              onAccept={() => void handleAcceptAiChange()}
-              onDismiss={handleRevertAiChange}
-              inlineReviewAnchor={inlineProposalAnchor}
+      {isReviewModeOpen ? (
+        <ReviewMode
+          key={routeNotebook?.uuid ?? notebookUuid}
+          notebookUuid={routeNotebook?.uuid ?? notebookUuid}
+          onTogglePlay={handleTogglePlay}
+          content={reviewContent}
+          paperWidth={paperWidth}
+          fontFamily={fontFamily}
+          zoomLevel={zoomLevel}
+          onZoomChange={handleZoomChange}
+          onZoomStep={handleZoomStep}
+          isAssistantOpen={aiSidebarOpen}
+          onAssistantOpenChange={setAiSidebarOpen}
+        />
+      ) : (
+        <>
+          <div className="editor-body">
+            <OutlineNav
+              outline={outline}
+              onSelect={handleSelectHeading}
+              mobileOverlayOpen={isNavigatorMobileOpen}
+              onMobileOverlayOpenChange={setIsNavigatorMobileOpen}
             />
 
-            <EditorCanvasControls
-              zoomLevel={zoomLevel}
-              onZoomChange={handleZoomChange}
-              onZoomStep={handleZoomStep}
-              hasTextSelection={aiSelectionState.hasTextSelection}
-              aiSelectionCount={aiSelectionState.aiSelectionCount}
-              onAddAiSelection={handleAddAiSelection}
-              onClearAiSelections={handleClearAiSelections}
-              isAiSelectionDisabled={!routeNotebook?.uuid || isPreviewMode || isAiProposalOpen}
+            <main className="editor-main">
+              <div className={`editor-container ${isAiProposalOpen ? 'has-ai-overlay' : ''}`} ref={editorContainerRef}>
+                <section className="editor-primary-panel">
+                  {routeNotebook && (
+                    <NoteEditorContent
+                      key={editorKey}
+                      storageKey={editorStorageKey}
+                      ref={editorRef}
+                      content={initialContent}
+                      contentSyncToken={editorContentSyncToken}
+                      onUpdateContent={handleDocumentChange}
+                      onBlur={handleBlurSave}
+                      onFocus={setActiveEditor}
+                      onSelectionStateChange={setAiSelectionState}
+                      fontFamily={fontFamily}
+                      paperWidth={paperWidth}
+                      paperHeight={paperHeight}
+                      zoom={zoomLevel}
+                      showLines={showLines}
+                      onOutlineChange={setOutline}
+                      readOnly={isAiProposalOpen}
+                      onPaperResizeStart={handlePaperResizeStart}
+                      isPaperResizing={isPaperResizing}
+                    />
+                  )}
+                </section>
+
+                <AiProposalOverlay
+                  isOpen={isAiProposalOpen}
+                  changes={proposalChanges}
+                  activeChangeIndex={activeProposalChangeIndex}
+                  onActiveChangeIndexChange={setActiveProposalChangeIndex}
+                  onChangeDecision={setProposalChangeDecision}
+                  onApplyDraft={() => void handleAcceptAiChange()}
+                  onDiscardDraft={handleRevertAiChange}
+                  inlineReviewAnchor={inlineProposalAnchor}
+                />
+
+                <EditorCanvasToolbar
+                  zoomLevel={zoomLevel}
+                  onZoomChange={handleZoomChange}
+                  onZoomStep={handleZoomStep}
+                  hasTextSelection={aiSelectionState.hasTextSelection}
+                  aiSelectionCount={aiSelectionState.aiSelectionCount}
+                  onAddAiSelection={handleAddAiSelection}
+                  onClearAiSelections={handleClearAiSelections}
+                  isAiSelectionDisabled={!routeNotebook?.uuid || isAiProposalOpen}
+                />
+              </div>
+            </main>
+
+            <EditorAiSidebar
+              isOpen={aiSidebarOpen}
+              onClose={() => {
+                setAiSidebarOpen(false);
+                setIsAiToolHelpOpen(false);
+              }}
+              activeToolKey={aiToolKey}
+              onActiveToolChange={setAiToolKey}
+              mode="editor"
+              quickTools={EDITOR_AI_TOOLS}
+              onAiUpdateContent={handleAiUpdateContent}
+              hasProposedChanges={isAiProposalOpen}
+              notebookUuid={routeNotebook?.uuid ?? null}
+              getSelectionText={getEditorSelection}
+              getAiSelections={getAiSelections}
+              isToolHelpOpen={isAiToolHelpOpen}
+              onToolHelpClose={() => setIsAiToolHelpOpen(false)}
+              pendingProposalSourceId={pendingProposalSourceId}
+              acceptedCheckpointEvent={acceptedCheckpointEvent}
+              onRestoreCheckpoint={handleRestoreCheckpoint}
+              onSelectTool={handleAiToolSelect}
+              onToggleHelp={handleToggleAiToolHelp}
+              railVisible
             />
           </div>
-        </main>
 
-        <aside className={`editor-right-sidebar ${aiSidebarOpen ? 'is-open' : ''}`} style={!aiSidebarOpen ? { width: 0, borderLeftWidth: 0, overflow: 'hidden' } : undefined}>
-          <AiSidebar
-            isOpen={aiSidebarOpen}
-            onClose={() => {
-              setAiSidebarOpen(false);
-              setIsAiToolHelpOpen(false);
+          <VersionPreviewOverlay
+            isOpen={Boolean(versionPreview)}
+            previewVersion={versionPreview?.version ?? null}
+            currentContent={getCurrentDocumentContent()}
+            previewContent={versionPreview?.content ?? ''}
+            fontFamily={fontFamily}
+            paperWidth={paperWidth}
+            paperHeight={paperHeight}
+            onClose={handleClearPreview}
+            onOpenHistory={() => {
+              setVersionPreview(null);
+              void handleOpenHistory();
             }}
-            activeToolKey={aiToolKey}
-            onActiveToolChange={setAiToolKey}
-            onAiUpdateContent={handleAiUpdateContent}
-            hasProposedChanges={isAiProposalOpen}
-            notebookUuid={routeNotebook?.uuid ?? null}
-            getEditorSelection={getEditorSelection}
-            getAiSelections={getAiSelections}
-            onRequestEditorFocus={focusEditor}
-            isToolHelpOpen={isAiToolHelpOpen}
-            onToolHelpClose={() => setIsAiToolHelpOpen(false)}
-            pendingProposalSourceId={pendingProposalSourceId}
-            acceptedCheckpointEvent={acceptedCheckpointEvent}
-            onRestoreCheckpoint={handleRestoreCheckpoint}
+            onRestore={() => {
+              if (versionPreview?.version) {
+                void handleRestoreVersion(versionPreview.version);
+              }
+            }}
           />
 
-          <AiToolRail
-            tools={EDITOR_AI_TOOLS}
-            activeToolKey={aiToolKey}
-            onSelectTool={handleAiToolSelect}
-            onToggleHelp={handleToggleAiToolHelp}
-            isHelpOpen={isAiToolHelpOpen}
-            isOpen={aiSidebarOpen}
+          <VersionHistorySidebar
+            isOpen={isHistoryOpen}
+            onClose={handleCloseHistory}
+            onVersionSelect={handleVersionSelect}
+            onRestore={handleRestoreVersion}
+            onClearPreview={handleClearPreview}
+            versions={versions}
+            isLoading={isVersionsLoading}
           />
-        </aside>
-      </div>
-
-      <VersionHistorySidebar
-        isOpen={isHistoryOpen}
-        onClose={handleCloseHistory}
-        onVersionSelect={handleVersionSelect}
-        onRestore={handleRestoreVersion}
-        onClearPreview={handleClearPreview}
-        versions={versions}
-        isLoading={isVersionsLoading}
-      />
-
-      <ReviewMode
-        isOpen={isReviewModeOpen}
-        onClose={() => setIsReviewModeOpen(false)}
-        notebookUuid={routeNotebook?.uuid ?? notebookUuid}
-        notebookTitle={notebookTitle}
-        onTogglePlay={handleTogglePlay}
-        content={reviewContent}
-      />
+        </>
+      )}
     </div>
   );
 };

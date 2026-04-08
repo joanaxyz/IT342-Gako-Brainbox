@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/shared/hooks/useAuth';
 import { useNotebook } from '../../notebook/shared/hooks/hooks';
@@ -178,23 +178,6 @@ const Dashboard = () => {
     || recentlyReviewedLoading
     || quizzesLoading
     || flashcardsLoading;
-
-  useEffect(() => {
-    const lastId          = localStorage.getItem('noteEditorLastOpenedId');
-    const sessionRestored = sessionStorage.getItem('noteEditorSessionRestored');
-    if (lastId && !sessionRestored && (window.location.pathname === '/dashboard' || window.location.pathname === '/')) {
-      const userOwnsNotebook = notebooks.some(nb => nb.uuid === lastId);
-      if (userOwnsNotebook) {
-        sessionStorage.setItem('noteEditorSessionRestored', 'true');
-        const navEntries   = performance.getEntriesByType('navigation');
-        const isFreshLoad  = navEntries.length > 0 && (navEntries[0].type === 'navigate' || navEntries[0].type === 'reload');
-        if (isFreshLoad) navigate(`/notebook/${lastId}`, { replace: true });
-      } else if (notebooks.length > 0) {
-        localStorage.removeItem('noteEditorLastOpenedId');
-        sessionStorage.setItem('noteEditorSessionRestored', 'true');
-      }
-    }
-  }, [navigate, notebooks]);
 
   /* ── Computed stats ──────────────────────────────────── */
   const safeQuizzes    = quizzes    || [];

@@ -5,19 +5,25 @@ import EditQuizPage from './components/EditQuizPage';
 import { useNotebook, useQuiz } from '../../notebook/shared/hooks/hooks';
 import ConfirmModal from '../../common/components/ConfirmModal';
 import SortSelect from '../../common/components/SortSelect';
+import SortDirectionToggle from '../../common/components/SortDirectionToggle';
 import { useNotification } from '../../common/hooks/hooks';
 import { StudyCardSkeleton } from '../../common/components/Skeleton';
 import '../dashboard/styles/dashboard.css';
 import '../shared/styles/study.css';
 
+const DIFFICULTY_CLASS = { Easy: 'chip-easy', Medium: 'chip-medium', Hard: 'chip-hard' };
+
 const SORT_OPTIONS = [
-  { value: 'recent', label: 'Most recent' },
-  { value: 'az', label: 'A – Z' },
-  { value: 'za', label: 'Z – A' },
-  { value: 'most', label: 'Most questions' },
+  { value: 'updatedAt', label: 'Recently updated' },
+  { value: 'title', label: 'Title' },
+  { value: 'questionCount', label: 'Question count' },
 ];
 
-const DIFFICULTY_CLASS = { Easy: 'chip-easy', Medium: 'chip-medium', Hard: 'chip-hard' };
+const DEFAULT_SORT_DIRECTIONS = {
+  updatedAt: 'desc',
+  title: 'asc',
+  questionCount: 'desc',
+};
 
 const ArrowRight = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -124,7 +130,8 @@ const Quizzes = () => {
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [editQuiz, setEditQuiz] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState('updatedAt');
+  const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTIONS.updatedAt);
   const [selectedNotebookId, setSelectedNotebookId] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -136,6 +143,11 @@ const Quizzes = () => {
   useEffect(() => {
     fetchQuizzes();
   }, [fetchQuizzes]);
+
+  const handleSortChange = (nextSortBy) => {
+    setSortBy(nextSortBy);
+    setSortDirection(DEFAULT_SORT_DIRECTIONS[nextSortBy]);
+  };
 
   const notebookPills = useMemo(() => {
     const ids = new Set(quizzes.filter((q) => q.notebookUuid).map((q) => q.notebookUuid));
@@ -155,11 +167,27 @@ const Quizzes = () => {
     } else if (selectedNotebookId !== 'all') {
       result = result.filter((qz) => qz.notebookUuid === selectedNotebookId);
     }
-    if (sortBy === 'az') result.sort((a, b) => a.title.localeCompare(b.title));
-    else if (sortBy === 'za') result.sort((a, b) => b.title.localeCompare(a.title));
-    else if (sortBy === 'most') result.sort((a, b) => b.questionCount - a.questionCount);
+
+    if (sortBy === 'updatedAt') {
+      result.sort((a, b) => {
+        const comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    } else if (sortBy === 'title') {
+      result.sort((a, b) => (
+        sortDirection === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title)
+      ));
+    } else if (sortBy === 'questionCount') {
+      result.sort((a, b) => {
+        const comparison = a.questionCount - b.questionCount;
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
     return result;
-  }, [quizzes, search, sortBy, selectedNotebookId]);
+  }, [quizzes, search, sortBy, sortDirection, selectedNotebookId]);
 
   const grouped = useMemo(() => {
     if (selectedNotebookId !== 'all') return null;
@@ -331,7 +359,19 @@ const Quizzes = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <SortSelect options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+        <SortSelect
+          ariaLabel="Sort quizzes by"
+          options={SORT_OPTIONS}
+          value={sortBy}
+          onChange={handleSortChange}
+        />
+        <SortDirectionToggle
+          direction={sortDirection}
+          label="Quiz sort direction"
+          onToggle={() => setSortDirection((currentDirection) => (
+            currentDirection === 'asc' ? 'desc' : 'asc'
+          ))}
+        />
       </div>
 
       <div className="pill-row mb-20">

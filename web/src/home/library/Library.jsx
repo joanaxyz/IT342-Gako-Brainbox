@@ -1,14 +1,15 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Modal from '../../common/components/Modal';
 import { useNotification } from '../../common/hooks/hooks';
 import { useNotebook, useCategory } from '../../notebook/shared/hooks/hooks';
 import NewCategoryModal from '../shared/components/NewCategoryModal';
 import NewNoteBookModal from '../shared/components/NewNotebookModal';
 import SortSelect from '../../common/components/SortSelect';
+import SortDirectionToggle from '../../common/components/SortDirectionToggle';
 import { formatUpdatedAt } from '../../common/utils/date';
 import { LibRowSkeleton } from '../../common/components/Skeleton';
 import { countWordsFromHtml } from '../../notebook/shared/utils/notebookPages';
+import { openNotebookInNewTab } from '../../notebook/shared/utils/notebookNavigation';
 import './library.css';
 
 const UNCATEGORIZED_VALUE = 'uncategorized';
@@ -45,16 +46,6 @@ const ArrowIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M5 12h14" />
     <path d="m13 6 6 6-6 6" />
-  </svg>
-);
-
-const DirectionIcon = ({ direction }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M8 6v12" />
-    <path d={direction === 'asc' ? 'm5 9 3-3 3 3' : 'm5 15 3 3 3-3'} />
-    <path d="M16 6h3" />
-    <path d="M16 12h3" />
-    <path d="M16 18h3" />
   </svg>
 );
 
@@ -103,18 +94,6 @@ const CategoryFilterButton = ({
 
 const formatCount = (count, singular, plural = `${singular}s`) => (
   `${count} ${count === 1 ? singular : plural}`
-);
-
-const SortDirectionToggle = ({ direction, label, onToggle }) => (
-  <button
-    type="button"
-    className="library-sort-toggle"
-    aria-label={`${label}. Currently ${direction === 'asc' ? 'ascending' : 'descending'}. Toggle sort direction.`}
-    onClick={onToggle}
-  >
-    <DirectionIcon direction={direction} />
-    {direction === 'asc' ? 'Asc' : 'Desc'}
-  </button>
 );
 
 const LibraryDeleteModal = ({
@@ -200,7 +179,6 @@ const LibraryDeleteModal = ({
 };
 
 const Library = () => {
-  const navigate = useNavigate();
   const { addNotification } = useNotification();
   const { notebooks, notebooksLoading, updateNotebook, deleteNotebook } = useNotebook();
   const { categories, fetchCategories, deleteCategory } = useCategory();
@@ -811,7 +789,7 @@ const Library = () => {
                         return;
                       }
 
-                      navigate(`/notebook/${notebook.uuid}`);
+                      openNotebookInNewTab(notebook.uuid);
                     }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
@@ -821,7 +799,7 @@ const Library = () => {
                           return;
                         }
 
-                        navigate(`/notebook/${notebook.uuid}`);
+                        openNotebookInNewTab(notebook.uuid);
                       }
                     }}
                     role="button"
@@ -890,7 +868,7 @@ const Library = () => {
                           className="library-open-button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            navigate(`/notebook/${notebook.uuid}`);
+                            openNotebookInNewTab(notebook.uuid);
                           }}
                           onKeyDown={(event) => event.stopPropagation()}
                         >

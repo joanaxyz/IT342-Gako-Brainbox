@@ -8,10 +8,20 @@ import {
 } from '../audio/playbackModel';
 import { AudioPlayerContext } from './AudioPlayerContextValue';
 
-const CHARS_PER_SEC = 15;
-
 const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
+const CHARS_PER_SEC = 15;
+const KEEP_ALIVE_INTERVAL_MS = 5000;
+const STALL_TIMEOUT_MS = 7000;
+const TARGET_CHUNK_DURATION_SEC = 8;
+const MIN_CHUNK_CHARS = 80;
+const MAX_CHUNK_CHARS = 180;
+const MAX_RECOVERY_ATTEMPTS = 3;
 const getResumeStorageKey = (notebookUuid) => `nb_ts_${notebookUuid}`;
+const getChunkCharLimit = (rate) => clamp(
+  Math.round(CHARS_PER_SEC * clamp(rate, 0.5, 2) * TARGET_CHUNK_DURATION_SEC),
+  MIN_CHUNK_CHARS,
+  MAX_CHUNK_CHARS,
+);
 
 const normalizePlayOptions = (forceOrOptions, maybeCharOffset) => {
   if (typeof forceOrOptions === 'object' && forceOrOptions !== null) {
@@ -58,6 +68,9 @@ export const AudioPlayerProvider = ({ children }) => {
   const pausedAtCharRef = useRef(0);
   const durationSecRef = useRef(0);
   const keepAliveRef = useRef(null);
+  const hasBoundaryProgressRef = useRef(false);
+  const lastBoundaryAtRef = useRef(0);
+  const recoveryAttemptsRef = useRef(0);
 
   const location = useLocation();
 
@@ -73,12 +86,53 @@ export const AudioPlayerProvider = ({ children }) => {
     currentNotebookRef.current = currentNotebook;
   }, [currentNotebook]);
 
+  const resetBoundaryTracking = useCallback(() => {
+    hasBoundaryProgressRef.current = false;
+    lastBoundaryAtRef.current = 0;
+  }, []);
+
+  const resetRecoveryState = useCallback(() => {
+    recoveryAttemptsRef.current = 0;
+    resetBoundaryTracking();
+  }, [resetBoundaryTracking]);
+
+  const noteBoundaryProgress = useCallback(() => {
+    hasBoundaryProgressRef.current = true;
+    lastBoundaryAtRef.current = Date.now();
+    recoveryAttemptsRef.current = 0;
+  }, []);
+
   const stopKeepAlive = useCallback(() => {
     if (keepAliveRef.current) {
       clearInterval(keepAliveRef.current);
       keepAliveRef.current = null;
     }
   }, []);
+
+  const recoverPlayback = useCallback((notebook, offset = 0) => {
+    if (!notebook?.uuid) {
+      return;
+    }
+
+    if (recoveryAttemptsRef.current >= MAX_RECOVERY_ATTEMPTS) {
+      stopKeepAlive();
+      synthRef.current?.cancel();
+      utteranceRef.current = null;
+      setIsPlaying(false);
+      return;
+    }
+
+    recoveryAttemptsRef.current += 1;
+    resetBoundaryTracking();
+
+    void playRef.current?.(notebook, undefined, {
+      force: true,
+      charOffset: Math.max(0, Math.floor(offset ?? 0)),
+      resumeFromSaved: false,
+      markReviewed: false,
+      preserveRecoveryState: true,
+    });
+  }, [resetBoundaryTracking, stopKeepAlive]);
 
   const startKeepAlive = useCallback(() => {
     stopKeepAlive();
@@ -93,6 +147,15 @@ export const AudioPlayerProvider = ({ children }) => {
       }
 
       if (synthRef.current.speaking && !synthRef.current.paused) {
+        const stalled = hasBoundaryProgressRef.current
+          && lastBoundaryAtRef.current > 0
+          && (Date.now() - lastBoundaryAtRef.current) > STALL_TIMEOUT_MS;
+
+        if (stalled && currentNotebookRef.current) {
+          recoverPlayback(currentNotebookRef.current, currentOffsetRef.current);
+          return;
+        }
+
         synthRef.current.pause();
         synthRef.current.resume();
         return;
@@ -105,15 +168,10 @@ export const AudioPlayerProvider = ({ children }) => {
         && !synthRef.current.paused
         && currentNotebookRef.current
       ) {
-        playRef.current?.(currentNotebookRef.current, undefined, {
-          force: true,
-          charOffset: currentOffsetRef.current,
-          resumeFromSaved: false,
-          markReviewed: false,
-        });
+        recoverPlayback(currentNotebookRef.current, currentOffsetRef.current);
       }
-    }, 10000);
-  }, [stopKeepAlive]);
+    }, KEEP_ALIVE_INTERVAL_MS);
+  }, [recoverPlayback, stopKeepAlive]);
 
   useEffect(() => () => {
     stopKeepAlive();
@@ -170,24 +228,26 @@ export const AudioPlayerProvider = ({ children }) => {
     isPausedRef.current = false;
     pausedAtCharRef.current = 0;
     currentChunkIndexRef.current = -1;
+    resetRecoveryState();
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
     setIsPlaying(false);
     updatePlaybackPosition(0, { persist: false });
-  }, [stopKeepAlive, updatePlaybackPosition]);
+  }, [resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
 
   const handleEditorRouteEnter = useCallback(() => {
     utteranceIdRef.current += 1;
     isPausedRef.current = false;
     pausedAtCharRef.current = 0;
     currentChunkIndexRef.current = -1;
+    resetRecoveryState();
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
     setIsPlaying(false);
     updatePlaybackPosition(0, { persist: false });
-  }, [stopKeepAlive, updatePlaybackPosition]);
+  }, [resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
 
   const editorPathRef = useRef(null);
 
@@ -247,6 +307,7 @@ export const AudioPlayerProvider = ({ children }) => {
       return;
     }
 
+    resetRecoveryState();
     stopKeepAlive();
     utteranceRef.current = null;
     currentChunkIndexRef.current = -1;
@@ -272,7 +333,7 @@ export const AudioPlayerProvider = ({ children }) => {
     }
 
     setIsPlaying(false);
-  }, [clearResumeMarker, stopKeepAlive, updatePlaybackPosition]);
+  }, [clearResumeMarker, resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
 
   const speakChunk = useCallback(function playChunk(chunkIndex, absoluteOffset, sessionId, notebook, playbackModel) {
     if (sessionId !== utteranceIdRef.current || !synthRef.current) {
@@ -295,6 +356,7 @@ export const AudioPlayerProvider = ({ children }) => {
       return;
     }
 
+    resetBoundaryTracking();
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.volume = volumeRef.current;
     utterance.rate = rateRef.current;
@@ -320,6 +382,7 @@ export const AudioPlayerProvider = ({ children }) => {
       );
       currentChunkIndexRef.current = chunkIndex;
       updatePlaybackPosition(nextOffset);
+      noteBoundaryProgress();
     };
 
     utterance.onend = () => {
@@ -329,6 +392,7 @@ export const AudioPlayerProvider = ({ children }) => {
 
       stopKeepAlive();
       currentChunkIndexRef.current = chunkIndex + 1;
+      recoveryAttemptsRef.current = 0;
       updatePlaybackPosition(chunk.end, { persist: chunk.end < playbackModel.fullText.length });
       playChunk(chunkIndex + 1, chunk.end, sessionId, notebook, playbackModel);
     };
@@ -343,12 +407,20 @@ export const AudioPlayerProvider = ({ children }) => {
       }
 
       stopKeepAlive();
-      setIsPlaying(false);
+      recoverPlayback(notebook, currentOffsetRef.current);
     };
 
     utteranceRef.current = utterance;
     synthRef.current.speak(utterance);
-  }, [finalizePlayback, startKeepAlive, stopKeepAlive, updatePlaybackPosition]);
+  }, [
+    finalizePlayback,
+    noteBoundaryProgress,
+    recoverPlayback,
+    resetBoundaryTracking,
+    startKeepAlive,
+    stopKeepAlive,
+    updatePlaybackPosition,
+  ]);
 
   const play = useCallback(async (notebook, contentOverride, forceOrOptions = false, maybeCharOffset = undefined) => {
     if (!notebook?.uuid) {
@@ -384,13 +456,20 @@ export const AudioPlayerProvider = ({ children }) => {
     utteranceRef.current = null;
     setIsPlaying(false);
     isPausedRef.current = false;
+    resetBoundaryTracking();
+
+    if (resolvedOptions.preserveRecoveryState !== true) {
+      recoveryAttemptsRef.current = 0;
+    }
 
     const source = await resolvePlaybackSource(notebook, contentOverride);
     if (sessionId !== utteranceIdRef.current) {
       return;
     }
 
-    const playbackModel = buildPlaybackModel(source || notebook.title || '');
+    const playbackModel = buildPlaybackModel(source || notebook.title || '', {
+      maxChunkChars: getChunkCharLimit(rateRef.current),
+    });
     currentModelRef.current = playbackModel;
     setCurrentNotebook(notebook);
     currentNotebookRef.current = notebook;
@@ -463,12 +542,13 @@ export const AudioPlayerProvider = ({ children }) => {
     isPausedRef.current = true;
     pausedAtCharRef.current = currentOffsetRef.current;
     utteranceIdRef.current += 1;
+    resetRecoveryState();
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
     setIsPlaying(false);
     updatePlaybackPosition(pausedAtCharRef.current);
-  }, [stopKeepAlive, updatePlaybackPosition]);
+  }, [resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
 
   const togglePlay = useCallback(async (notebook, contentOverride) => {
     const targetNotebook = notebook || currentNotebookRef.current;

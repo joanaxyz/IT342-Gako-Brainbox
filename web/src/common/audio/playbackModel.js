@@ -58,6 +58,8 @@ const buildWordRanges = (text = '', { blockId = 'reading-block-0', baseStart = 0
   });
 };
 
+export const buildPlaybackWordRanges = (text = '', options = {}) => buildWordRanges(text, options);
+
 const flushPendingSeparator = (parent, document, state) => {
   if (state.pendingBreak) {
     state.charOffset += 1;
@@ -82,6 +84,7 @@ const appendAnnotatedWord = (parent, document, state, blockId, token) => {
   const wordElement = document.createElement('span');
 
   wordElement.className = 'review-reading-word';
+  wordElement.dataset.ttsWordId = wordId;
   wordElement.dataset.readingWordId = wordId;
   wordElement.dataset.readingBlockId = blockId;
   wordElement.dataset.charStart = String(start);
@@ -196,7 +199,7 @@ const buildAnnotatedFallbackHtml = (text, blockId = 'reading-block-0') => {
       const word = words[wordIndex];
       wordIndex += 1;
 
-      return `<span class="review-reading-word" data-reading-word-id="${word.id}" data-reading-block-id="${blockId}" data-char-start="${word.start}" data-char-end="${word.end}">${escapeHtml(token)}</span>`;
+      return `<span class="review-reading-word" data-tts-word-id="${word.id}" data-reading-word-id="${word.id}" data-reading-block-id="${blockId}" data-char-start="${word.start}" data-char-end="${word.end}">${escapeHtml(token)}</span>`;
     })
     .join('') ?? '';
 

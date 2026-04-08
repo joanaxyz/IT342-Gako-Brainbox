@@ -1,3 +1,4 @@
+import 'katex/dist/katex.min.css';
 import { InputRule, mergeAttributes, Node } from '@tiptap/core';
 import katex from 'katex';
 
@@ -8,13 +9,13 @@ const focusSoon = (element) => {
   });
 };
 
-const renderFormula = (element, latex, katexOptions, { displayMode = false } = {}) => {
+const renderEquation = (element, latex, katexOptions, { displayMode = false } = {}) => {
   if (!element) {
     return;
   }
 
   if (!latex.trim()) {
-    element.textContent = displayMode ? 'Display formula' : 'Inline formula';
+    element.textContent = '';
     return;
   }
 
@@ -53,8 +54,8 @@ const createMathNodeView = ({
   input.className = 'brainbox-math-node-input';
   input.setAttribute('spellcheck', 'false');
   input.setAttribute('autocomplete', 'off');
-  input.setAttribute('aria-label', displayMode ? 'Edit display formula' : 'Edit inline formula');
-  input.placeholder = displayMode ? 'Type LaTeX for a display formula' : 'Type LaTeX';
+  input.setAttribute('aria-label', displayMode ? 'Edit display equation' : 'Edit inline equation');
+  input.placeholder = '';
 
   if (displayMode) {
     input.rows = 3;
@@ -142,22 +143,39 @@ const createMathNodeView = ({
     sync();
   };
 
+  const syncDraftAppearance = () => {
+    const draftLatex = isEditing ? input.value : currentLatex;
+    const hasLatex = draftLatex.trim().length > 0;
+
+    wrapper.classList.toggle('is-empty', !hasLatex);
+    wrapper.setAttribute('data-latex', draftLatex);
+
+    if (displayMode) {
+      const lineCount = Math.max(1, draftLatex.split(/\n/).length);
+      input.rows = Math.max(2, Math.min(8, hasLatex ? lineCount : 2));
+      return;
+    }
+
+    input.size = Math.max(1, Math.min(32, draftLatex.length + 1));
+  };
+
   const sync = () => {
     wrapper.classList.toggle('is-editing', isEditing);
-    wrapper.classList.toggle('is-empty', !currentLatex.trim());
-    wrapper.setAttribute('data-latex', currentLatex);
 
     if (isEditing) {
       input.value = currentLatex;
-      renderFormula(preview, currentLatex, katexOptions, { displayMode });
+      syncDraftAppearance();
+      renderEquation(preview, currentLatex, katexOptions, { displayMode });
       focusSoon(input);
       return;
     }
 
-    renderFormula(preview, currentLatex, katexOptions, { displayMode });
+    syncDraftAppearance();
+    renderEquation(preview, currentLatex, katexOptions, { displayMode });
   };
 
   preview.addEventListener('click', openEditor);
+  input.addEventListener('input', syncDraftAppearance);
   input.addEventListener('blur', () => {
     // Delay commit to check if focus moved to another element within the wrapper
     // (e.g. ProseMirror transaction causing a temporary blur). If focus returns
@@ -201,6 +219,7 @@ const createMathNodeView = ({
     },
     destroy() {
       preview.removeEventListener('click', openEditor);
+      input.removeEventListener('input', syncDraftAppearance);
     },
   };
 };
@@ -238,9 +257,10 @@ export const InlineMath = Node.create({
         (options) =>
         ({ editor, tr }) => {
           const latex = options?.latex ?? '';
-          const from = options?.pos ?? editor.state.selection.from;
+          const from = options?.range?.from ?? options?.pos ?? editor.state.selection.from;
+          const to = options?.range?.to ?? editor.state.selection.to ?? from;
 
-          tr.replaceWith(from, from, this.type.create({ latex }));
+          tr.replaceRangeWith(from, to, this.type.create({ latex }));
           return true;
         },
       deleteInlineMath:
@@ -344,7 +364,10 @@ export const BlockMath = Node.create({
         (options) =>
         ({ commands, editor }) => {
           const latex = options?.latex ?? '';
-          return commands.insertContentAt(options?.pos ?? editor.state.selection.from, {
+          const from = options?.range?.from ?? options?.pos ?? editor.state.selection.from;
+          const to = options?.range?.to ?? editor.state.selection.to ?? from;
+
+          return commands.insertContentAt({ from, to }, {
             type: this.name,
             attrs: { latex },
           });

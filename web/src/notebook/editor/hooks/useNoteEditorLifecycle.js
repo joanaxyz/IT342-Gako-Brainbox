@@ -6,7 +6,7 @@ export const useNoteEditorLifecycle = ({
   onAcceptAiChange,
   onRevertAiChange,
   onInsertPageBreak,
-  onInsertFormula,
+  onInsertEquation,
   onSave,
 }) => {
   useEffect(() => {
@@ -75,7 +75,7 @@ export const useNoteEditorLifecycle = ({
 
       if (isToolShortcut && event.key.toLowerCase() === 'm') {
         event.preventDefault();
-        onInsertFormula?.();
+        onInsertEquation?.();
         return;
       }
 
@@ -88,5 +88,5 @@ export const useNoteEditorLifecycle = ({
 
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [aiProposedContent, editorRef, onAcceptAiChange, onInsertFormula, onInsertPageBreak, onRevertAiChange, onSave]);
+  }, [aiProposedContent, editorRef, onAcceptAiChange, onInsertEquation, onInsertPageBreak, onRevertAiChange, onSave]);
 };
