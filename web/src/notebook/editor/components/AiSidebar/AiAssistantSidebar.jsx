@@ -11,24 +11,18 @@ import {
   CheckCircle2,
   ExternalLink,
   History,
-  LoaderCircle,
-  Mic,
   Plus,
   Search,
   Send,
   Settings,
   Sparkles,
-  Square,
   Trash2,
   X,
 } from 'lucide-react';
 import { aiAPI } from '../../../../common/utils/api.jsx';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { useFlashcard, useQuiz } from '../../../shared/hooks/hooks';
-import { useSpeechToText } from '../../hooks/useSpeechToText';
-import { useSettingsModal } from '../../../../common/contexts/SettingsModalContext';
-import { useAiConfig } from '../../../../common/hooks/useAiConfig';
-import AiConfigSetup from './AiConfigSetup';
+import AiSettingsModal from './AiSettingsModal';
 
 const createMessageId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -152,6 +146,7 @@ const AiAssistantSidebar = ({
   onRestoreCheckpoint,
   className = '',
 }) => {
+  const [showAiSettings, setShowAiSettings] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState(() => buildInitialMessages(introMessage));
   const [historyQuery, setHistoryQuery] = useState('');
@@ -187,24 +182,6 @@ const AiAssistantSidebar = ({
   const { addNotification } = useNotification();
   const { createQuiz } = useQuiz();
   const { createFlashcard } = useFlashcard();
-  const { isConfigured, loading: aiConfigLoading } = useAiConfig();
-  const { openSettings } = useSettingsModal();
-
-  const {
-    isRecording,
-    isTranscribing,
-    toggleRecording,
-  } = useSpeechToText({
-    enabled: Boolean(notebookUuid) && isOpen,
-    onTranscript: (transcript) => {
-      setMessage((currentValue) => (
-        currentValue.trim()
-          ? `${currentValue.trim()} ${transcript}`.trim()
-          : transcript
-      ));
-    },
-    onError: (nextError) => addNotification(nextError, 'error', 3200),
-  });
 
   useEffect(() => {
     const messageList = messagesListRef.current;
@@ -678,8 +655,8 @@ const AiAssistantSidebar = ({
             <div className="ai-sidebar-header-actions">
               <button
                 type="button"
-                className="ai-sidebar-icon-btn"
-                onClick={() => openSettings('ai')}
+                className={`ai-sidebar-icon-btn${showAiSettings ? ' is-active' : ''}`}
+                onClick={() => setShowAiSettings((v) => !v)}
                 aria-label="AI provider settings"
                 title="AI settings"
               >
@@ -708,11 +685,9 @@ const AiAssistantSidebar = ({
           </div>
 
           <div className="ai-sidebar-body">
-            {!aiConfigLoading && !isConfigured ? (
-              <AiConfigSetup />
-            ) : (
-              <div className="ai-chat-container">
-                {isToolHelpOpen && (
+            <AiSettingsModal isOpen={showAiSettings} onClose={() => setShowAiSettings(false)} />
+            <div className="ai-chat-container">
+              {isToolHelpOpen && (
                   <section className="ai-tool-help-card">
                     <div className="ai-tool-help-header">
                       <div className="ai-tool-help-copy">
@@ -915,22 +890,6 @@ const AiAssistantSidebar = ({
                     />
                     <button
                       type="button"
-                      className={`ai-audio-btn ${isRecording ? 'is-recording' : ''}`}
-                      onClick={toggleRecording}
-                      disabled={!notebookUuid || isTyping || isTranscribing}
-                      aria-label={isRecording ? 'Stop voice input' : 'Start voice input'}
-                      title={isRecording ? 'Stop voice input' : 'Dictate to AI'}
-                    >
-                      {isTranscribing ? (
-                        <LoaderCircle size={16} className="ai-audio-btn-spinner" />
-                      ) : isRecording ? (
-                        <Square size={14} />
-                      ) : (
-                        <Mic size={16} />
-                      )}
-                    </button>
-                    <button
-                      type="button"
                       className="ai-send-btn"
                       onClick={() => void handleSendMessage()}
                       disabled={!message.trim() || isTyping || !notebookUuid}
@@ -939,8 +898,7 @@ const AiAssistantSidebar = ({
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {isHistoryModalOpen && (

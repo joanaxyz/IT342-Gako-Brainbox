@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { useNotification } from '../../../common/hooks/hooks';
-import { useAiConfig } from '../../../common/hooks/useAiConfig';
+import AiConfigPanel from '../../../common/components/AiConfigPanel';
 import './SettingsModal.css';
 
 const TAB_PROFILE = 'profile';
@@ -24,17 +24,6 @@ const EyeIcon = ({ open }) => open ? (
 const SettingsModal = ({ isOpen, onClose, initialTab }) => {
   const { user, updateProfile, changePassword } = useAuth();
   const { addNotification } = useNotification();
-  const {
-    config,
-    configs,
-    selectedConfigId,
-    isConfigured,
-    loading: aiConfigLoading,
-    saveConfig,
-    deleteConfig,
-    selectConfig,
-    refetch,
-  } = useAiConfig();
 
   const [activeTab, setActiveTab] = useState(initialTab || TAB_PROFILE);
 
@@ -52,70 +41,9 @@ const SettingsModal = ({ isOpen, onClose, initialTab }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  // AI config form
-  const [aiName, setAiName] = useState('');
-  const [aiModel, setAiModel] = useState('');
-  const [aiProxyUrl, setAiProxyUrl] = useState('');
-  const [aiApiKey, setAiApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-
-  /** 'new' = create another profile; number = edit existing row */
-  const [editTarget, setEditTarget] = useState(null);
-  /** true when editTarget was auto-set to 'new' because configs were empty at that moment */
-  const autoSetNew = useRef(false);
-
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
-
-  // Force-refresh configs whenever the AI tab becomes active
-  useEffect(() => {
-    if (activeTab === TAB_AI) {
-      void refetch();
-    }
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (activeTab !== TAB_AI || aiConfigLoading) return;
-    if (configs.length === 0) {
-      autoSetNew.current = true;
-      setEditTarget('new');
-      return;
-    }
-    // Auto-select: either editTarget is null (initial), or it was auto-set to 'new'
-    // because configs were empty at the time (not an explicit user choice).
-    if (editTarget === null || (editTarget === 'new' && autoSetNew.current)) {
-      autoSetNew.current = false;
-      setEditTarget(selectedConfigId || configs[0].id);
-    }
-  }, [activeTab, configs, selectedConfigId, editTarget, aiConfigLoading]);
-
-  useEffect(() => {
-    if (activeTab !== TAB_AI) return;
-    if (typeof editTarget === 'number' && !configs.some((c) => c.id === editTarget)) {
-      setEditTarget(configs[0]?.id ?? 'new');
-    }
-  }, [configs, editTarget, activeTab]);
-
-  useEffect(() => {
-    if (activeTab !== TAB_AI || editTarget === null) return;
-    if (editTarget === 'new') {
-      setAiName('');
-      setAiModel('');
-      setAiProxyUrl('');
-      setAiApiKey('');
-      return;
-    }
-    const row = configs.find((c) => c.id === editTarget);
-    if (row) {
-      setAiName(row.name || '');
-      setAiModel(row.model || '');
-      setAiProxyUrl(row.proxyUrl || '');
-      setAiApiKey('');
-    }
-  }, [editTarget, configs, activeTab]);
 
   if (!isOpen) return null;
 
@@ -177,67 +105,6 @@ const SettingsModal = ({ isOpen, onClose, initialTab }) => {
       setConfirmPassword('');
     } else {
       addNotification(res.message || 'Failed to change password.', 'error');
-    }
-  };
-
-  const handleAiSubmit = async (e) => {
-    e.preventDefault();
-    if (!aiName.trim()) {
-      addNotification('Please enter a configuration name.', 'error');
-      return;
-    }
-    if (!aiModel.trim()) {
-      addNotification('Please enter a model name.', 'error');
-      return;
-    }
-    if (!aiProxyUrl.trim()) {
-      addNotification('Please enter a proxy URL.', 'error');
-      return;
-    }
-    const isNewProfile = editTarget === 'new';
-    if (isNewProfile && !aiApiKey.trim()) {
-      addNotification('API key is required for a new configuration.', 'error');
-      return;
-    }
-
-    setAiLoading(true);
-    const res = await saveConfig({
-      id: isNewProfile ? null : editTarget,
-      name: aiName.trim(),
-      model: aiModel.trim(),
-      proxyUrl: aiProxyUrl.trim(),
-      apiKey: aiApiKey.trim() || null,
-    });
-    setAiLoading(false);
-
-    if (res.success) {
-      addNotification('AI configuration saved.', 'success');
-      setAiApiKey('');
-      if (isNewProfile && res.data?.id) {
-        setEditTarget(res.data.id);
-      }
-    } else {
-      addNotification(res.message || 'Failed to save AI configuration.', 'error');
-    }
-  };
-
-  const handleAiDelete = async () => {
-    if (editTarget === 'new' || editTarget === null) {
-      return;
-    }
-    setDeleteLoading(true);
-    const res = await deleteConfig(editTarget);
-    setDeleteLoading(false);
-
-    if (res.success) {
-      addNotification('AI configuration removed.', 'success');
-      setEditTarget(null);
-      setAiName('');
-      setAiModel('');
-      setAiProxyUrl('');
-      setAiApiKey('');
-    } else {
-      addNotification(res.message || 'Failed to remove AI configuration.', 'error');
     }
   };
 
@@ -411,133 +278,7 @@ const SettingsModal = ({ isOpen, onClose, initialTab }) => {
           )}
 
           {activeTab === TAB_AI && (
-            <form className="settings-form" onSubmit={handleAiSubmit}>
-              <p className="settings-hint">
-                Connect your own AI provider by entering your proxy URL and API key. Your key is encrypted and stored securely.
-                You can save multiple profiles and choose which one the assistant uses.
-              </p>
-
-              {aiConfigLoading && (
-                <p className="settings-hint">Loading AI configuration…</p>
-              )}
-
-              {!aiConfigLoading && (
-                <div className="settings-field">
-                  <label className="settings-label" htmlFor="ai-edit-target">Configuration</label>
-                  <select
-                    id="ai-edit-target"
-                    className="settings-input"
-                    value={
-                      editTarget === 'new'
-                        ? 'new'
-                        : editTarget != null
-                          ? String(editTarget)
-                          : String(selectedConfigId || configs[0]?.id || 'new')
-                    }
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      autoSetNew.current = false; // user made an explicit choice
-                      setEditTarget(v === 'new' ? 'new' : Number(v));
-                    }}
-                  >
-                    {configs.map((c) => (
-                      <option key={c.id} value={String(c.id)}>
-                        {c.name}{c.id === selectedConfigId ? ' (Active)' : ''}
-                      </option>
-                    ))}
-                    <option value="new">+ Add new configuration</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="settings-field">
-                <label className="settings-label">Configuration Name</label>
-                <input
-                  type="text"
-                  className="settings-input"
-                  placeholder="e.g. My OpenAI, Groq Free Tier"
-                  value={aiName}
-                  onChange={(e) => setAiName(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-
-              <div className="settings-field">
-                <label className="settings-label">Model</label>
-                <input
-                  type="text"
-                  className="settings-input"
-                  placeholder="e.g. gpt-4o, llama-3.3-70b-versatile"
-                  value={aiModel}
-                  onChange={(e) => setAiModel(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-
-              <div className="settings-field">
-                <label className="settings-label">Proxy URL</label>
-                <input
-                  type="url"
-                  className="settings-input"
-                  placeholder="e.g. https://api.openai.com/v1"
-                  value={aiProxyUrl}
-                  onChange={(e) => setAiProxyUrl(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-
-              <div className="settings-field">
-                <label className="settings-label">
-                  API Key
-                  {editTarget !== null && editTarget !== 'new' && (
-                    <span className="settings-label-hint"> (leave blank to keep current)</span>
-                  )}
-                </label>
-                <div className="settings-input-wrap">
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    className="settings-input"
-                    placeholder={(editTarget !== null && editTarget !== 'new') ? '••••••••••••••••' : 'Enter your API key'}
-                    value={aiApiKey}
-                    onChange={(e) => setAiApiKey(e.target.value)}
-                    autoComplete="off"
-                  />
-                  <button type="button" className="settings-eye" onClick={() => setShowApiKey(v => !v)} tabIndex={-1}>
-                    <EyeIcon open={showApiKey} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="settings-actions">
-                {editTarget !== null && editTarget !== 'new' && (
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={handleAiDelete}
-                    disabled={deleteLoading}
-                    style={{ marginRight: 'auto' }}
-                  >
-                    {deleteLoading ? 'Removing…' : 'Remove'}
-                  </button>
-                )}
-                {editTarget !== null && editTarget !== 'new' && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => void selectConfig(editTarget)}
-                    disabled={editTarget === selectedConfigId}
-                  >
-                    {editTarget === selectedConfigId ? 'In use' : 'Use this config'}
-                  </button>
-                )}
-                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm" disabled={aiLoading}>
-                  {aiLoading ? 'Saving…' : 'Save'}
-                </button>
-              </div>
-            </form>
+            <AiConfigPanel onClose={onClose} />
           )}
         </div>
       </div>

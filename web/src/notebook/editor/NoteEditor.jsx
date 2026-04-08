@@ -7,7 +7,6 @@ import { useNoteEditorPreferences } from './hooks/useNoteEditorPreferences';
 import { useAiProposalState } from './hooks/useAiProposalState';
 import { useNoteEditorLifecycle } from './hooks/useNoteEditorLifecycle';
 import { useNoteEditorPersistence } from './hooks/useNoteEditorPersistence';
-import { useSpeechToText } from './hooks/useSpeechToText';
 import EditorNavbar from './components/EditorNavbar/EditorNavbar';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
 import NoteEditorContent from './components/NoteEditorContent/NoteEditorContent';
@@ -19,15 +18,10 @@ import AiProposalOverlay from './components/AiProposalOverlay/AiProposalOverlay'
 import VersionHistorySidebar from './components/VersionHistorySidebar/VersionHistorySidebar';
 import ReviewMode from './components/ReviewMode/ReviewMode';
 import { useAudioPlayer, useNotification } from '../../common/hooks/hooks';
-import { Highlighter, LoaderCircle, Mic, Square, Trash2 } from 'lucide-react';
+import { Highlighter, Trash2 } from 'lucide-react';
 import './editor.css';
 
 const EditorCanvasControls = ({
-  isMicDisabled = false,
-  isRecording = false,
-  isTranscribing = false,
-  recordingSeconds = 0,
-  onToggleRecording,
   zoomLevel,
   onZoomChange,
   onZoomStep,
@@ -39,30 +33,6 @@ const EditorCanvasControls = ({
 }) => (
   <div className="editor-canvas-toolbar">
     <div className="editor-canvas-toolbar-main">
-      <button
-        type="button"
-        className={`editor-canvas-mic-btn ${isRecording ? 'is-recording' : ''}`}
-        onClick={onToggleRecording}
-        disabled={isMicDisabled || isTranscribing}
-        aria-label={isRecording ? 'Stop microphone recording' : 'Start microphone recording'}
-        title={isRecording ? 'Stop microphone recording' : 'Transcribe speech with Groq'}
-      >
-        {isTranscribing ? (
-          <LoaderCircle size={16} className="editor-canvas-mic-spinner" />
-        ) : isRecording ? (
-          <Square size={15} />
-        ) : (
-          <Mic size={16} />
-        )}
-        <span>
-          {isTranscribing
-            ? 'Transcribing'
-            : isRecording
-              ? `Recording ${recordingSeconds}s`
-              : 'Mic'}
-        </span>
-      </button>
-
       <div className="editor-canvas-toolbar-divider" />
 
       <span className="editor-canvas-group-label">Zoom</span>
@@ -226,29 +196,6 @@ const NoteEditor = () => {
     currentNotebook: routeNotebook,
     isPreviewMode,
     updateNotebookContent,
-  });
-
-  const handleTranscriptionResult = useCallback((transcript) => {
-    const cleanedTranscript = transcript.trim();
-
-    if (!cleanedTranscript) {
-      addNotification('No speech detected in the recording.', 'error', 3000);
-      return;
-    }
-
-    editorRef.current?.insertPlainText?.(`${cleanedTranscript} `);
-    addNotification('Speech inserted into the note.', 'success', 2500);
-  }, [addNotification]);
-
-  const {
-    isRecording,
-    isTranscribing,
-    recordingSeconds,
-    toggleRecording,
-  } = useSpeechToText({
-    enabled: Boolean(routeNotebook?.uuid) && !isPreviewMode,
-    onTranscript: handleTranscriptionResult,
-    onError: (message) => addNotification(message, 'error', 3500),
   });
 
   const {
@@ -872,11 +819,6 @@ const NoteEditor = () => {
             />
 
             <EditorCanvasControls
-              isMicDisabled={!routeNotebook?.uuid || isPreviewMode}
-              isRecording={isRecording}
-              isTranscribing={isTranscribing}
-              recordingSeconds={recordingSeconds}
-              onToggleRecording={toggleRecording}
               zoomLevel={zoomLevel}
               onZoomChange={handleZoomChange}
               onZoomStep={handleZoomStep}
