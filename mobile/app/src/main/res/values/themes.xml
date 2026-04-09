@@ -9,6 +9,18 @@
         <item name="android:windowBackground">@color/background_color</item>
     </style>
 
+    <style name="Theme.Brainbox.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/background_color</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/primary_color</item>
+        <item name="postSplashScreenTheme">@style/Theme.Brainbox</item>
+        <item name="android:statusBarColor">@color/background_color</item>
+        <item name="android:navigationBarColor">@color/background_color</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/background_color</item>
+    </style>
+
     <style name="ShapeAppearance.Brainbox.Circle" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>

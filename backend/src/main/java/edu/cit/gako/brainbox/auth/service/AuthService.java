@@ -128,18 +128,30 @@ public class AuthService implements AuthFacade {
     }
 
     @Transactional
-    public LoginResponse googleLogin(String accessToken, HttpServletRequest servletRequest) {
+    public LoginResponse googleLogin(String idToken, String accessToken, HttpServletRequest servletRequest) {
         String googleId, email, name;
         try {
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
+            HttpRequest request;
+            if (idToken != null && !idToken.isBlank()) {
+                // Mobile: ID token flow — verify via tokeninfo
+                request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken))
+                        .GET()
+                        .build();
+            } else if (accessToken != null && !accessToken.isBlank()) {
+                // Web: OAuth access token flow — fetch userinfo
+                request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
+                        .header("Authorization", "Bearer " + accessToken)
+                        .GET()
+                        .build();
+            } else {
+                throw new IllegalArgumentException("No Google token provided");
+            }
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                throw new IllegalArgumentException("Invalid Google access token");
+                throw new IllegalArgumentException("Invalid Google token");
             }
             JsonNode json = new ObjectMapper().readTree(response.body());
             googleId = json.get("sub").asText();
@@ -148,7 +160,7 @@ public class AuthService implements AuthFacade {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to fetch Google user info");
+            throw new IllegalArgumentException("Failed to verify Google token");
         }
 
         User user = userService.findByGoogleId(googleId).orElse(null);

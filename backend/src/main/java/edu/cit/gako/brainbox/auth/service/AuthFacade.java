@@ -34,5 +34,5 @@ public interface AuthFacade {
 
     LoginResponse refreshToken(String refreshToken);
 
-    LoginResponse googleLogin(String accessToken, HttpServletRequest servletRequest);
+    LoginResponse googleLogin(String idToken, String accessToken, HttpServletRequest servletRequest);
 }
