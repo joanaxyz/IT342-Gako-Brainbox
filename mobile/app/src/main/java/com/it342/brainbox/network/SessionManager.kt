@@ -1,4 +1,4 @@
-package com.it342.brainbox.network
+﻿package com.it342.brainbox.network
 
 import android.content.Context
 import android.content.SharedPreferences

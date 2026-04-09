@@ -1,4 +1,4 @@
-package com.it342.brainbox.network.models
+﻿package com.it342.brainbox.network.models
 
 import com.google.gson.annotations.SerializedName
 
@@ -34,4 +34,8 @@ data class VerifyCodeResponse(
 data class ResetPasswordRequest(
     @SerializedName("token") val token: String,
     @SerializedName("newPassword") val newPassword: String
+)
+
+data class LogoutRequest(
+    @SerializedName("refreshToken") val refreshToken: String
 )

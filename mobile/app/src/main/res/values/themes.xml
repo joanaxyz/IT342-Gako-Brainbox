@@ -9,11 +9,6 @@
         <item name="android:windowBackground">@color/background_color</item>
     </style>
 
-    <style name="Theme.Brainbox.Dashboard" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">@color/primary_color</item>
-        <item name="colorOnPrimary">@color/white</item>
-    </style>
-
     <style name="ShapeAppearance.Brainbox.Circle" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
