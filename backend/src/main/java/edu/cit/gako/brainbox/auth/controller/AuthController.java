@@ -84,6 +84,6 @@ public class AuthController {
 
     @PostMapping("/google")
     public ResponseEntity<ApiResponse<LoginResponse>> googleAuth(@RequestBody GoogleAuthRequest request, HttpServletRequest servletRequest) {
-        return ResponseEntity.ok(ApiResponse.success(authService.googleLogin(request.getAccessToken(), servletRequest)));
+        return ResponseEntity.ok(ApiResponse.success(authService.googleLogin(request.getIdToken(), request.getAccessToken(), servletRequest)));
     }
 }
