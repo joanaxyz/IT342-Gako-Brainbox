@@ -72,11 +72,12 @@ export const AiHighlight = Extension.create({
               return DecorationSet.empty;
             }
 
-            const decorations = ranges.map(({ from, to, className }) => Decoration.inline(
+            const decorations = ranges.map(({ from, to, className, attributes = {} }) => Decoration.inline(
               from,
               to,
               {
                 class: className || 'ai-changed-block',
+                ...attributes,
               },
             ));
 

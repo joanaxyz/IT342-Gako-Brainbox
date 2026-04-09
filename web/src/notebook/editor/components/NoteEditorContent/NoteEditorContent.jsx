@@ -66,8 +66,6 @@ const NoteEditorContent = forwardRef(({
   paperWidth = DEFAULT_PAPER_WIDTH,
   paperHeight = DEFAULT_PAPER_HEIGHT,
   zoom = 1,
-  onPaperResizeStart,
-  isPaperResizing = false,
   aiSelectionMode = false,
 }, ref) => {
   const viewportRef = useRef(null);
@@ -105,14 +103,22 @@ const NoteEditorContent = forwardRef(({
       onSelectionStateChange?.({
         hasTextSelection: false,
         aiSelectionCount: 0,
+        selectedText: '',
+        isEditorFocused: false,
       });
       return;
     }
 
     const { from, to } = currentEditor.state.selection;
+    const selectedText = from !== to
+      ? currentEditor.state.doc.textBetween(from, to, ' ')
+      : '';
+
     onSelectionStateChange?.({
       hasTextSelection: from !== to,
       aiSelectionCount: getAiSelectionRanges(currentEditor.state).length,
+      selectedText,
+      isEditorFocused: Boolean(currentEditor.isFocused),
     });
   }, [onSelectionStateChange, readOnly]);
 
@@ -415,6 +421,10 @@ const NoteEditorContent = forwardRef(({
       const selectedBlockIndexes = new Set(Array.isArray(descriptor?.blockIndexes) ? descriptor.blockIndexes : []);
       const activeBlockIndexes = new Set(Array.isArray(descriptor?.activeBlockIndexes) ? descriptor.activeBlockIndexes : []);
       const tone = descriptor?.tone ? `ai-changed-block--${descriptor.tone}` : '';
+      const reviewStatus = descriptor?.reviewStatus ? `ai-changed-block--${descriptor.reviewStatus}` : '';
+      const attributes = Number.isInteger(descriptor?.changeIndex)
+        ? { 'data-ai-change-index': String(descriptor.changeIndex) }
+        : {};
 
       blockRanges.forEach((blockRange) => {
         const { blockIndex } = blockRange;
@@ -430,8 +440,10 @@ const NoteEditorContent = forwardRef(({
             className: [
               'ai-changed-block',
               tone,
+              reviewStatus,
               activeBlockIndexes.has(blockIndex) ? 'is-active' : '',
             ].filter(Boolean).join(' '),
+            attributes,
           });
         });
       });
@@ -766,7 +778,7 @@ const NoteEditorContent = forwardRef(({
 
   return (
     <div
-      className={`note-editor-content${showLines ? ' show-lines' : ''}${isPaperResizing ? ' is-resizing' : ''}${aiSelectionMode ? ' is-ai-selection-mode' : ''}`}
+      className={`note-editor-content${showLines ? ' show-lines' : ''}${aiSelectionMode ? ' is-ai-selection-mode' : ''}`}
       style={paperStyles}
     >
       <div className="note-editor-canvas-viewport" ref={viewportRef}>
@@ -797,29 +809,6 @@ const NoteEditorContent = forwardRef(({
               </article>
             </div>
           </div>
-
-          {!readOnly && onPaperResizeStart && (
-            <>
-              <button
-                type="button"
-                className="note-editor-resize-handle note-editor-resize-handle--left"
-                onMouseDown={onPaperResizeStart}
-                aria-label="Resize paper width"
-                title="Resize paper width"
-              >
-                <span className="note-editor-resize-handle-rail" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                className="note-editor-resize-handle note-editor-resize-handle--right"
-                onMouseDown={onPaperResizeStart}
-                aria-label="Resize paper width"
-                title="Resize paper width"
-              >
-                <span className="note-editor-resize-handle-rail" aria-hidden="true" />
-              </button>
-            </>
-          )}
         </div>
       </div>
     </div>

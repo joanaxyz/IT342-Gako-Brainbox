@@ -1804,6 +1804,41 @@
 .ai-changed-block {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+  border-radius: 0.35rem;
+  transition: background 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+
+.ai-changed-block--proposal {
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.14), rgba(22, 163, 74, 0.22));
+}
+
+.ai-changed-block--original {
+  background: linear-gradient(180deg, rgba(156, 163, 175, 0.12), rgba(107, 114, 128, 0.18));
+}
+
+.ai-changed-block--pending {
+  box-shadow:
+    0 0 0 1px rgba(194, 65, 12, 0.2),
+    inset 0 -1px 0 rgba(194, 65, 12, 0.18);
+}
+
+.ai-changed-block--accepted {
+  box-shadow:
+    0 0 0 1px rgba(22, 163, 74, 0.18),
+    inset 0 -1px 0 rgba(22, 163, 74, 0.16);
+}
+
+.ai-changed-block--rejected {
+  opacity: 0.82;
+  box-shadow:
+    0 0 0 1px rgba(107, 114, 128, 0.16),
+    inset 0 -1px 0 rgba(107, 114, 128, 0.14);
+}
+
+.ai-changed-block.is-active {
+  box-shadow:
+    0 0 0 2px rgba(28, 25, 23, 0.18),
+    0 8px 18px -16px rgba(15, 23, 42, 0.34);
 }
 
 /* AI change bar — shown between toolbar and editor when AI edits are pending */
@@ -5089,6 +5124,13 @@ a.ai-btn-create {
   transform: translateY(-1px);
 }
 
+.ai-proposal-inline-btn:disabled,
+.ai-proposal-mini-dock-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+  transform: none;
+}
+
 .ai-proposal-inline-btn--accept {
   background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
   border-color: rgba(22, 163, 74, 0.16);
@@ -5106,6 +5148,34 @@ a.ai-btn-create {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.84);
 }
 
+.ai-proposal-inline-review--selection {
+  padding: 8px;
+}
+
+.ai-proposal-inline-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.ai-proposal-inline-status--accepted {
+  background: rgba(240, 253, 244, 0.96);
+  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+}
+
+.ai-proposal-inline-status--rejected {
+  background: rgba(243, 244, 246, 0.98);
+  color: #4b5563;
+  border: 1px solid rgba(107, 114, 128, 0.18);
+}
+
 .ai-proposal-mini-dock {
   position: absolute;
   top: 14px;
@@ -5120,6 +5190,43 @@ a.ai-btn-create {
   backdrop-filter: blur(16px);
   box-shadow: 0 18px 36px -28px rgba(15, 23, 42, 0.28);
   z-index: 121;
+}
+
+.ai-proposal-bulk-dock {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(520px, calc(100% - 32px));
+  padding: 10px 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(28, 25, 23, 0.08);
+  background: rgba(248, 247, 244, 0.92);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 36px -28px rgba(15, 23, 42, 0.28);
+  z-index: 121;
+}
+
+.ai-proposal-bulk-dock-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.ai-proposal-bulk-dock-copy strong {
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+
+.ai-proposal-bulk-dock-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .ai-proposal-mini-dock-main {
@@ -5253,6 +5360,7 @@ a.ai-btn-create {
 }
 
 @media (max-width: 980px) {
+  .ai-proposal-bulk-dock,
   .ai-proposal-mini-dock {
     top: 12px;
     right: 12px;
@@ -5266,6 +5374,8 @@ a.ai-btn-create {
 @media (max-width: 720px) {
   .ai-proposal-nav,
   .ai-proposal-inline-review-actions,
+  .ai-proposal-bulk-dock,
+  .ai-proposal-bulk-dock-actions,
   .ai-proposal-mini-dock-main,
   .ai-proposal-mini-dock-review,
   .ai-proposal-mini-dock-actions {
@@ -5274,11 +5384,13 @@ a.ai-btn-create {
 
   .ai-proposal-inline-btn,
   .ai-proposal-nav-btn,
+  .ai-proposal-bulk-dock-actions .ai-proposal-mini-dock-btn,
   .ai-proposal-mini-dock-review .ai-proposal-mini-dock-btn,
   .ai-proposal-mini-dock-actions .ai-proposal-mini-dock-btn {
     flex: 1 1 0;
   }
 
+  .ai-proposal-bulk-dock,
   .ai-proposal-mini-dock {
     position: fixed;
     left: 12px;

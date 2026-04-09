@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PanelLeftOpen } from 'lucide-react';
-import { useBlocker, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useNotebook, useCategory } from '../shared/hooks/hooks';
 import { useNoteEditorData } from './hooks/useNoteEditorData';
 import { useEditorResize } from './hooks/useEditorResize';
@@ -8,6 +8,9 @@ import { useNoteEditorPreferences } from './hooks/useNoteEditorPreferences';
 import { useAiProposalState } from './hooks/useAiProposalState';
 import { useNoteEditorLifecycle } from './hooks/useNoteEditorLifecycle';
 import { useNoteEditorPersistence } from './hooks/useNoteEditorPersistence';
+import useVersionHistory from './hooks/useVersionHistory';
+import useProposalOverlayAnchor from './hooks/useProposalOverlayAnchor';
+import useEditorNavigation from './hooks/useEditorNavigation';
 import EditorNavbar from './components/EditorNavbar/EditorNavbar';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
 import NoteEditorContent from './components/NoteEditorContent/NoteEditorContent';
@@ -25,20 +28,15 @@ import './editor.css';
 const NoteEditor = () => {
   const { id: notebookUuid } = useParams();
   const { state: locationState, search } = useLocation();
-  const navigate = useNavigate();
   const editorRef = useRef(null);
   const editorContainerRef = useRef(null);
+  const lastEditorSelectionTextRef = useRef('');
+  const autoAppliedSelectionReviewRef = useRef(null);
+
+  // Merge mode from URL query param and location state
   const editorLocationState = useMemo(() => {
     const mode = new URLSearchParams(search).get('mode') || locationState?.mode;
-
-    if (!mode) {
-      return locationState;
-    }
-
-    return {
-      ...(locationState || {}),
-      mode,
-    };
+    return mode ? { ...(locationState || {}), mode } : locationState;
   }, [locationState, search]);
 
   const {
@@ -59,59 +57,34 @@ const NoteEditor = () => {
   const routeNotebook = currentNotebook?.uuid === notebookUuid ? currentNotebook : null;
 
   useNoteEditorData({ notebookUuid, fetchNotebook });
+  useEffect(() => { fetchCategories(false); }, [fetchCategories]);
 
-  useEffect(() => {
-    fetchCategories(false);
-  }, [fetchCategories]);
-
-  const [versionPreview, setVersionPreview] = useState(null);
+  // UI state
   const [outline, setOutline] = useState([]);
   const [reviewContent, setReviewContent] = useState('');
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isVersionsLoading, setIsVersionsLoading] = useState(false);
-  const [isSavingBeforeExit, setIsSavingBeforeExit] = useState(false);
   const [acceptedCheckpointEvent, setAcceptedCheckpointEvent] = useState(null);
   const [aiToolKey, setAiToolKey] = useState('chat');
   const [isAiToolHelpOpen, setIsAiToolHelpOpen] = useState(false);
   const [isNavigatorMobileOpen, setIsNavigatorMobileOpen] = useState(false);
-  const [inlineProposalAnchor, setInlineProposalAnchor] = useState(null);
-  const [aiSelectionState, setAiSelectionState] = useState({
-    hasTextSelection: false,
-    aiSelectionCount: 0,
-  });
-  const wasReviewModeRef = useRef(false);
-  const isExitSaveInFlightRef = useRef(false);
-  const isMountedRef = useRef(true);
+  const [aiSelectionState, setAiSelectionState] = useState({ hasTextSelection: false, aiSelectionCount: 0 });
 
-  useEffect(() => () => {
-    isMountedRef.current = false;
-  }, []);
-
+  // Reset all per-notebook UI state when the notebook changes
   useEffect(() => {
     setAcceptedCheckpointEvent(null);
-    setVersionPreview(null);
     setAiToolKey('chat');
     setIsAiToolHelpOpen(false);
     setIsNavigatorMobileOpen(false);
-    setInlineProposalAnchor(null);
-    setAiSelectionState({
-      hasTextSelection: false,
-      aiSelectionCount: 0,
-    });
+    setAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
+    lastEditorSelectionTextRef.current = '';
+    autoAppliedSelectionReviewRef.current = null;
   }, [notebookUuid]);
 
   const {
-    aiSidebarOpen,
-    setAiSidebarOpen,
-    isReviewModeOpen,
-    setIsReviewModeOpen,
-    editorFont,
-    setEditorFont,
-    zoomLevel,
-    handleZoomChange,
-    handleZoomStep,
-    showLines,
-    setShowLines,
+    aiSidebarOpen, setAiSidebarOpen,
+    isReviewModeOpen, setIsReviewModeOpen,
+    editorFont, setEditorFont,
+    zoomLevel, handleZoomChange, handleZoomStep,
+    showLines, setShowLines,
     fontFamily,
   } = useNoteEditorPreferences(editorLocationState);
 
@@ -140,12 +113,15 @@ const NoteEditor = () => {
     pendingAiSelectionIds,
     clearAllAiSelectionsOnAccept,
     proposalRenderToken,
+    proposalReviewMode,
     proposalChanges,
+    proposalChangeDecisions,
     activeProposalChangeIndex,
     activeProposalWorkingBlockIndexes,
     setActiveEditor,
-    setActiveProposalChangeIndex,
-    setProposalChangeDecision,
+    setProposalChangePreview,
+    acceptAllRemainingProposalChanges,
+    rejectAllRemainingProposalChanges,
     handleAiUpdateContent,
     handleAcceptAiChange: clearAcceptedAiProposal,
     handleRevertAiChange,
@@ -155,22 +131,87 @@ const NoteEditor = () => {
     isPreviewMode: false,
   });
 
-  const {
-    paperWidth,
-    paperHeight,
-    isResizing: isPaperResizing,
-    beginResize: handlePaperResizeStart,
-  } = useEditorResize(editorContainerRef, zoomLevel);
+  const { paperWidth, paperHeight } = useEditorResize(editorContainerRef, zoomLevel);
 
+  // ── Computed values ───────────────────────────────────────────────────
+  const isAiProposalOpen = aiProposedContent !== null && aiOriginalContent !== null;
+  const isSelectionReviewMode = isAiProposalOpen && proposalReviewMode === 'selection_changes';
+  const proposalHighlightFocusIndex = isSelectionReviewMode ? -1 : activeProposalChangeIndex;
+  const editorSurfaceState = isAiProposalOpen ? `ai_preview_${proposalRenderToken}` : 'document';
+  const editorKey = `${routeNotebook?.uuid ?? notebookUuid}_${editorSurfaceState}`;
+  const editorStorageKey = routeNotebook?.uuid || notebookUuid;
+  const isDocumentHydrated = hydratedNotebookUuid === routeNotebook?.uuid;
+  const editorContentSyncToken = isAiProposalOpen ? proposalRenderToken : contentSyncToken;
+  const initialContent = isAiProposalOpen
+    ? (aiWorkingContent || aiProposedContent || '')
+    : (isDocumentHydrated ? (documentContent || '') : (routeNotebook?.content || ''));
   const notebookTitle = notebookUuid === 'new'
     ? (locationState?.title || 'New notebook')
     : (routeNotebook?.title || 'Loading...');
 
-  useEffect(() => {
-    if (wasReviewModeRef.current && !isReviewModeOpen) {
-      stopPlayback();
-    }
+  // ── Editor content helpers ────────────────────────────────────────────
+  const getCurrentDocumentContent = useCallback(
+    () => editorRef.current?.getHTML?.() ?? documentContent ?? '',
+    [documentContent],
+  );
 
+  const hasUnsavedDocumentChanges = useCallback(() => {
+    if (!routeNotebook?.uuid) return false;
+    return getCurrentDocumentContent() !== (routeNotebook.content ?? '');
+  }, [getCurrentDocumentContent, routeNotebook?.content, routeNotebook?.uuid]);
+
+  const handleSaveNotebook = useCallback(async () => {
+    if (!routeNotebook?.uuid) return null;
+    const content = editorRef.current?.getHTML?.() ?? documentContent ?? '';
+    return saveDocument(content);
+  }, [documentContent, routeNotebook?.uuid, saveDocument]);
+
+  const saveCurrentDocumentIfNeeded = useCallback(async () => {
+    if (!hasUnsavedDocumentChanges()) return { success: true };
+    return handleSaveNotebook() ?? { success: true };
+  }, [handleSaveNotebook, hasUnsavedDocumentChanges]);
+
+  // ── Feature hooks ─────────────────────────────────────────────────────
+  const { isSavingBeforeExit, handleBackHome } = useEditorNavigation({
+    hasUnsavedDocumentChanges,
+    handleSaveNotebook,
+    addNotification,
+  });
+
+  const {
+    isHistoryOpen,
+    isVersionsLoading,
+    versionPreview,
+    handleOpenHistory,
+    handleVersionSelect,
+    handleRestoreVersion,
+    handleRestoreCheckpoint,
+    handleCloseHistory,
+    handleClearPreview,
+  } = useVersionHistory({
+    notebookUuid: routeNotebook?.uuid,
+    fetchVersions,
+    fetchVersion,
+    restoreVersion,
+    saveCurrentDocumentIfNeeded,
+    addNotification,
+  });
+
+  const { inlineProposalAnchor, hoveredProposalChangeIndex } = useProposalOverlayAnchor({
+    editorRef,
+    editorContainerRef,
+    isAiProposalOpen,
+    isSelectionReviewMode,
+    activeProposalChangeIndex,
+    activeProposalWorkingBlockIndexes,
+    proposalRenderToken,
+  });
+
+  // ── Review mode ───────────────────────────────────────────────────────
+  const wasReviewModeRef = useRef(false);
+
+  useEffect(() => {
+    if (wasReviewModeRef.current && !isReviewModeOpen) stopPlayback();
     wasReviewModeRef.current = isReviewModeOpen;
   }, [isReviewModeOpen, stopPlayback]);
 
@@ -181,223 +222,79 @@ const NoteEditor = () => {
   }, [routeNotebook?.uuid, isReviewModeOpen, markNotebookReviewed]);
 
   useEffect(() => {
-    if (!isReviewModeOpen) {
-      return;
-    }
-
+    if (!isReviewModeOpen) return;
     const content = editorRef.current?.getHTML?.()
-      ?? (reviewContent
-        ? null
-        : (documentContent ?? routeNotebook?.content ?? ''));
-
-    if (typeof content === 'string') {
-      setReviewContent(content);
-    }
+      ?? (reviewContent ? null : (documentContent ?? routeNotebook?.content ?? ''));
+    if (typeof content === 'string') setReviewContent(content);
   }, [documentContent, isReviewModeOpen, reviewContent, routeNotebook?.content]);
 
+  const handleReviewModeToggle = useCallback((nextValue) => {
+    if (nextValue) setReviewContent(getCurrentDocumentContent());
+    setIsReviewModeOpen(nextValue);
+    setIsAiToolHelpOpen(false);
+    if (nextValue) handleCloseHistory();
+  }, [getCurrentDocumentContent, handleCloseHistory, setIsReviewModeOpen]);
+
+  // ── AI proposal acceptance ────────────────────────────────────────────
   useEffect(() => {
-    if (aiProposedContent !== null) {
-      setActiveEditor(null);
-    }
+    if (aiProposedContent !== null) setActiveEditor(null);
   }, [aiProposedContent, setActiveEditor]);
 
-  const handleUpdateNotebookTitle = useCallback(async (newTitle) => {
-    if (!routeNotebook?.uuid) {
+  // Clear editor highlights when proposal closes
+  useEffect(() => {
+    if (!isAiProposalOpen) {
+      editorRef.current?.clearAiHighlights?.();
       return;
     }
 
-    const response = await updateNotebook(routeNotebook.uuid, { title: newTitle }, false);
+    const frame = window.requestAnimationFrame(() => {
+      editorRef.current?.setAiHighlightsByBlockDescriptors?.(
+        proposalChanges
+          .filter((c) => c.workingBlockIndexes.length > 0)
+          .map((c) => ({
+            blockIndexes: c.workingBlockIndexes,
+            tone: c.decision === 'original' ? 'original' : 'proposal',
+            reviewStatus: '',
+            activeBlockIndexes: proposalHighlightFocusIndex === c.index ? c.workingBlockIndexes : [],
+            changeIndex: c.index,
+          }))
+      );
 
-    if (!response.success) {
-      addNotification('Failed to update title', 'error', 3000);
-    }
-  }, [addNotification, routeNotebook?.uuid, updateNotebook]);
-
-  const handleUpdateNotebookCategory = useCallback(async (categoryId) => {
-    if (!routeNotebook?.uuid) {
-      return;
-    }
-
-    const response = await updateNotebook(routeNotebook.uuid, {
-      categoryId: categoryId ?? -1,
+      const focusBlock = !isSelectionReviewMode ? activeProposalWorkingBlockIndexes?.[0] : null;
+      if (Number.isInteger(focusBlock)) editorRef.current?.scrollToTopLevelBlock?.(focusBlock);
     });
 
-    if (!response.success) {
-      addNotification('Failed to update category', 'error', 3000);
-    }
-  }, [addNotification, routeNotebook?.uuid, updateNotebook]);
-
-  const getEditorSelection = useCallback(() => editorRef.current?.getSelectedText?.() || '', []);
-  const getAiSelections = useCallback(() => editorRef.current?.getAiSelectionTargets?.() || [], []);
-  const focusEditor = useCallback(() => {
-    editorRef.current?.focusEditor?.();
-  }, []);
-
-  const handleInsertPageBreak = useCallback(() => {
-    editorRef.current?.insertPageBreak?.();
-  }, []);
-
-  const handleInsertEquation = useCallback(() => {
-    editorRef.current?.insertEquation?.();
-  }, []);
-
-  const handleAddAiSelection = useCallback(() => {
-    const nextSelection = editorRef.current?.addAiSelectionFromCurrentSelection?.();
-
-    if (!nextSelection) {
-      addNotification('Select text in the editor first, then add it as an AI highlight.', 'error', 3000);
-      focusEditor();
-      return;
-    }
-
-    addNotification('Saved AI highlight for targeted edits.', 'success', 2200);
-  }, [addNotification, focusEditor]);
-
-  const handleClearAiSelections = useCallback(() => {
-    const currentSelections = editorRef.current?.getAiSelectionTargets?.() || [];
-
-    if (currentSelections.length === 0) {
-      return;
-    }
-
-    editorRef.current?.clearAiSelections?.();
-    addNotification('Cleared AI highlights.', 'success', 2200);
-  }, [addNotification]);
-
-  const handleSaveNotebook = useCallback(async () => {
-    if (!routeNotebook?.uuid) {
-      return null;
-    }
-
-    const content = editorRef.current?.getHTML?.() ?? documentContent ?? '';
-    return saveDocument(content);
-  }, [documentContent, routeNotebook?.uuid, saveDocument]);
-
-  const handleImportContent = useCallback((filename, rawText) => {
-    if (!editorRef.current) {
-      return;
-    }
-
-    const isHtml = filename.endsWith('.html') || filename.endsWith('.htm');
-    let html;
-
-    if (isHtml) {
-      const bodyMatch = rawText.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-      html = bodyMatch ? bodyMatch[1].trim() : rawText;
-    } else {
-      html = rawText
-        .split(/\n{2,}/)
-        .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br />')}</p>`)
-        .join('');
-    }
-
-    editorRef.current.setContent(html);
-    handleDocumentChange(html);
-    addNotification(`"${filename}" imported successfully`, 'success', 3000);
-  }, [addNotification, handleDocumentChange]);
-
-  const getCurrentDocumentContent = useCallback(
-    () => editorRef.current?.getHTML?.() ?? documentContent ?? '',
-    [documentContent],
-  );
-
-  const hasUnsavedDocumentChanges = useCallback(() => {
-    if (!routeNotebook?.uuid) {
-      return false;
-    }
-
-    return getCurrentDocumentContent() !== (routeNotebook.content ?? '');
-  }, [getCurrentDocumentContent, routeNotebook?.content, routeNotebook?.uuid]);
-
-  const saveCurrentDocumentIfNeeded = useCallback(async () => {
-    if (!hasUnsavedDocumentChanges()) {
-      return { success: true };
-    }
-
-    return handleSaveNotebook() ?? { success: true };
-  }, [handleSaveNotebook, hasUnsavedDocumentChanges]);
-
-  const navigationBlocker = useBlocker(useCallback(
-    ({ currentLocation, nextLocation }) => {
-      if (isExitSaveInFlightRef.current) {
-        return false;
-      }
-
-      if (currentLocation.pathname === nextLocation.pathname) {
-        return false;
-      }
-
-      return hasUnsavedDocumentChanges();
-    },
-    [hasUnsavedDocumentChanges],
-  ));
-
-  useEffect(() => {
-    if (navigationBlocker.state !== 'blocked' || isExitSaveInFlightRef.current) {
-      return;
-    }
-
-    isExitSaveInFlightRef.current = true;
-    setIsSavingBeforeExit(true);
-
-    void handleSaveNotebook()
-      .then((response) => {
-        if (!isMountedRef.current) {
-          return;
-        }
-
-        if (response && !response.success) {
-          addNotification(response.message || 'Failed to save notebook before leaving', 'error', 3000);
-          navigationBlocker.reset();
-          return;
-        }
-
-        navigationBlocker.proceed();
-      })
-      .finally(() => {
-        if (!isMountedRef.current) {
-          return;
-        }
-
-        isExitSaveInFlightRef.current = false;
-        setIsSavingBeforeExit(false);
-      });
-  }, [addNotification, handleSaveNotebook, navigationBlocker]);
-
-  const handleBackHome = useCallback(() => {
-    if (isSavingBeforeExit) {
-      return;
-    }
-
-    navigate('/dashboard');
-  }, [isSavingBeforeExit, navigate]);
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    activeProposalWorkingBlockIndexes,
+    isSelectionReviewMode,
+    proposalChanges,
+    proposalHighlightFocusIndex,
+    isAiProposalOpen,
+    proposalRenderToken,
+  ]);
 
   const handleAcceptAiChange = useCallback(async () => {
-    const acceptedDraftContent = aiWorkingContent || aiProposedContent;
+    const acceptedContent = aiWorkingContent || aiProposedContent;
+    if (!acceptedContent) return;
 
-    if (!acceptedDraftContent) {
-      return;
+    const hasActualChanges = acceptedContent !== (aiOriginalContent || '');
+
+    if (hasActualChanges) {
+      const scrollTop = editorRef.current?.captureViewportScroll?.() ?? 0;
+      editorRef.current?.setContent?.(acceptedContent);
+      handleDocumentChange(acceptedContent);
+      window.requestAnimationFrame(() => editorRef.current?.restoreViewportScroll?.(scrollTop));
     }
 
-    const acceptedContent = acceptedDraftContent;
-    const scrollTop = editorRef.current?.captureViewportScroll?.() ?? 0;
-
-    editorRef.current?.setContent?.(acceptedContent);
-    handleDocumentChange(acceptedContent);
-    window.requestAnimationFrame(() => {
-      editorRef.current?.restoreViewportScroll?.(scrollTop);
-    });
-
-    if (routeNotebook?.uuid) {
+    if (hasActualChanges && routeNotebook?.uuid) {
       const saveResponse = await saveDocument(acceptedContent);
-
       if (saveResponse && !saveResponse.success) {
         addNotification(saveResponse.message || 'Failed to save accepted AI changes', 'error', 3000);
         return;
       }
 
       const checkpointResponse = await createVersion(routeNotebook.uuid, { content: acceptedContent }, false);
-
       if (checkpointResponse?.success && checkpointResponse.data?.id && pendingProposalSourceId) {
         setAcceptedCheckpointEvent({
           eventId: `${checkpointResponse.data.id}:${checkpointResponse.data.version || Date.now()}`,
@@ -420,6 +317,7 @@ const NoteEditor = () => {
     clearAcceptedAiProposal();
   }, [
     addNotification,
+    aiOriginalContent,
     aiWorkingContent,
     aiProposedContent,
     clearAcceptedAiProposal,
@@ -437,153 +335,96 @@ const NoteEditor = () => {
     aiProposedContent,
     onAcceptAiChange: handleAcceptAiChange,
     onRevertAiChange: handleRevertAiChange,
-    onInsertPageBreak: handleInsertPageBreak,
-    onInsertEquation: handleInsertEquation,
+    onInsertPageBreak: useCallback(() => editorRef.current?.insertPageBreak?.(), []),
+    onInsertEquation: useCallback(() => editorRef.current?.insertEquation?.(), []),
     onSave: handleSaveNotebook,
   });
 
-  const handleTogglePlay = useCallback(async () => {
-    if (!routeNotebook?.uuid) {
+  // ── Editor selection / AI selection helpers ───────────────────────────
+  const handleEditorSelectionStateChange = useCallback((nextState) => {
+    setAiSelectionState({
+      hasTextSelection: Boolean(nextState?.hasTextSelection),
+      aiSelectionCount: nextState?.aiSelectionCount ?? 0,
+    });
+
+    const selectedText = typeof nextState?.selectedText === 'string' ? nextState.selectedText.trim() : '';
+    if (selectedText) {
+      lastEditorSelectionTextRef.current = selectedText;
       return;
     }
+    if (nextState?.isEditorFocused) lastEditorSelectionTextRef.current = '';
+  }, []);
 
-    const content = editorRef.current?.getHTML?.() ?? documentContent ?? '';
-    await togglePlay(routeNotebook, content);
+  const getEditorSelection = useCallback(() => {
+    const live = editorRef.current?.getSelectedText?.() || '';
+    const trimmed = live.trim();
+    if (trimmed) { lastEditorSelectionTextRef.current = trimmed; return live; }
+    if (!editorRef.current?.isFocused?.()) return lastEditorSelectionTextRef.current || '';
+    return '';
+  }, []);
+
+  const getAiSelections = useCallback(() => editorRef.current?.getAiSelectionTargets?.() || [], []);
+  const focusEditor = useCallback(() => editorRef.current?.focusEditor?.(), []);
+
+  const handleAddAiSelection = useCallback(() => {
+    const next = editorRef.current?.addAiSelectionFromCurrentSelection?.();
+    if (!next) {
+      addNotification('Select text in the editor first, then add it as an AI highlight.', 'error', 3000);
+      focusEditor();
+      return;
+    }
+    addNotification('Saved AI highlight for targeted edits.', 'success', 2200);
+  }, [addNotification, focusEditor]);
+
+  const handleClearAiSelections = useCallback(() => {
+    const current = editorRef.current?.getAiSelectionTargets?.() || [];
+    if (current.length === 0) return;
+    editorRef.current?.clearAiSelections?.();
+    addNotification('Cleared AI highlights.', 'success', 2200);
+  }, [addNotification]);
+
+  const handleTogglePlay = useCallback(async () => {
+    if (!routeNotebook?.uuid) return;
+    await togglePlay(routeNotebook, editorRef.current?.getHTML?.() ?? documentContent ?? '');
   }, [documentContent, routeNotebook, togglePlay]);
 
-  const handleSelectHeading = useCallback((pos) => {
-    editorRef.current?.scrollToHeading(pos);
-  }, []);
-
-  const handleOpenHistory = useCallback(async () => {
-    if (!routeNotebook?.uuid) {
-      return;
-    }
-
-    setVersionPreview(null);
-    setIsHistoryOpen(true);
-    setIsVersionsLoading(true);
-
-    try {
-      await fetchVersions(routeNotebook.uuid, false, true);
-    } finally {
-      setIsVersionsLoading(false);
-    }
-  }, [fetchVersions, routeNotebook?.uuid]);
-
-  const handleVersionSelect = useCallback(async (version) => {
-    if (!routeNotebook?.uuid || !version.id) {
-      return;
-    }
-
-    const response = await fetchVersion(routeNotebook.uuid, Number(version.id), false);
-
-    if (response.success) {
-      setVersionPreview({
-        version,
-        content: response.data?.content ?? '',
-      });
-      setIsHistoryOpen(false);
-      return;
-    }
-
-    addNotification(response.message || 'Failed to load version preview', 'error', 3000);
-  }, [addNotification, fetchVersion, routeNotebook?.uuid]);
-
-  const handleRestoreVersion = useCallback(async (version) => {
-    if (!routeNotebook?.uuid || !version.id) {
-      return;
-    }
-
-    const saveResponse = await saveCurrentDocumentIfNeeded();
-
-    if (saveResponse && !saveResponse.success) {
-      addNotification(saveResponse.message || 'Failed to save current document before restore', 'error', 3000);
-      return;
-    }
-
-    const response = await restoreVersion(routeNotebook.uuid, version.id);
-
-    if (response.success) {
-      addNotification('Notebook restored to selected version', 'success', 3000);
-      setIsHistoryOpen(false);
-      setVersionPreview(null);
-      return;
-    }
-
-    addNotification(response.message || 'Failed to restore version', 'error', 3000);
-  }, [addNotification, restoreVersion, routeNotebook?.uuid, saveCurrentDocumentIfNeeded]);
-
-  const handleRestoreCheckpoint = useCallback(async (checkpoint) => {
-    if (!checkpoint?.versionId) {
-      return;
-    }
-
-    await handleRestoreVersion({ id: checkpoint.versionId });
-  }, [handleRestoreVersion]);
-
-  const handleCloseHistory = useCallback(() => {
-    setIsHistoryOpen(false);
-  }, []);
-
-  const handleClearPreview = useCallback(() => {
-    setVersionPreview(null);
-  }, []);
-
   const handleAiToolSelect = useCallback((toolKey) => {
-    setAiSidebarOpen((isOpen) => (
-      toolKey === aiToolKey ? !isOpen : true
-    ));
+    setAiSidebarOpen((isOpen) => toolKey === aiToolKey ? !isOpen : true);
     setAiToolKey(toolKey);
     setIsAiToolHelpOpen(false);
   }, [aiToolKey, setAiSidebarOpen]);
 
   const handleToggleAiToolHelp = useCallback(() => {
     setAiSidebarOpen(true);
-    setIsAiToolHelpOpen((currentValue) => !currentValue);
+    setIsAiToolHelpOpen((v) => !v);
   }, [setAiSidebarOpen]);
 
-  const handleReviewModeToggle = useCallback((nextValue) => {
-    if (nextValue) {
-      setReviewContent(getCurrentDocumentContent());
-    }
+  const handleImportContent = useCallback((filename, rawText) => {
+    if (!editorRef.current) return;
+    const isHtml = filename.endsWith('.html') || filename.endsWith('.htm');
+    const html = isHtml
+      ? (() => { const m = rawText.match(/<body[^>]*>([\s\S]*?)<\/body>/i); return m ? m[1].trim() : rawText; })()
+      : rawText.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, '<br />')}</p>`).join('');
+    editorRef.current.setContent(html);
+    handleDocumentChange(html);
+    addNotification(`"${filename}" imported successfully`, 'success', 3000);
+  }, [addNotification, handleDocumentChange]);
 
-    setIsReviewModeOpen(nextValue);
-    setIsAiToolHelpOpen(false);
-
-    if (nextValue) {
-      setIsHistoryOpen(false);
-    }
-  }, [getCurrentDocumentContent, setIsReviewModeOpen]);
-
-  const isAiProposalOpen = aiProposedContent !== null && aiOriginalContent !== null;
-  const editorSurfaceState = isAiProposalOpen
-    ? `ai_preview_${proposalRenderToken}`
-    : 'document';
-  const editorKey = `${routeNotebook?.uuid ?? notebookUuid}_${editorSurfaceState}`;
-  const editorStorageKey = routeNotebook?.uuid || notebookUuid;
-  const isDocumentHydrated = hydratedNotebookUuid === routeNotebook?.uuid;
-  const editorContentSyncToken = isAiProposalOpen
-    ? proposalRenderToken
-    : contentSyncToken;
-  const initialContent = isAiProposalOpen
-    ? (aiWorkingContent || aiProposedContent || '')
-    : (isDocumentHydrated ? (documentContent || '') : (routeNotebook?.content || ''));
-
+  // ── Toolbar (pre-built to avoid re-creating the JSX on every render) ──
   const toolbar = (
     <FormatToolbar
       editor={activeEditor}
       font={editorFont}
       onFontChange={setEditorFont}
-      onInsertPageBreak={handleInsertPageBreak}
-      onInsertEquation={handleInsertEquation}
+      onInsertPageBreak={() => editorRef.current?.insertPageBreak?.()}
+      onInsertEquation={() => editorRef.current?.insertEquation?.()}
       showLines={showLines}
-      onLinesToggle={() => setShowLines((value) => !value)}
+      onLinesToggle={() => setShowLines((v) => !v)}
       leadingAccessory={(
         <button
           type="button"
           className={`outline-toolbar-toggle ${isNavigatorMobileOpen ? 'is-active' : ''}`.trim()}
-          onClick={() => setIsNavigatorMobileOpen((value) => !value)}
+          onClick={() => setIsNavigatorMobileOpen((v) => !v)}
           aria-label={isNavigatorMobileOpen ? 'Close navigator' : 'Open navigator'}
           title={isNavigatorMobileOpen ? 'Close navigator' : 'Open navigator'}
         >
@@ -594,99 +435,18 @@ const NoteEditor = () => {
     />
   );
 
-  useEffect(() => {
-    if (!isAiProposalOpen) {
-      editorRef.current?.clearAiHighlights?.();
-      setInlineProposalAnchor(null);
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      editorRef.current?.setAiHighlightsByBlockDescriptors?.(proposalChanges
-        .filter((change) => change.workingBlockIndexes.length > 0)
-        .map((change) => ({
-          blockIndexes: change.workingBlockIndexes,
-          tone: change.decision === 'original' ? 'original' : 'proposal',
-          activeBlockIndexes: activeProposalChangeIndex === change.index ? change.workingBlockIndexes : [],
-        })));
-
-      const focusBlock = activeProposalWorkingBlockIndexes?.[0];
-
-      if (Number.isInteger(focusBlock)) {
-        editorRef.current?.scrollToTopLevelBlock?.(focusBlock);
-      }
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [
-    activeProposalChangeIndex,
-    activeProposalWorkingBlockIndexes,
-    proposalChanges,
-    isAiProposalOpen,
-    proposalRenderToken,
-  ]);
-
-  useEffect(() => {
-    if (!isAiProposalOpen) {
-      setInlineProposalAnchor(null);
-      return undefined;
-    }
-
-    let frameId = 0;
-    const updateInlineAnchor = () => {
-      const focusBlock = activeProposalWorkingBlockIndexes?.[0];
-      const blockBounds = Number.isInteger(focusBlock)
-        ? editorRef.current?.getTopLevelBlockBounds?.(focusBlock)
-        : null;
-      const containerRect = editorContainerRef.current?.getBoundingClientRect?.();
-
-      if (!blockBounds || !containerRect) {
-        setInlineProposalAnchor(null);
-        return;
-      }
-
-      const top = Math.max(18, Math.min(
-        blockBounds.bottom - containerRect.top + 10,
-        containerRect.height - 62,
-      ));
-      const left = Math.max(18, Math.min(
-        blockBounds.left - containerRect.left,
-        containerRect.width - 148,
-      ));
-
-      setInlineProposalAnchor({ top, left });
-    };
-
-    const scheduleAnchorUpdate = () => {
-      window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(updateInlineAnchor);
-    };
-
-    scheduleAnchorUpdate();
-
-    const viewportElement = editorRef.current?.getViewportElement?.();
-    viewportElement?.addEventListener('scroll', scheduleAnchorUpdate, { passive: true });
-    window.addEventListener('resize', scheduleAnchorUpdate);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      viewportElement?.removeEventListener('scroll', scheduleAnchorUpdate);
-      window.removeEventListener('resize', scheduleAnchorUpdate);
-    };
-  }, [
-    activeProposalChangeIndex,
-    activeProposalWorkingBlockIndexes,
-    isAiProposalOpen,
-    proposalRenderToken,
-  ]);
-
+  // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className="editor-layout">
       <EditorNavbar
         notebookTitle={notebookTitle}
         onBackHome={handleBackHome}
         isBackHomeDisabled={isSavingBeforeExit}
-        onTitleChange={handleUpdateNotebookTitle}
+        onTitleChange={async (newTitle) => {
+          if (!routeNotebook?.uuid) return;
+          const res = await updateNotebook(routeNotebook.uuid, { title: newTitle }, false);
+          if (!res.success) addNotification('Failed to update title', 'error', 3000);
+        }}
         onSave={handleSaveNotebook}
         isSaveDisabled={!routeNotebook?.uuid || isAiProposalOpen || saveStatus === 'saved' || saveStatus === 'saving'}
         saveStatus={saveStatus}
@@ -696,14 +456,14 @@ const NoteEditor = () => {
         onHistoryOpen={handleOpenHistory}
         categories={categories}
         notebookCategoryId={routeNotebook?.categoryId ?? null}
-        onCategoryChange={handleUpdateNotebookCategory}
+        onCategoryChange={async (categoryId) => {
+          if (!routeNotebook?.uuid) return;
+          const res = await updateNotebook(routeNotebook.uuid, { categoryId: categoryId ?? -1 });
+          if (!res.success) addNotification('Failed to update category', 'error', 3000);
+        }}
         onImportContent={handleImportContent}
         getExportContent={getCurrentDocumentContent}
-        getExportLayout={() => ({
-          paperWidth,
-          paperHeight,
-          fontFamily,
-        })}
+        getExportLayout={() => ({ paperWidth, paperHeight, fontFamily })}
         isAiSidebarOpen={aiSidebarOpen}
         onAiSidebarToggle={setAiSidebarOpen}
         showHomeButton
@@ -718,11 +478,7 @@ const NoteEditor = () => {
         titleEditable={!isReviewModeOpen}
       />
 
-      {!isReviewModeOpen && (
-        <div className="editor-toolbar-shell">
-          {toolbar}
-        </div>
-      )}
+      {!isReviewModeOpen && <div className="editor-toolbar-shell">{toolbar}</div>}
 
       {isReviewModeOpen ? (
         <ReviewMode
@@ -743,7 +499,7 @@ const NoteEditor = () => {
           <div className="editor-body">
             <OutlineNav
               outline={outline}
-              onSelect={handleSelectHeading}
+              onSelect={(pos) => editorRef.current?.scrollToHeading(pos)}
               mobileOverlayOpen={isNavigatorMobileOpen}
               onMobileOverlayOpenChange={setIsNavigatorMobileOpen}
             />
@@ -761,7 +517,8 @@ const NoteEditor = () => {
                       onUpdateContent={handleDocumentChange}
                       onBlur={handleBlurSave}
                       onFocus={setActiveEditor}
-                      onSelectionStateChange={setAiSelectionState}
+                      onEditorReady={setActiveEditor}
+                      onSelectionStateChange={handleEditorSelectionStateChange}
                       fontFamily={fontFamily}
                       paperWidth={paperWidth}
                       paperHeight={paperHeight}
@@ -769,8 +526,6 @@ const NoteEditor = () => {
                       showLines={showLines}
                       onOutlineChange={setOutline}
                       readOnly={isAiProposalOpen}
-                      onPaperResizeStart={handlePaperResizeStart}
-                      isPaperResizing={isPaperResizing}
                     />
                   )}
                 </section>
@@ -778,11 +533,11 @@ const NoteEditor = () => {
                 <AiProposalOverlay
                   isOpen={isAiProposalOpen}
                   changes={proposalChanges}
-                  activeChangeIndex={activeProposalChangeIndex}
-                  onActiveChangeIndexChange={setActiveProposalChangeIndex}
-                  onChangeDecision={setProposalChangeDecision}
-                  onApplyDraft={() => void handleAcceptAiChange()}
-                  onDiscardDraft={handleRevertAiChange}
+                  hoveredChangeIndex={hoveredProposalChangeIndex}
+                  reviewMode={proposalReviewMode}
+                  onChangePreview={setProposalChangePreview}
+                  onAcceptAllRemaining={handleAcceptAiChange}
+                  onRejectAllRemaining={rejectAllRemainingProposalChanges}
                   inlineReviewAnchor={inlineProposalAnchor}
                 />
 
@@ -801,10 +556,7 @@ const NoteEditor = () => {
 
             <EditorAiSidebar
               isOpen={aiSidebarOpen}
-              onClose={() => {
-                setAiSidebarOpen(false);
-                setIsAiToolHelpOpen(false);
-              }}
+              onClose={() => { setAiSidebarOpen(false); setIsAiToolHelpOpen(false); }}
               activeToolKey={aiToolKey}
               onActiveToolChange={setAiToolKey}
               mode="editor"
@@ -834,15 +586,8 @@ const NoteEditor = () => {
             paperWidth={paperWidth}
             paperHeight={paperHeight}
             onClose={handleClearPreview}
-            onOpenHistory={() => {
-              setVersionPreview(null);
-              void handleOpenHistory();
-            }}
-            onRestore={() => {
-              if (versionPreview?.version) {
-                void handleRestoreVersion(versionPreview.version);
-              }
-            }}
+            onOpenHistory={() => { handleClearPreview(); void handleOpenHistory(); }}
+            onRestore={() => { if (versionPreview?.version) void handleRestoreVersion(versionPreview.version); }}
           />
 
           <VersionHistorySidebar

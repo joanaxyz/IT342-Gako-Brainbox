@@ -30,6 +30,7 @@ const createScopedState = (scopeKey) => ({
   pendingAiSelectionIds: [],
   clearAllAiSelectionsOnAccept: false,
   proposalRenderToken: 0,
+  proposalReviewMode: 'diff',
   proposalComparisonSession: null,
   proposalChanges: [],
   proposalChangeDecisions: [],
@@ -38,8 +39,14 @@ const createScopedState = (scopeKey) => ({
   activeProposalChangeIndex: -1,
 });
 
-const buildProposalSessionState = (baseState, originalContent, proposedContent) => {
-  const comparisonSession = buildProposalComparisonSession(originalContent, proposedContent);
+const buildProposalSessionState = (
+  baseState,
+  originalContent,
+  proposedContent,
+  reviewMode = 'diff',
+  preBuiltSession = null,
+) => {
+  const comparisonSession = preBuiltSession || buildProposalComparisonSession(originalContent, proposedContent);
   const proposalChangeDecisions = comparisonSession.changes.map(() => 'proposal');
   const resolvedState = resolveProposalComparisonState(comparisonSession, proposalChangeDecisions);
 
@@ -48,6 +55,7 @@ const buildProposalSessionState = (baseState, originalContent, proposedContent) 
     aiOriginalContent: originalContent,
     aiProposedContent: proposedContent,
     aiWorkingContent: resolvedState.html || proposedContent,
+    proposalReviewMode: reviewMode,
     proposalComparisonSession: comparisonSession,
     proposalChanges: resolvedState.changes,
     proposalChangeDecisions,
@@ -57,7 +65,11 @@ const buildProposalSessionState = (baseState, originalContent, proposedContent) 
   };
 };
 
-const applyProposalDecisionUpdate = (baseState, nextDecisions, nextActiveIndex = baseState.activeProposalChangeIndex) => {
+const applyProposalDecisionUpdate = (
+  baseState,
+  nextDecisions,
+  shouldIncrementToken = true,
+) => {
   if (!baseState.proposalComparisonSession) {
     return baseState;
   }
@@ -71,8 +83,7 @@ const applyProposalDecisionUpdate = (baseState, nextDecisions, nextActiveIndex =
     proposalChangeDecisions: nextDecisions,
     proposalWorkingChangedBlockIndexes: resolvedState.workingChangedBlockIndexes,
     proposalWorkingBlockIndexesByChange: resolvedState.workingBlockIndexesByChange,
-    activeProposalChangeIndex: clampChangeIndex(nextActiveIndex, resolvedState.changes.length),
-    proposalRenderToken: baseState.proposalRenderToken + 1,
+    proposalRenderToken: shouldIncrementToken ? baseState.proposalRenderToken + 1 : baseState.proposalRenderToken,
   };
 };
 
@@ -93,6 +104,7 @@ export const useAiProposalState = ({
     pendingAiSelectionIds,
     clearAllAiSelectionsOnAccept,
     proposalRenderToken,
+    proposalReviewMode,
     proposalChanges,
     proposalChangeDecisions,
     proposalWorkingChangedBlockIndexes,
@@ -124,20 +136,42 @@ export const useAiProposalState = ({
         ? normalizeAiSelectionEdits(options.selectionEdits)
         : [],
     };
+    const proposalReviewMode = mode === 'replace_ai_selections' && normalizedOptions.selectionEdits.length > 0
+      ? 'selection_changes'
+      : 'diff';
     const originalContent = editorRef.current.getHTML();
     const proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
     const sourceMessageId = options?.sourceMessageId ?? null;
+
+    if (proposedContent === originalContent) {
+      return { applied: false, reason: 'identical' };
+    }
 
     // If the notebook is empty (no meaningful content), skip the comparison modal
     // and apply content directly
     const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').trim();
     if (!strippedOriginal) {
       editorRef.current.setContent?.(proposedContent);
-      return;
+      return { applied: true };
+    }
+
+    // Pre-build the comparison session so we can detect no-op proposals before
+    // opening the overlay. If the diff finds zero block-level changes (e.g. the
+    // AI returned the same text with different HTML structure or whitespace), we
+    // skip the proposal entirely rather than showing a confusing empty diff.
+    const comparisonSession = buildProposalComparisonSession(originalContent, proposedContent);
+    if (comparisonSession.changes.length === 0) {
+      return { applied: false, reason: 'no_changes' };
     }
 
     updateScopedState((previousState) => {
-      const nextState = buildProposalSessionState(previousState, originalContent, proposedContent);
+      const nextState = buildProposalSessionState(
+        previousState,
+        originalContent,
+        proposedContent,
+        proposalReviewMode,
+        comparisonSession,
+      );
 
       return {
         ...nextState,
@@ -148,6 +182,8 @@ export const useAiProposalState = ({
         proposalRenderToken: previousState.proposalRenderToken + 1,
       };
     });
+
+    return { applied: true };
   }, [editorRef, scopeKey, updateScopedState]);
 
   const clearProposalState = useCallback((baseState) => ({
@@ -159,6 +195,7 @@ export const useAiProposalState = ({
     pendingProposalSourceId: null,
     pendingAiSelectionIds: [],
     clearAllAiSelectionsOnAccept: false,
+    proposalReviewMode: 'diff',
     proposalComparisonSession: null,
     proposalChanges: [],
     proposalChangeDecisions: [],
@@ -200,21 +237,37 @@ export const useAiProposalState = ({
     }));
   }, [scopeKey, updateScopedState]);
 
-  const setProposalChangeDecision = useCallback((changeIndex, decision) => {
+  const setProposalChangePreview = useCallback((changeIndex, preview) => {
     updateScopedState((previousState) => {
-      if (!previousState.proposalComparisonSession || !previousState.proposalChangeDecisions[changeIndex]) {
+      if (
+        previousState.proposalReviewMode !== 'selection_changes'
+        || !previousState.proposalComparisonSession
+        || !previousState.proposalChangeDecisions[changeIndex]
+      ) {
         return previousState;
       }
 
-      const nextDecisions = previousState.proposalChangeDecisions.map((currentDecision, index) => (
+      const nextDecisions = previousState.proposalChangeDecisions.map((current, index) => (
         index === changeIndex
-          ? (decision === 'original' ? 'original' : 'proposal')
-          : currentDecision
+          ? (preview === 'original' ? 'original' : 'proposal')
+          : current
       ));
 
-      return applyProposalDecisionUpdate(previousState, nextDecisions, changeIndex);
+      return applyProposalDecisionUpdate(
+        previousState,
+        nextDecisions,
+        false, // Don't increment render token to avoid scroll reset
+      );
     });
   }, [updateScopedState]);
+
+  const acceptSelectionReviewChanges = useCallback(() => {
+    handleAcceptAiChange();
+  }, [handleAcceptAiChange]);
+
+  const rejectSelectionReviewChanges = useCallback(() => {
+    handleRevertAiChange();
+  }, [handleRevertAiChange]);
 
   const activeProposalWorkingBlockIndexes = activeProposalChangeIndex >= 0
     ? (proposalWorkingBlockIndexesByChange[activeProposalChangeIndex] || [])
@@ -229,6 +282,7 @@ export const useAiProposalState = ({
     pendingAiSelectionIds,
     clearAllAiSelectionsOnAccept,
     proposalRenderToken,
+    proposalReviewMode,
     proposalChanges,
     proposalChangeDecisions,
     proposalWorkingChangedBlockIndexes,
@@ -237,7 +291,9 @@ export const useAiProposalState = ({
     activeProposalWorkingBlockIndexes,
     setActiveEditor,
     setActiveProposalChangeIndex,
-    setProposalChangeDecision,
+    setProposalChangePreview,
+    acceptAllRemainingProposalChanges: acceptSelectionReviewChanges,
+    rejectAllRemainingProposalChanges: rejectSelectionReviewChanges,
     handleAiUpdateContent,
     handleAcceptAiChange,
     handleRevertAiChange,

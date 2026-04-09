@@ -1,5 +1,5 @@
 .review-body {
-  --review-playback-height: 152px;
+  --review-playback-height: 116px;
   background: var(--background-color);
 }
 
@@ -62,6 +62,9 @@
   font-size: 1.0625rem;
   line-height: 1.75;
   color: var(--text-primary);
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 .review-article-body > :first-child {
@@ -200,7 +203,7 @@
   width: 100%;
   max-width: min(100%, 1680px);
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 8px 18px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -215,8 +218,8 @@
 .review-playback-divider {
   flex-shrink: 0;
   width: 1px;
-  height: 48px;
-  margin: 0 20px;
+  height: 40px;
+  margin: 0 16px;
   background: linear-gradient(
     180deg,
     rgba(28, 25, 23, 0),
@@ -236,7 +239,7 @@
 .review-playback-player .player-bar-container {
   width: 100%;
   max-width: 100%;
-  min-height: 96px;
+  min-height: 72px;
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -248,33 +251,75 @@
   min-height: 0;
 }
 
+.review-playback-player .player-seek-row {
+  height: 18px;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.review-playback-player .player-timestamp {
+  min-width: 24px;
+  font-size: 0.56rem;
+}
+
+.review-playback-player .player-progress-bar {
+  height: 3px;
+}
+
+.review-playback-player .player-progress-bar:hover,
+.review-playback-player .player-progress-bar.dragging {
+  height: 5px;
+}
+
+.review-playback-player .player-progress-thumb {
+  width: 10px;
+  height: 10px;
+}
+
 .review-playback-player .player-content--review {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  padding: 0 12px 8px;
+  gap: 10px;
+  padding: 0 10px 4px;
 }
 
 .review-playback-player .player-controls--review {
   flex-wrap: nowrap;
   justify-content: flex-start;
+  gap: 8px;
 }
 
 .review-playback-player .player-extras--review {
   flex-wrap: nowrap;
   justify-content: flex-end;
+  gap: 6px;
+}
+
+.review-playback-player .player-btn {
+  padding: 4px;
+}
+
+.review-playback-player .player-btn.play-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.review-playback-player .player-speed-btn {
+  min-width: 32px;
+  padding: 4px 6px;
+  font-size: 0.68rem;
 }
 
 .review-canvas-toolbar {
-  width: min(100%, 520px);
+  width: min(100%, 500px);
 }
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock {
   padding: 0;
-  gap: 18px;
+  gap: 14px;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -285,7 +330,7 @@
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-toolbar-main,
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-toolbar-end {
-  gap: 12px;
+  gap: 10px;
 }
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-group-label {
@@ -293,17 +338,29 @@
 }
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-zoom {
-  gap: 8px;
+  gap: 6px;
   padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
 }
 
+.review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-zoom-slider {
+  width: clamp(72px, 9vw, 96px);
+}
+
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-zoom-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 0.84rem;
   border: 1px solid rgba(28, 25, 23, 0.08);
   background: rgba(240, 236, 229, 0.88);
   box-shadow: none;
+}
+
+.review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-zoom-label {
+  min-width: 34px;
+  font-size: 0.68rem;
 }
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-zoom-btn:hover {
@@ -311,9 +368,19 @@
 }
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-ai-btn {
+  min-height: 30px;
+  gap: 5px;
+  padding: 0 9px;
+  font-size: 0.68rem;
   border-color: rgba(194, 65, 12, 0.14);
   background: rgba(194, 65, 12, 0.08);
   box-shadow: none;
+}
+
+.review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-ai-btn strong {
+  min-width: 1rem;
+  height: 1rem;
+  font-size: 0.6rem;
 }
 
 .review-canvas-toolbar.editor-canvas-toolbar--dock .editor-canvas-ai-btn:hover:not(:disabled) {
@@ -335,6 +402,10 @@
 }
 
 @media (max-width: 1180px) {
+  .review-body {
+    --review-playback-height: 132px;
+  }
+
   .review-body .outline-sidebar {
     top: var(--editor-navbar-height);
     bottom: calc(var(--review-playback-height) + 18px);
@@ -352,8 +423,8 @@
   .review-playback-inner {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
-    padding: 10px 14px 12px;
+    gap: 8px;
+    padding: 8px 14px 10px;
   }
 
   .review-playback-player {
@@ -387,7 +458,7 @@
 
 @media (max-width: 720px) {
   .review-body {
-    --review-playback-height: 136px;
+    --review-playback-height: 126px;
   }
 
   .review-body .outline-sidebar {
@@ -406,7 +477,7 @@
     justify-content: center;
     flex-wrap: nowrap;
     gap: 6px;
-    padding: 0 10px 8px;
+    padding: 0 10px 6px;
   }
 
   .review-playback-player .player-controls--review,
@@ -432,7 +503,7 @@
 
 @media (max-width: 480px) {
   .review-body {
-    --review-playback-height: 128px;
+    --review-playback-height: 120px;
   }
 
   .review-playback-tools {

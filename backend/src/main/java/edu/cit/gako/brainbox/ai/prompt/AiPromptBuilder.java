@@ -85,6 +85,7 @@ public abstract class AiPromptBuilder {
             + "  - Saved AI selections are present and the user wants those highlighted areas rewritten or improved\n"
             + "  - selectionEdits must include an entry for each selection you are editing\n"
             + "  - Each selectionEdits entry must preserve the selection id and provide ONLY the replacement HTML for that selection\n"
+            + "  - When multiple saved AI selections are provided for a targeted edit request, do NOT collapse them into one replacement and do NOT switch to replace_selection or replace_editor\n"
             + "  - Leave editorContent as \"\"\n\n"
             + "\"create_quiz\" - generate a quiz from the current working content:\n"
             + "  - User asks to create, generate, or build a quiz, test, or exam from the note\n"
@@ -149,8 +150,8 @@ public abstract class AiPromptBuilder {
     private String buildSelectionModeBlock() {
         return switch (selectionMode) {
             case "document"        -> "---\nEDIT SCOPE CONFIRMATION:\nThe user explicitly confirmed that the entire working document is the intended edit scope.\nDo not ask them to select text first unless they later change their mind.\n\n";
-            case "ai_selection"    -> "---\nEDIT SCOPE CONFIRMATION:\nThe user explicitly wants you to operate on their saved AI selections.\nTreat those selections as the primary edit target.\n\n";
-            case "single_selection"-> "---\nEDIT SCOPE CONFIRMATION:\nThe user supplied a specific editor selection for this request.\nPrefer that selection over the rest of the document when editing.\n\n";
+            case "ai_selection"    -> "---\nEDIT SCOPE CONFIRMATION:\nThe user explicitly wants you to operate on their saved AI selections.\nTreat those selections as the primary edit target.\nIf the user says \"these\", \"those\", \"the selected parts\", or similar, interpret that as the saved AI selections and do not ask which part of the notebook they mean.\n\n";
+            case "single_selection"-> "---\nEDIT SCOPE CONFIRMATION:\nThe user supplied a specific editor selection for this request.\nPrefer that selection over the rest of the document when editing.\nIf the user says \"this\" or \"these\", interpret that as the supplied selection and do not ask which part they mean.\n\n";
             default                -> "---\nEDIT SCOPE CONFIRMATION:\nNo explicit scope confirmation was supplied for this request.\n\n";
         };
     }
@@ -165,8 +166,12 @@ public abstract class AiPromptBuilder {
                 .reduce((l, r) -> l + "\n\n" + r).orElse("")
             + "\n\nThese are ranges the user explicitly pinned for AI editing.\n"
             + "- When the user asks to improve, expand, shorten, rewrite, or otherwise edit note content, prefer these saved selections over the full document unless they explicitly ask for the whole note.\n"
+            + "- If the user refers to \"these\", \"those\", \"selected sections\", \"highlighted parts\", or \"the ones I selected\", treat that as an explicit reference to these saved AI selections.\n"
+            + "- When saved AI selections exist, do not ask which part of the note the user means unless they explicitly indicate a different scope.\n"
+            + "- If the user made the target clear through the saved AI selections but did not specify the type of change, ask what kind of update they want for those saved selections.\n"
             + "- Use action \"replace_ai_selections\" when you are rewriting one or more saved selections.\n"
             + "- For action \"replace_ai_selections\", leave editorContent as \"\" and return selectionEdits as an array of {\"id\": \"<selection id>\", \"content\": \"<HTML replacement>\"}.\n"
+            + "- When multiple saved AI selections are present, return one selectionEdits entry per selection id and do not merge multiple selections into a single edit.\n"
             + "- Each content value must replace only the matching saved selection, not the entire note.\n"
             + "- If the request is explanatory rather than an edit, keep action as \"none\".\n\n";
     }
@@ -176,17 +181,28 @@ public abstract class AiPromptBuilder {
             return "---\nUSER'S CURRENT TEXT SELECTION:\n" + selectedText + "\n\n"
                 + "The user has highlighted specific text in the current working content. When the user asks to summarize, explain, improve, or expand:\n"
                 + "- Focus ONLY on the selected text, not the rest of the note.\n"
+                + "- If the user says \"this\", \"these\", or \"the selected part\", assume they mean this selection.\n"
                 + "- For improve or expand in editor mode, use action \"replace_selection\" and put the improved or expanded version of ONLY the selected text in editorContent.\n"
                 + "- Preserve useful formatting from the selection. If the selection already contains headings, lists, tables, quotes, code, links, or alignment, keep or improve that structure instead of flattening it.\n"
                 + "- For summarize or explain, use action \"none\" and reply conversationally unless the user explicitly asks to write the result into the note.\n"
+                + "- If the user made the target clear through the selection but did not specify the transformation, ask what kind of change they want for the selection instead of asking which part they mean.\n"
                 + "- For quizzes or flashcards, generate them from the selected text only.\n\n";
         }
+        if (!aiSelections.isEmpty()) {
+            return "---\nUSER'S CURRENT TEXT SELECTION: (none)\n\n"
+                + "The user has NOT selected fresh text in the editor, but saved AI selections are available for this request.\n"
+                + "- Treat the saved AI selections as the explicit target for targeted edit requests.\n"
+                + "- If the user says \"these\", \"those\", \"selected sections\", \"highlighted parts\", or \"the ones I selected\", interpret that as the saved AI selections.\n"
+                + "- Do NOT ask which part of the notebook they mean when the saved AI selections already define the target.\n"
+                + "- If the user makes an editing request but the desired transformation is vague, ask what kind of change they want applied to the saved AI selections.\n"
+                + "- Use the current notebook content as broader context, but keep the saved AI selections as the primary edit target unless the user explicitly broadens scope.\n"
+                + "- For quizzes and flashcards, use the saved AI selections when the request is clearly about the selected material; otherwise use the current working context.\n\n";
+        }
+
         return "---\nUSER'S CURRENT TEXT SELECTION: (none)\n\n"
             + "The user has NOT selected any text. When they use a tool like Summarize, Explain, Improve, or Expand:\n"
             + "- If edit scope confirmation says the whole document was chosen, proceed with the full working context and do not ask for clarification.\n"
-            + (aiSelections.isEmpty()
-                ? "- There are no saved AI selections, so ask whether they want to highlight the exact text first or use the whole note when the request is clearly about editing.\n"
-                : "- Saved AI selections exist, so prefer those saved selections for targeted edits.\n")
+            + "- There are no saved AI selections, so ask whether they want to highlight the exact text first or use the whole note when the request is clearly about editing.\n"
             + "- Use the current notebook content as the default working context.\n"
             + "- If their message is a generic tool command with no specific topic, use action \"none\" and ask which part of the notebook they want help with.\n"
             + "- If they mention a specific topic, heading, or area, proceed normally.\n"

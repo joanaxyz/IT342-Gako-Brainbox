@@ -68,7 +68,7 @@ const sanitizeConversationTitle = (value, messages = []) => {
   return buildFallbackConversationTitle(firstUserMessage);
 };
 
-const EDIT_INTENT_PATTERN = /\b(improve|expand|rewrite|reword|edit|polish|refine|fix|shorten|condense|tighten|clarify|revise|replace|update|clean up|make (?:this|it)|turn (?:this|it)|write (?:this|it)|add .*?(?:into|to) (?:the )?(?:note|document))\b/i;
+const EDIT_INTENT_PATTERN = /\b(improve|expand|rewrite|reword|rephrase|paraphrase|edit|polish|refine|fix|shorten|condense|tighten|clarify|revise|replace|update|simplify|formalize|restructure|clean up|make (?:this|it)|turn (?:this|it)|write (?:this|it)|add .*?(?:into|to) (?:the )?(?:note|document))\b/i;
 const EDIT_TOOL_KEYS = new Set(['improve', 'expand']);
 
 const hasEditIntent = (value, activeToolKey, mode, isToolTriggered = false) => {
@@ -368,8 +368,9 @@ const AiAssistantSidebar = ({
     const aiSelections = Array.isArray(options.aiSelections)
       ? options.aiSelections
       : resolveAiSelectionTargets();
+    const effectiveSelectedText = aiSelections.length > 0 ? '' : selectedText;
     let resolvedSelectionMode = options.selectionMode
-      || (aiSelections.length > 0 ? 'ai_selection' : selectedText ? 'single_selection' : '');
+      || (aiSelections.length > 0 ? 'ai_selection' : effectiveSelectedText ? 'single_selection' : '');
 
     if (!text.trim() || isTyping || !notebookUuid) {
       return;
@@ -378,7 +379,7 @@ const AiAssistantSidebar = ({
     if (
       !options.skipIntentGuard
       && hasEditIntent(text, activeToolKey, mode, Boolean(options.toolTriggered))
-      && !selectedText.trim()
+      && !effectiveSelectedText.trim()
       && aiSelections.length === 0
       && resolvedSelectionMode !== 'document'
     ) {
@@ -407,7 +408,7 @@ const AiAssistantSidebar = ({
         text,
         notebookUuid,
         history,
-        selectedText,
+        effectiveSelectedText,
         mode,
         {
           selectionMode: resolvedSelectionMode,
@@ -452,30 +453,49 @@ const AiAssistantSidebar = ({
         && action === 'replace_editor'
         && editorContent
       ) {
-        onApplyEditorContent(editorContent, 'replace', {
+        const replaceResult = onApplyEditorContent(editorContent, 'replace', {
           sourceMessageId: userMessage.id,
           clearAllAiSelections: true,
         });
+        if (replaceResult?.applied === false) {
+          addNotification('The AI\'s response didn\'t produce any changes to the note.', 'info', 3500);
+        }
       } else if (
         onApplyEditorContent
         && action === 'replace_selection'
         && editorContent
       ) {
-        onApplyEditorContent(editorContent, 'replace_selection', {
+        const selectionResult = onApplyEditorContent(editorContent, 'replace_selection', {
           sourceMessageId: userMessage.id,
           aiSelectionIds: aiSelections.map((selection) => selection.id),
         });
+        if (selectionResult?.applied === false) {
+          addNotification(
+            selectionResult?.reason === 'no_changes'
+              ? 'The rephrased text is the same as the original — no changes were made.'
+              : 'No text was selected in the editor. Highlight the text you want to change first.',
+            'info',
+            3500,
+          );
+        }
       } else if (
         onApplyEditorContent
         && action === 'replace_ai_selections'
         && Array.isArray(selectionEdits)
         && selectionEdits.length > 0
       ) {
-        onApplyEditorContent('', 'replace_ai_selections', {
+        const aiSelResult = onApplyEditorContent('', 'replace_ai_selections', {
           sourceMessageId: userMessage.id,
           aiSelectionIds: selectionEdits.map((selection) => selection.id),
           selectionEdits,
         });
+        if (aiSelResult?.applied === false) {
+          addNotification(
+            'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
+            'info',
+            3500,
+          );
+        }
       } else if (action === 'create_quiz' && quizData) {
         setPendingQuiz({ ...quizData, notebookUuid });
         setPendingFlashcard(null);
@@ -496,12 +516,12 @@ const AiAssistantSidebar = ({
     const selectedText = getSelectionText?.() || '';
     const aiSelections = resolveAiSelectionTargets();
     const basePrompt = tool.prompt;
-    const prompt = selectedText && tool.includeSelectionPreview !== false
+    const prompt = !aiSelections.length && selectedText && tool.includeSelectionPreview !== false
       ? `[Selected text: "${selectedText.length > 300 ? `${selectedText.slice(0, 300)}...` : selectedText}"]\n\n${basePrompt}`
       : basePrompt;
 
     void handleSendMessage(prompt, {
-      selectedText,
+      selectedText: aiSelections.length > 0 ? '' : selectedText,
       aiSelections,
       toolLabel: tool.label,
       toolTriggered: true,

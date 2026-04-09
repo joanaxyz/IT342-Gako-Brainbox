@@ -5,6 +5,7 @@ import PlayerBar from '../../../../home/shared/components/PlayerBar';
 import { useAudioPlayer, useNotification } from '../../../../common/hooks/hooks';
 import { buildPlaybackModel } from '../../../../common/audio/playbackModel';
 import {
+  DEFAULT_PAPER_WIDTH,
   DEFAULT_PAPER_PADDING_BOTTOM,
   DEFAULT_PAPER_PADDING_TOP,
   DEFAULT_PAPER_PADDING_X,
@@ -52,21 +53,22 @@ const ReviewMode = ({
   const { addNotification } = useNotification();
   const isReviewNotebookActive = currentNotebook?.uuid === notebookUuid;
   const activeOffset = isReviewNotebookActive ? currentCharOffset : 0;
-  const documentBodyWidth = Math.max(160, paperWidth - (DEFAULT_PAPER_PADDING_X * 2));
-  const reviewShellWidth = paperWidth + 40;
+  const reviewPaperWidth = Math.max(DEFAULT_PAPER_WIDTH, paperWidth);
+  const documentBodyWidth = Math.max(160, reviewPaperWidth - (DEFAULT_PAPER_PADDING_X * 2));
+  const reviewShellWidth = reviewPaperWidth + 40;
   const scaledCanvasWidth = Math.round(reviewShellWidth * zoomLevel);
   const [scaledCanvasHeight, setScaledCanvasHeight] = useState(
     Math.max(1, Math.round(reviewShellWidth * zoomLevel)),
   );
   const reviewDocumentStyle = useMemo(() => ({
-    '--document-paper-width': `${paperWidth}px`,
+    '--document-paper-width': `${reviewPaperWidth}px`,
     '--document-shell-width': `${reviewShellWidth}px`,
     '--document-body-width': `${documentBodyWidth}px`,
     '--document-padding-x': `${DEFAULT_PAPER_PADDING_X}px`,
     '--document-padding-top': `${DEFAULT_PAPER_PADDING_TOP}px`,
     '--document-padding-bottom': `${DEFAULT_PAPER_PADDING_BOTTOM}px`,
     fontFamily,
-  }), [documentBodyWidth, fontFamily, paperWidth, reviewShellWidth]);
+  }), [documentBodyWidth, fontFamily, reviewPaperWidth, reviewShellWidth]);
 
   const activeTocIndex = useMemo(() => {
     if (!playbackModel.headings.length) {
@@ -119,7 +121,7 @@ const ReviewMode = ({
       window.cancelAnimationFrame(frameId);
       observer.disconnect();
     };
-  }, [content, fontFamily, paperWidth, zoomLevel]);
+  }, [content, fontFamily, reviewPaperWidth, zoomLevel]);
 
   const getSelectedReviewText = useCallback(() => {
     if (!articleRef.current || typeof window === 'undefined') {

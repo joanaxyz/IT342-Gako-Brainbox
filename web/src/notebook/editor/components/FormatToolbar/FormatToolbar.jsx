@@ -244,8 +244,6 @@ const FormatToolbar = ({
       hasDragged: false,
       suppressClick: toolbarDragStateRef.current.suppressClick,
     };
-
-    scrollElement.setPointerCapture?.(event.pointerId);
   }, []);
 
   const finishToolbarScrollDrag = useCallback((pointerId) => {
@@ -281,6 +279,7 @@ const FormatToolbar = ({
     if (!dragState.hasDragged && Math.abs(deltaX) > 6) {
       dragState.hasDragged = true;
       setIsToolbarScrollDragging(true);
+      scrollElement.setPointerCapture?.(event.pointerId);
     }
 
     if (!dragState.hasDragged) {
@@ -685,7 +684,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('paragraph')}
             onClick={() => editor?.chain().focus().setParagraph().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().setParagraph()}
             title="Normal text"
             ariaLabel="Normal text"
             className="format-toolbar-btn--text"
@@ -695,7 +694,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('heading', { level: 1 })}
             onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleHeading({ level: 1 })}
             title="Heading 1 (Ctrl/Cmd+Alt+1)"
             ariaLabel="Heading 1"
           >
@@ -704,7 +703,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('heading', { level: 2 })}
             onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleHeading({ level: 2 })}
             title="Heading 2 (Ctrl/Cmd+Alt+2)"
             ariaLabel="Heading 2"
           >
@@ -713,7 +712,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('heading', { level: 3 })}
             onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleHeading({ level: 3 })}
             title="Heading 3 (Ctrl/Cmd+Alt+3)"
             ariaLabel="Heading 3"
           >
@@ -725,7 +724,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('bold')}
             onClick={() => editor?.chain().focus().toggleBold().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleBold()}
             title="Bold (Ctrl/Cmd+B)"
             ariaLabel="Bold"
           >
@@ -734,7 +733,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('italic')}
             onClick={() => editor?.chain().focus().toggleItalic().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleItalic()}
             title="Italic (Ctrl/Cmd+I)"
             ariaLabel="Italic"
           >
@@ -743,7 +742,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('underline')}
             onClick={() => editor?.chain().focus().toggleUnderline().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleUnderline()}
             title="Underline"
             ariaLabel="Underline"
           >
@@ -752,7 +751,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('strike')}
             onClick={() => editor?.chain().focus().toggleStrike().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleStrike()}
             title="Strikethrough"
             ariaLabel="Strikethrough"
           >
@@ -761,7 +760,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('code')}
             onClick={() => editor?.chain().focus().toggleCode().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleCode()}
             title="Inline code"
             ariaLabel="Inline code"
             className="format-toolbar-btn--text"
@@ -774,7 +773,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('bulletList')}
             onClick={() => editor?.chain().focus().toggleBulletList().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleBulletList()}
             title="Bullet list"
             ariaLabel="Bullet list"
           >
@@ -783,7 +782,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('orderedList')}
             onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleOrderedList()}
             title="Numbered list"
             ariaLabel="Numbered list"
           >
@@ -792,7 +791,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('taskList')}
             onClick={() => editor?.chain().focus().toggleTaskList().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleTaskList()}
             title="Task list"
             ariaLabel="Task list"
           >
@@ -820,7 +819,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive({ textAlign: 'left' })}
             onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().setTextAlign('left')}
             title="Align left"
             ariaLabel="Align left"
           >
@@ -829,7 +828,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive({ textAlign: 'center' })}
             onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().setTextAlign('center')}
             title="Align center"
             ariaLabel="Align center"
           >
@@ -838,7 +837,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive({ textAlign: 'right' })}
             onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().setTextAlign('right')}
             title="Align right"
             ariaLabel="Align right"
           >
@@ -847,7 +846,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive({ textAlign: 'justify' })}
             onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().setTextAlign('justify')}
             title="Justify"
             ariaLabel="Justify"
           >
@@ -859,7 +858,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('blockquote')}
             onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleBlockquote()}
             title="Blockquote"
             ariaLabel="Blockquote"
           >
@@ -868,7 +867,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('codeBlock')}
             onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleCodeBlock()}
             title="Code block"
             ariaLabel="Code block"
           >
@@ -876,7 +875,7 @@ const FormatToolbar = ({
           </ToolbarButton>
           <ToolbarButton
             onClick={() => editor?.chain().focus().setHorizontalRule().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().setHorizontalRule()}
             title="Horizontal rule"
             ariaLabel="Horizontal rule"
           >
@@ -899,7 +898,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('superscript')}
             onClick={() => editor?.chain().focus().toggleSuperscript().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleSuperscript()}
             title="Superscript"
             ariaLabel="Superscript"
           >
@@ -908,7 +907,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={editor?.isActive('subscript')}
             onClick={() => editor?.chain().focus().toggleSubscript().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().toggleSubscript()}
             title="Subscript"
             ariaLabel="Subscript"
           >
@@ -920,7 +919,7 @@ const FormatToolbar = ({
           <ToolbarButton
             active={tablePickerOpen}
             onClick={() => setTablePickerOpen((value) => !value)}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().insertTable()}
             title="Insert table (Ctrl/Cmd+Alt+T)"
             ariaLabel="Insert table"
           >
@@ -940,7 +939,7 @@ const FormatToolbar = ({
           </ToolbarButton>
           <ToolbarButton
             onClick={() => editor?.chain().focus().unsetAllMarks().clearNodes().run()}
-            disabled={!editor}
+            disabled={!editor || !editor?.can().unsetAllMarks() || !editor?.can().clearNodes()}
             title="Clear formatting"
             ariaLabel="Clear formatting"
             className="format-toolbar-btn--text"
