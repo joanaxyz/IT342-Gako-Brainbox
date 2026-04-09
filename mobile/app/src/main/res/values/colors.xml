@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary_color">#2563eb</color>
-    <color name="primary_hover">#1d4ed8</color>
-    <color name="secondary_color">#64748b</color>
-    <color name="background_color">#f8fafc</color>
-    <color name="surface_color">#ffffff</color>
-    <color name="text_primary">#1e293b</color>
-    <color name="text_secondary">#64748b</color>
-    <color name="border_color">#e2e8f0</color>
-    <color name="error_color">#ef4444</color>
-    <color name="success_color">#22c55e</color>
+    <color name="primary_color">#C2410C</color>
+    <color name="primary_hover">#9A3412</color>
+    <color name="secondary_color">#57534E</color>
+    <color name="background_color">#FAF8F5</color>
+    <color name="surface_color">#FFFFFF</color>
+    <color name="text_primary">#1C1917</color>
+    <color name="text_secondary">#57534E</color>
+    <color name="border_color">#E5E0D8</color>
+    <color name="error_color">#DC2626</color>
+    <color name="success_color">#16A34A</color>
 
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">brainbox</string>
+    <string name="app_name">BrainBox</string>
     <string name="logo_text">BrainBox</string>
     <string name="hamburger_menu_description">open/collapse</string>
     <string name="username">username</string>
