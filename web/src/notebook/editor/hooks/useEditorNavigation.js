@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
+import { closeHostEditor, isAndroidHost } from '../../../app/host/brainBoxHost';
 
 /**
  * Handles navigation-away blocking: auto-saves the document before leaving
@@ -15,6 +16,7 @@ const useEditorNavigation = ({ hasUnsavedDocumentChanges, handleSaveNotebook, ad
 
   const navigationBlocker = useBlocker(useCallback(
     ({ currentLocation, nextLocation }) => {
+      if (isAndroidHost()) return false;
       if (isExitSaveInFlightRef.current) return false;
       if (currentLocation.pathname === nextLocation.pathname) return false;
       return hasUnsavedDocumentChanges();
@@ -46,8 +48,44 @@ const useEditorNavigation = ({ hasUnsavedDocumentChanges, handleSaveNotebook, ad
   }, [addNotification, handleSaveNotebook, navigationBlocker]);
 
   const handleBackHome = useCallback(() => {
-    if (!isSavingBeforeExit) navigate('/dashboard');
-  }, [isSavingBeforeExit, navigate]);
+    if (isSavingBeforeExit) return;
+
+    if (!isAndroidHost()) {
+      navigate('/dashboard');
+      return;
+    }
+
+    const exitEditor = async () => {
+      if (!hasUnsavedDocumentChanges()) {
+        if (!closeHostEditor()) {
+          navigate('/dashboard');
+        }
+        return;
+      }
+
+      setIsSavingBeforeExit(true);
+      isExitSaveInFlightRef.current = true;
+
+      try {
+        const response = await handleSaveNotebook();
+        if (response && !response.success) {
+          addNotification(response.message || 'Failed to save notebook before leaving', 'error', 3000);
+          return;
+        }
+
+        if (!closeHostEditor()) {
+          navigate('/dashboard');
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setIsSavingBeforeExit(false);
+        }
+        isExitSaveInFlightRef.current = false;
+      }
+    };
+
+    void exitEditor();
+  }, [addNotification, handleSaveNotebook, hasUnsavedDocumentChanges, isSavingBeforeExit, navigate]);
 
   return { isSavingBeforeExit, handleBackHome };
 };

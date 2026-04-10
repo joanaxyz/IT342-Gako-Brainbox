@@ -24,7 +24,7 @@ internal fun LibraryScreen(
     syncNotice: String?,
     syncedAtLabel: String?,
     contentPadding: PaddingValues,
-    onFeatureRequest: (String) -> Unit
+    onOpenNotebook: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = notebooks.filter {
@@ -48,7 +48,7 @@ internal fun LibraryScreen(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 filtered.forEach { notebook ->
                     NotebookCard(notebook, "Open editor") {
-                        onFeatureRequest("The mobile notebook editor is the next phase of the build.")
+                        onOpenNotebook(notebook.uuid)
                     }
                 }
             }

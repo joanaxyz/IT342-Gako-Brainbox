@@ -1,3 +1,28 @@
+import { clearHostSession, persistHostSession } from '../../app/host/brainBoxHost';
+
+let hostSessionSyncScheduled = false;
+
+const scheduleHostSessionSync = () => {
+  if (hostSessionSyncScheduled || typeof window === 'undefined') {
+    return;
+  }
+
+  hostSessionSyncScheduled = true;
+  Promise.resolve().then(() => {
+    hostSessionSyncScheduled = false;
+
+    const accessToken = getCookie('accessToken');
+    const refreshToken = getCookie('refreshToken');
+
+    if (!accessToken && !refreshToken) {
+      clearHostSession();
+      return;
+    }
+
+    persistHostSession(accessToken || '', refreshToken || '');
+  });
+};
+
 export const getCookie = (name) => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
@@ -19,10 +44,12 @@ export const setCookie = (name, value, days) => {
   }
 
   document.cookie = `${name}=${value || ''}${expires}; path=/; SameSite=Lax`;
+  scheduleHostSessionSync();
 };
 
 export const deleteCookie = (name) => {
   document.cookie = `${name}=; Max-Age=-99999999; path=/;`;
+  scheduleHostSessionSync();
 };
 
 export const getAuthHeaders = () => {

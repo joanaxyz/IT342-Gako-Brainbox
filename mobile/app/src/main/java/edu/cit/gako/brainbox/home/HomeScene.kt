@@ -29,6 +29,7 @@ import edu.cit.gako.brainbox.ui.theme.Cream
 internal fun HomeScene(
     state: AppState,
     onTabSelected: (HomeTab) -> Unit,
+    onOpenNotebook: (String) -> Unit,
     onOpenQuiz: (String) -> Unit,
     onOpenFlashcardDeck: (String) -> Unit,
     onRefreshHome: () -> Unit,
@@ -75,6 +76,7 @@ internal fun HomeScene(
                     homeData = state.homeData,
                     contentPadding = contentPadding,
                     onGoToTab = onTabSelected,
+                    onOpenNotebook = onOpenNotebook,
                     onOpenQuiz = onOpenQuiz,
                     onOpenFlashcardDeck = onOpenFlashcardDeck,
                     onFeatureRequest = onFeatureRequest
@@ -84,7 +86,7 @@ internal fun HomeScene(
                     syncNotice = state.homeData.syncNotice,
                     syncedAtLabel = state.homeData.syncedAtLabel,
                     contentPadding = contentPadding,
-                    onFeatureRequest = onFeatureRequest
+                    onOpenNotebook = onOpenNotebook
                 )
                 HomeTab.QUIZZES -> QuizzesScreen(
                     quizzes = state.homeData.quizzes,

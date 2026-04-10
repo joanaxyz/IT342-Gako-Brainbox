@@ -14,6 +14,13 @@ import {
   DEFAULT_PAPER_HEIGHT,
   DEFAULT_PAPER_WIDTH,
 } from '../constants';
+import {
+  clearPendingPdfExport,
+  exportFileThroughHost,
+  isAndroidHost,
+  requestHostPdfExport,
+  storePendingPdfExport,
+} from '../../../app/host/brainBoxHost';
 
 const PRINT_FRAME_ID = 'note-editor-print-frame';
 const PRINT_CLEANUP_TIMEOUT_MS = 60000;
@@ -39,6 +46,10 @@ const createExportContainer = (htmlContent = '') => {
   container.innerHTML = htmlContent;
   return container;
 };
+
+const serializeDocumentStyles = () => Array.from(
+  document.head.querySelectorAll('style, link[rel="stylesheet"]')
+).map((node) => node.outerHTML).join('\n');
 
 const cloneDocumentStyles = (targetDocument) => {
   document.head.querySelectorAll('style, link[rel="stylesheet"]').forEach((node) => {
@@ -171,6 +182,29 @@ const createPrintStyles = ({ paperWidth, paperHeight, fontFamily, marginIn = DEF
   `;
 };
 
+export const buildPrintableDocumentHtml = (htmlContent, title = 'Untitled', layout = {}) => {
+  const paperWidth = layout.paperWidth ?? DEFAULT_PAPER_WIDTH;
+  const paperHeight = layout.paperHeight ?? DEFAULT_PAPER_HEIGHT;
+  const marginIn = layout.marginIn ?? DEFAULT_PAGE_MARGIN_IN;
+  const exportRootMarkup = buildExportRoot(document, htmlContent).outerHTML;
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>${sanitizeFilename(title)}</title>
+    ${serializeDocumentStyles()}
+    <style>${createPrintStyles({
+      paperWidth,
+      paperHeight,
+      fontFamily: layout.fontFamily,
+      marginIn,
+    })}</style>
+  </head>
+  <body>${exportRootMarkup}</body>
+</html>`;
+};
+
 const waitForStylesheets = async (targetDocument) => {
   const stylesheets = Array.from(targetDocument.querySelectorAll('link[rel="stylesheet"]'));
   await Promise.all(stylesheets.map((stylesheet) => (
@@ -232,6 +266,22 @@ const removeExistingPrintFrame = () => {
  * Open the current editor content in the browser print dialog for PDF/print export.
  */
 export async function exportToPdf(htmlContent, title = 'Untitled', layout = {}) {
+  if (isAndroidHost()) {
+    const printableHtml = buildPrintableDocumentHtml(htmlContent, title, layout);
+    storePendingPdfExport({
+      title: sanitizeFilename(title),
+      printableHtml,
+    });
+
+    if (!requestHostPdfExport()) {
+      clearPendingPdfExport();
+      throw new Error('Android PDF export bridge is unavailable.');
+    }
+
+    return;
+  }
+
+  clearPendingPdfExport();
   removeExistingPrintFrame();
 
   const iframe = document.createElement('iframe');
@@ -381,13 +431,28 @@ export async function exportToDocx(htmlContent, title = 'Untitled') {
   });
 
   const blob = await Packer.toBlob(doc);
+
+  if (isAndroidHost()) {
+    const exported = await exportFileThroughHost({
+      filename: `${safeTitle}.docx`,
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      blob,
+    });
+
+    if (!exported) {
+      throw new Error('Android export bridge is unavailable.');
+    }
+
+    return;
+  }
+
   saveAs(blob, `${safeTitle}.docx`);
 }
 
 /**
  * Export editor HTML content as a plain text file.
  */
-export function exportToText(htmlContent, title = 'Untitled') {
+export async function exportToText(htmlContent, title = 'Untitled') {
   const container = createExportContainer(htmlContent);
   const safeTitle = sanitizeFilename(title);
 
@@ -397,6 +462,21 @@ export function exportToText(htmlContent, title = 'Untitled') {
 
   const text = container.textContent || container.innerText || '';
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+
+  if (isAndroidHost()) {
+    const exported = await exportFileThroughHost({
+      filename: `${safeTitle}.txt`,
+      mimeType: 'text/plain',
+      blob,
+    });
+
+    if (!exported) {
+      throw new Error('Android export bridge is unavailable.');
+    }
+
+    return;
+  }
+
   saveAs(blob, `${safeTitle}.txt`);
 }
 

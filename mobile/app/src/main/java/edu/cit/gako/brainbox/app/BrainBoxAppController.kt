@@ -207,6 +207,61 @@ class BrainBoxAppController(
         }
     }
 
+    fun handleOpenNotebook(uuid: String) {
+        state = state.copy(
+            activeNotebookUuid = uuid,
+            activeNotebookOriginTab = state.currentTab,
+            notebookEditorStatus = NotebookEditorHostStatus(isLoading = true)
+        )
+    }
+
+    fun handleCloseNotebookEditor() {
+        val restoreTab = state.activeNotebookOriginTab ?: state.currentTab
+        val shouldRefresh = state.isAuthenticated
+
+        state = state.copy(
+            activeNotebookUuid = null,
+            activeNotebookOriginTab = null,
+            currentTab = restoreTab,
+            notebookEditorStatus = NotebookEditorHostStatus()
+        )
+
+        if (shouldRefresh) {
+            scope.launch {
+                syncHome(setBusy = false)
+            }
+        }
+    }
+
+    fun handleNotebookEditorLoadingStarted() {
+        state = state.copy(
+            notebookEditorStatus = NotebookEditorHostStatus(isLoading = true)
+        )
+    }
+
+    fun handleNotebookEditorReady() {
+        state = state.copy(
+            notebookEditorStatus = NotebookEditorHostStatus()
+        )
+    }
+
+    fun handleNotebookEditorError(message: String) {
+        state = state.copy(
+            notebookEditorStatus = NotebookEditorHostStatus(
+                isLoading = false,
+                errorMessage = message.ifBlank { "We couldn't load the notebook editor." }
+            )
+        )
+    }
+
+    fun handleEmbeddedSessionCleared() {
+        scope.launch {
+            repository.logout()
+            state = AppState(isBootstrapping = false)
+            showMessage("Your session ended. Sign in again to keep going.")
+        }
+    }
+
     fun handleExitStudySession() {
         state = state.copy(
             activeQuiz = null,

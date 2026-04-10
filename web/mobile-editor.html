@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BrainBox Notebook Editor</title>
+    <script>
+      (function initializeBrainBoxHost() {
+        const params = new URLSearchParams(window.location.search);
+
+        window.__BRAINBOX_HOST_CONFIG__ = {
+          host: params.get('host') || '',
+          notebookId: params.get('notebookId') || '',
+          apiBaseUrl: params.get('apiBaseUrl') || '',
+        };
+
+        if (!window.BrainBoxHostNative) {
+          return;
+        }
+
+        window.BrainBoxHost = {
+          closeEditor() {
+            window.BrainBoxHostNative.closeEditor();
+          },
+          persistSession(accessToken, refreshToken) {
+            window.BrainBoxHostNative.persistSession(accessToken || '', refreshToken || '');
+          },
+          clearSession() {
+            window.BrainBoxHostNative.clearSession();
+          },
+          exportFile(payload) {
+            window.BrainBoxHostNative.exportFile(JSON.stringify(payload || {}));
+          },
+          requestPdfExport() {
+            window.BrainBoxHostNative.requestPdfExport();
+          },
+          reportReady() {
+            window.BrainBoxHostNative.reportReady();
+          },
+          reportError(message) {
+            window.BrainBoxHostNative.reportError(String(message || 'Unknown embedded editor error'));
+          },
+        };
+      }());
+    </script>
+    <script type="module" src="/src/mobile-editor.jsx"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

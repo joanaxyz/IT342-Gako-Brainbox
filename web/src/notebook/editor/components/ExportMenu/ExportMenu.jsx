@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, File, FileText, FileType, X } from 'lucide-react';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { exportToDocx, exportToPdf, exportToText } from '../../utils/exportUtils';
+import { isAndroidHost } from '../../../../app/host/brainBoxHost';
 
 const PAPER_SIZES = [
   { label: 'Letter  (8.5" x 11")', value: 'letter', width: 816, height: 1056 },
@@ -124,7 +125,7 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
       } else if (format === 'docx') {
         await exportToDocx(html, title);
       } else if (format === 'txt') {
-        exportToText(html, title);
+        await exportToText(html, title);
       }
     } catch (error) {
       addNotification(error.message || 'Export failed. Please try again.', 'error', 4000);
@@ -150,11 +151,16 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
         {open && (
           <div className="export-menu-dropdown">
             <button type="button" onClick={() => {
+              if (isEmbeddedAndroidHost) {
+                void handleExport('print');
+                return;
+              }
+
               setOpen(false);
               setShowPdfOptions(true);
             }} disabled={Boolean(exporting)}>
               <FileText size={14} />
-              Print / Save as PDF
+              {isEmbeddedAndroidHost ? 'Print / Share PDF' : 'Print / Save as PDF'}
             </button>
             <button type="button" onClick={() => handleExport('docx')} disabled={Boolean(exporting)}>
               <FileType size={14} />
@@ -168,7 +174,7 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
         )}
       </div>
 
-      {showPdfOptions && (
+      {!isEmbeddedAndroidHost && showPdfOptions && (
         <PdfOptionsModal
           onClose={() => setShowPdfOptions(false)}
           onExport={(options) => handleExport('print', options)}
@@ -179,3 +185,4 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
 };
 
 export default ExportMenu;
+  const isEmbeddedAndroidHost = isAndroidHost();

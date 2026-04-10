@@ -47,6 +47,7 @@ internal fun DashboardScreen(
     homeData: HomeData,
     contentPadding: PaddingValues,
     onGoToTab: (HomeTab) -> Unit,
+    onOpenNotebook: (String) -> Unit,
     onOpenQuiz: (String) -> Unit,
     onOpenFlashcardDeck: (String) -> Unit,
     onFeatureRequest: (String) -> Unit
@@ -119,7 +120,7 @@ internal fun DashboardScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(homeData.recentlyReviewed.take(4)) { notebook ->
                         ContinueLearningCard(notebook) {
-                            onFeatureRequest("Notebook playback and editing are next on mobile.")
+                            onOpenNotebook(notebook.uuid)
                         }
                     }
                 }
@@ -185,7 +186,7 @@ internal fun DashboardScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     homeData.recentlyEdited.take(4).forEach { notebook ->
                         NotebookCard(notebook, "Open notebook") {
-                            onFeatureRequest("Notebook reading and editing are next in line for mobile.")
+                            onOpenNotebook(notebook.uuid)
                         }
                     }
                 }

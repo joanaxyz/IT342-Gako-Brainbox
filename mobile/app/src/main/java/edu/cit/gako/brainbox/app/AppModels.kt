@@ -41,6 +41,11 @@ data class HomeBundle(
     val homeData: HomeData
 )
 
+data class NotebookEditorHostStatus(
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
 data class AppState(
     val isBootstrapping: Boolean = true,
     val isBusy: Boolean = false,
@@ -52,6 +57,9 @@ data class AppState(
     val user: UserProfile? = null,
     val homeData: HomeData = HomeData(),
     val activeQuiz: QuizDetail? = null,
-    val activeFlashcardDeck: FlashcardDeckDetail? = null
+    val activeFlashcardDeck: FlashcardDeckDetail? = null,
+    val activeNotebookUuid: String? = null,
+    val activeNotebookOriginTab: HomeTab? = null,
+    val notebookEditorStatus: NotebookEditorHostStatus = NotebookEditorHostStatus()
 )
 

@@ -1,4 +1,5 @@
 import { deleteCookie, getCookie, setCookie } from './cookies';
+import { getHostApiBaseUrl } from '../../app/host/brainBoxHost';
 
 let isRefreshing = false;
 let refreshQueue = [];
@@ -65,7 +66,11 @@ const getFallbackBaseUrl = () => {
   }
 };
 
-const getBaseUrl = () => normalizeBaseUrl(import.meta.env.VITE_BRAINBOX_API_URL) || getFallbackBaseUrl();
+const getBaseUrl = () => (
+  normalizeBaseUrl(getHostApiBaseUrl())
+  || normalizeBaseUrl(import.meta.env.VITE_BRAINBOX_API_URL)
+  || getFallbackBaseUrl()
+);
 
 const createNetworkErrorResponse = (error) => ({
   success: false,

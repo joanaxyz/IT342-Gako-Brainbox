@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.Sync
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -8,6 +9,13 @@ plugins {
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) load(file.inputStream())
+}
+val embeddedEditorDistDir = rootProject.file("../web/dist")
+val embeddedEditorAssetsDir = layout.buildDirectory.dir("generated/embeddedEditorAssets")
+
+val syncEmbeddedEditorAssets by tasks.registering(Sync::class) {
+    from(embeddedEditorDistDir)
+    into(embeddedEditorAssetsDir)
 }
 
 android {
@@ -61,6 +69,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    sourceSets["main"].assets.srcDir(embeddedEditorAssetsDir)
+}
+
+tasks.named("preBuild") {
+    dependsOn(syncEmbeddedEditorAssets)
 }
 
 dependencies {
@@ -84,6 +97,7 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+    implementation(libs.androidx.webkit)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
