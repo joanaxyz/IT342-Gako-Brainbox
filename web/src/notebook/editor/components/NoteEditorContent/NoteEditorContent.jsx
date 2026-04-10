@@ -422,9 +422,6 @@ const NoteEditorContent = forwardRef(({
       const activeBlockIndexes = new Set(Array.isArray(descriptor?.activeBlockIndexes) ? descriptor.activeBlockIndexes : []);
       const tone = descriptor?.tone ? `ai-changed-block--${descriptor.tone}` : '';
       const reviewStatus = descriptor?.reviewStatus ? `ai-changed-block--${descriptor.reviewStatus}` : '';
-      const attributes = Number.isInteger(descriptor?.changeIndex)
-        ? { 'data-ai-change-index': String(descriptor.changeIndex) }
-        : {};
 
       blockRanges.forEach((blockRange) => {
         const { blockIndex } = blockRange;
@@ -443,7 +440,6 @@ const NoteEditorContent = forwardRef(({
               reviewStatus,
               activeBlockIndexes.has(blockIndex) ? 'is-active' : '',
             ].filter(Boolean).join(' '),
-            attributes,
           });
         });
       });

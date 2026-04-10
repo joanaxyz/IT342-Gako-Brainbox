@@ -18,6 +18,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
   const {
     currentNotebook,
     isPlaying,
+    isPreparing,
     togglePlay,
     progress,
     queue,
@@ -39,6 +40,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
     showQueue,
     setShowQueue,
   } = useAudioPlayer();
+  const isPlaybackActive = isPlaying || isPreparing;
 
   const [showVolume, setShowVolume] = useState(false);
   const [volumePopupStyle, setVolumePopupStyle] = useState({});
@@ -182,7 +184,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
               </button>
               {/* Play button is always enabled in review mode — onTogglePlay starts playback */}
               <button className="player-btn play-btn" onClick={handlePlayToggle}>
-                {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
+                {isPlaybackActive ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
               </button>
             </div>
             <div className="player-extras player-extras--review">
@@ -215,7 +217,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
               <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
             </svg>
           )}
-          {isPlaying && (
+          {isPlaybackActive && (
             <div className="mini-playing-indicator">
               <span /><span /><span />
             </div>
@@ -231,7 +233,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
           onClick={(e) => { e.stopPropagation(); if (currentNotebook) togglePlay(currentNotebook); }}
           style={{ opacity: currentNotebook ? 1 : 0.35 }}
         >
-          {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+          {isPlaybackActive ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
         </button>
       </div>
     );
@@ -329,7 +331,7 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
                 disabled={!currentNotebook}
                 style={{ opacity: currentNotebook ? 1 : 0.4 }}
               >
-                {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
+                {isPlaybackActive ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
               </button>
               <button
                 className="player-btn"

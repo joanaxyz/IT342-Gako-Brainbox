@@ -27,8 +27,15 @@ public class AiService {
     private final AiProvider proxyProvider;
     private final ObjectMapper objectMapper;
 
-    private static final List<String> VALID_ACTIONS = List.of(
+    private static final Set<String> VALID_ACTIONS = Set.of(
         "none", "add_to_editor", "replace_editor", "replace_selection", "replace_ai_selections", "create_quiz", "create_flashcard"
+    );
+    private static final Set<String> QUIZ_ACTION_ALIASES = Set.of(
+        "create_quiz", "create_quizzes", "generate_quiz", "generate_quizzes", "quiz", "quizzes"
+    );
+    private static final Set<String> FLASHCARD_ACTION_ALIASES = Set.of(
+        "create_flashcard", "create_flashcards", "generate_flashcard", "generate_flashcards",
+        "create_flashcard_deck", "create_deck", "deck", "flashcard", "flashcards"
     );
 
     public AiResponse generateResponse(AiRequest aiRequest, Long userId) {
@@ -109,28 +116,34 @@ public class AiService {
         try {
             JsonNode parsed = objectMapper.readTree(trimmed);
             String reply = parsed.path("reply").asText("");
-            String action = parsed.path("action").asText("none");
+            String action = normalizeAction(parsed.path("action").asText("none"));
             String editorContent = parsed.path("editorContent").asText("");
             String conversationTitle = parsed.path("conversationTitle").asText("");
 
-            if (!VALID_ACTIONS.contains(action)) action = "none";
             if (reply.isBlank()) reply = extractFieldFallback(trimmed, "reply");
             if (conversationTitle.isBlank()) conversationTitle = extractFieldFallback(trimmed, "conversationTitle");
 
-            Object quizData = null;
-            Object flashcardData = null;
+            Object quizData = extractQuizData(parsed);
+            Object flashcardData = extractFlashcardData(parsed);
             List<AiSelectionEdit> selectionEdits = null;
-            if ("create_quiz".equals(action) && !parsed.path("quizData").isMissingNode()) {
-                quizData = objectMapper.convertValue(parsed.path("quizData"), Object.class);
-            }
-            if ("create_flashcard".equals(action) && !parsed.path("flashcardData").isMissingNode()) {
-                flashcardData = objectMapper.convertValue(parsed.path("flashcardData"), Object.class);
-            }
             if ("replace_ai_selections".equals(action) && parsed.path("selectionEdits").isArray()) {
                 selectionEdits = objectMapper.convertValue(parsed.path("selectionEdits"), new TypeReference<>() {});
             }
             if ("replace_ai_selections".equals(action) && (selectionEdits == null || selectionEdits.isEmpty())) {
                 action = "none";
+            }
+            if ("create_quiz".equals(action) && quizData == null) {
+                action = flashcardData != null ? "create_flashcard" : "none";
+            }
+            if ("create_flashcard".equals(action) && flashcardData == null) {
+                action = quizData != null ? "create_quiz" : "none";
+            }
+            if ("none".equals(action)) {
+                if (quizData != null && flashcardData == null) {
+                    action = "create_quiz";
+                } else if (flashcardData != null && quizData == null) {
+                    action = "create_flashcard";
+                }
             }
 
             return new AiResponse(
@@ -140,16 +153,180 @@ public class AiService {
             );
         } catch (Exception e) {
             String reply = extractFieldFallback(trimmed, "reply");
-            String action = extractFieldFallback(trimmed, "action");
+            String action = normalizeAction(extractFieldFallback(trimmed, "action"));
             String editorContent = extractFieldFallback(trimmed, "editorContent");
             String conversationTitle = extractFieldFallback(trimmed, "conversationTitle");
-            if (!VALID_ACTIONS.contains(action)) action = "none";
 
             return new AiResponse(
                 reply.isBlank() ? aiMessage : reply, action,
                 editorContent.isBlank() ? null : editorContent, conversationTitle,
                 null, null, null
             );
+        }
+    }
+
+    private String normalizeAction(String rawAction) {
+        String normalizedAction = rawAction != null ? rawAction.trim().toLowerCase() : "";
+
+        if (QUIZ_ACTION_ALIASES.contains(normalizedAction)) {
+            return "create_quiz";
+        }
+        if (FLASHCARD_ACTION_ALIASES.contains(normalizedAction)) {
+            return "create_flashcard";
+        }
+
+        return VALID_ACTIONS.contains(normalizedAction) ? normalizedAction : "none";
+    }
+
+    private Object extractQuizData(JsonNode parsed) {
+        List<JsonNode> candidates = Arrays.asList(
+            parsed.get("quizData"),
+            parsed.get("quiz"),
+            parsed.get("quiz_data"),
+            parsed.get("generatedQuiz"),
+            buildQuizDataFromTopLevel(parsed)
+        );
+
+        for (JsonNode candidate : candidates) {
+            JsonNode normalizedCandidate = normalizePayloadNode(candidate);
+            if (normalizedCandidate == null || !normalizedCandidate.isObject()) {
+                continue;
+            }
+
+            JsonNode questionsNode = normalizedCandidate.path("questions");
+            if (!questionsNode.isArray() || questionsNode.isEmpty()) {
+                continue;
+            }
+
+            return objectMapper.convertValue(normalizedCandidate, Object.class);
+        }
+
+        return null;
+    }
+
+    private Object extractFlashcardData(JsonNode parsed) {
+        List<JsonNode> candidates = Arrays.asList(
+            parsed.get("flashcardData"),
+            parsed.get("flashcardsData"),
+            parsed.get("flashcardDeck"),
+            parsed.get("deckData"),
+            parsed.get("deck"),
+            parsed.get("generatedDeck"),
+            parsed.get("generatedFlashcards"),
+            buildFlashcardDataFromTopLevel(parsed)
+        );
+
+        for (JsonNode candidate : candidates) {
+            JsonNode normalizedCandidate = normalizePayloadNode(candidate);
+            JsonNode flashcardNode = normalizeFlashcardPayload(normalizedCandidate);
+
+            if (flashcardNode == null || !flashcardNode.isObject()) {
+                continue;
+            }
+
+            JsonNode cardsNode = flashcardNode.path("cards");
+            if (!cardsNode.isArray() || cardsNode.isEmpty()) {
+                continue;
+            }
+
+            return objectMapper.convertValue(flashcardNode, Object.class);
+        }
+
+        return null;
+    }
+
+    private JsonNode buildQuizDataFromTopLevel(JsonNode parsed) {
+        if (!parsed.path("questions").isArray() || parsed.path("questions").isEmpty()) {
+            return null;
+        }
+
+        var quizNode = objectMapper.createObjectNode();
+        copyTextField(parsed, quizNode, "title");
+        copyTextField(parsed, quizNode, "description");
+        copyTextField(parsed, quizNode, "difficulty");
+        quizNode.set("questions", parsed.path("questions"));
+        return quizNode;
+    }
+
+    private JsonNode buildFlashcardDataFromTopLevel(JsonNode parsed) {
+        JsonNode cardsNode = null;
+        if (parsed.path("cards").isArray() && !parsed.path("cards").isEmpty()) {
+            cardsNode = parsed.path("cards");
+        } else if (parsed.path("flashcards").isArray() && !parsed.path("flashcards").isEmpty()) {
+            cardsNode = parsed.path("flashcards");
+        }
+
+        if (cardsNode == null) {
+            return null;
+        }
+
+        var flashcardNode = objectMapper.createObjectNode();
+        copyTextField(parsed, flashcardNode, "title");
+        copyTextField(parsed, flashcardNode, "description");
+        flashcardNode.set("cards", cardsNode);
+        return flashcardNode;
+    }
+
+    private JsonNode normalizePayloadNode(JsonNode candidate) {
+        if (candidate == null || candidate.isNull() || candidate.isMissingNode()) {
+            return null;
+        }
+
+        if (candidate.isTextual()) {
+            String rawJson = candidate.asText("").trim();
+            if (rawJson.isBlank()) {
+                return null;
+            }
+
+            try {
+                return objectMapper.readTree(rawJson);
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+
+        return candidate;
+    }
+
+    private JsonNode normalizeFlashcardPayload(JsonNode candidate) {
+        JsonNode normalizedCandidate = normalizePayloadNode(candidate);
+        if (normalizedCandidate == null) {
+            return null;
+        }
+
+        if (normalizedCandidate.isArray()) {
+            var flashcardNode = objectMapper.createObjectNode();
+            flashcardNode.set("cards", normalizedCandidate);
+            return flashcardNode;
+        }
+
+        if (!normalizedCandidate.isObject()) {
+            return null;
+        }
+
+        if (normalizedCandidate.path("cards").isArray()) {
+            return normalizedCandidate;
+        }
+
+        if (normalizedCandidate.path("flashcards").isArray()) {
+            var flashcardNode = objectMapper.createObjectNode();
+            copyTextField(normalizedCandidate, flashcardNode, "title");
+            copyTextField(normalizedCandidate, flashcardNode, "description");
+            flashcardNode.set("cards", normalizedCandidate.path("flashcards"));
+            return flashcardNode;
+        }
+
+        return null;
+    }
+
+    private void copyTextField(JsonNode source, com.fasterxml.jackson.databind.node.ObjectNode target, String fieldName) {
+        if (source == null || target == null || fieldName == null || fieldName.isBlank()) {
+            return;
+        }
+
+        String value = source.path(fieldName).asText("");
+        if (!value.isBlank()) {
+            target.put(fieldName, value);
         }
     }
 

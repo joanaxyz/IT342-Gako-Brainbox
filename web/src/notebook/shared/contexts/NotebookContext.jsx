@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notebookAPI } from '../../../common/utils/api';
 import { countWordsFromHtml } from '../utils/notebookPages';
@@ -138,6 +138,11 @@ export const NotebookProvider = ({ children }) => {
   const recentlyReviewedNotebooks = recentlyReviewedQuery.data ?? EMPTY_ITEMS;
   const currentNotebook = currentNotebookQuery.data || null;
   const versions = versionsQuery.data ?? EMPTY_ITEMS;
+
+  const notebooksRef = useRef(notebooks);
+  notebooksRef.current = notebooks;
+  const currentNotebookRef = useRef(currentNotebook);
+  currentNotebookRef.current = currentNotebook;
 
   const setNotebookDetail = useCallback((notebook) => {
     const normalizedNotebook = normalizeNotebook(notebook);
@@ -365,8 +370,8 @@ export const NotebookProvider = ({ children }) => {
     }
 
     const cachedNotebook = queryClient.getQueryData(queryKeys.notebooks.detail(uuid))
-      || notebooks.find((notebook) => notebook.uuid === uuid)
-      || currentNotebook;
+      || notebooksRef.current.find((notebook) => notebook.uuid === uuid)
+      || currentNotebookRef.current;
 
     if (cachedNotebook) {
       const reviewedNotebook = {
@@ -382,7 +387,7 @@ export const NotebookProvider = ({ children }) => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.notebooks.recentReviewed });
 
     return response;
-  }, [currentNotebook, notebooks, queryClient, syncNotebookCaches]);
+  }, [queryClient, syncNotebookCaches]);
 
   const deleteNotebook = useCallback((uuid, showSpinner = true) => withLoading(
     async () => {

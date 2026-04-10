@@ -199,12 +199,14 @@ public abstract class AiPromptBuilder {
                 + "- For quizzes and flashcards, use the saved AI selections when the request is clearly about the selected material; otherwise use the current working context.\n\n";
         }
 
+        boolean documentScopeConfirmed = "document".equals(selectionMode);
         return "---\nUSER'S CURRENT TEXT SELECTION: (none)\n\n"
             + "The user has NOT selected any text. When they use a tool like Summarize, Explain, Improve, or Expand:\n"
-            + "- If edit scope confirmation says the whole document was chosen, proceed with the full working context and do not ask for clarification.\n"
-            + "- There are no saved AI selections, so ask whether they want to highlight the exact text first or use the whole note when the request is clearly about editing.\n"
+            + (documentScopeConfirmed
+                ? "- Edit scope confirmation says the whole document was chosen. For any edit request (improve, expand, rewrite, reword, rephrase, paraphrase, polish, refine, shorten, condense, tighten, clarify, revise, simplify, restructure, fix, etc.), use action \"replace_editor\" and rewrite the full working content accordingly. Do NOT ask the user to highlight text first and do NOT return action \"replace_selection\".\n"
+                : "- There are no saved AI selections, so ask whether they want to highlight the exact text first or use the whole note when the request is clearly about editing.\n")
             + "- Use the current notebook content as the default working context.\n"
-            + "- If their message is a generic tool command with no specific topic, use action \"none\" and ask which part of the notebook they want help with.\n"
+            + "- If their message is a generic tool command with no specific topic and no scope confirmation, use action \"none\" and ask which part of the notebook they want help with.\n"
             + "- If they mention a specific topic, heading, or area, proceed normally.\n"
             + "- For quizzes and flashcards, use the current working context.\n\n";
     }

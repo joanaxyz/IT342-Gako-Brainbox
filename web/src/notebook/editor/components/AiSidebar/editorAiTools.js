@@ -55,7 +55,7 @@ export const EDITOR_AI_TOOLS = [
     key: 'flashcards',
     label: 'Flashcards',
     icon: Layers,
-    prompt: 'Generate study flashcards from this note.',
+    prompt: 'Generate a deck of 12 study flashcards from this note.',
     description: 'Convert the note into flashcards for review.',
   },
 ];
@@ -100,7 +100,7 @@ export const REVIEW_AI_TOOLS = [
     key: 'flashcards',
     label: 'Flashcards',
     icon: Layers,
-    prompt: 'Generate study flashcards from this note.',
+    prompt: 'Generate a deck of 12 study flashcards from this note.',
     description: 'Convert the note into flashcards for review.',
   },
 ];

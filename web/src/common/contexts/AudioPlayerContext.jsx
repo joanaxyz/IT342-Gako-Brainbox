@@ -11,7 +11,8 @@ import { AudioPlayerContext } from './AudioPlayerContextValue';
 const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
 const CHARS_PER_SEC = 15;
 const KEEP_ALIVE_INTERVAL_MS = 5000;
-const STALL_TIMEOUT_MS = 7000;
+const STALL_TIMEOUT_MS = 15000;
+const SPEAK_START_DELAY_MS = 60;
 const TARGET_CHUNK_DURATION_SEC = 8;
 const MIN_CHUNK_CHARS = 80;
 const MAX_CHUNK_CHARS = 180;
@@ -38,6 +39,7 @@ export const AudioPlayerProvider = ({ children }) => {
   const { markNotebookReviewed } = useNotebook();
   const [currentNotebook, setCurrentNotebook] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [queue, setQueue] = useState([]);
   const [isMinimized, setIsMinimized] = useState(true);
@@ -58,6 +60,7 @@ export const AudioPlayerProvider = ({ children }) => {
   const rateRef = useRef(1);
   const loopRef = useRef(false);
   const isPlayingRef = useRef(false);
+  const isPreparingRef = useRef(false);
   const currentNotebookRef = useRef(null);
   const currentModelRef = useRef(null);
   const currentOffsetRef = useRef(0);
@@ -81,6 +84,10 @@ export const AudioPlayerProvider = ({ children }) => {
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  useEffect(() => {
+    isPreparingRef.current = isPreparing;
+  }, [isPreparing]);
 
   useEffect(() => {
     currentNotebookRef.current = currentNotebook;
@@ -109,6 +116,16 @@ export const AudioPlayerProvider = ({ children }) => {
     }
   }, []);
 
+  const waitForSynthToSettle = useCallback(async () => {
+    if (typeof window === 'undefined' || !synthRef.current) {
+      return;
+    }
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, SPEAK_START_DELAY_MS);
+    });
+  }, []);
+
   const recoverPlayback = useCallback((notebook, offset = 0) => {
     if (!notebook?.uuid) {
       return;
@@ -118,6 +135,7 @@ export const AudioPlayerProvider = ({ children }) => {
       stopKeepAlive();
       synthRef.current?.cancel();
       utteranceRef.current = null;
+      setIsPreparing(false);
       setIsPlaying(false);
       return;
     }
@@ -152,7 +170,11 @@ export const AudioPlayerProvider = ({ children }) => {
           && (Date.now() - lastBoundaryAtRef.current) > STALL_TIMEOUT_MS;
 
         if (stalled && currentNotebookRef.current) {
-          recoverPlayback(currentNotebookRef.current, currentOffsetRef.current);
+          // Only recover if we're confident the synth is actually stuck,
+          // not just mid-utterance on a long word/phrase.
+          if (recoveryAttemptsRef.current < MAX_RECOVERY_ATTEMPTS) {
+            recoverPlayback(currentNotebookRef.current, currentOffsetRef.current);
+          }
           return;
         }
 
@@ -232,6 +254,7 @@ export const AudioPlayerProvider = ({ children }) => {
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
+    setIsPreparing(false);
     setIsPlaying(false);
     updatePlaybackPosition(0, { persist: false });
   }, [resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
@@ -245,6 +268,7 @@ export const AudioPlayerProvider = ({ children }) => {
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
+    setIsPreparing(false);
     setIsPlaying(false);
     updatePlaybackPosition(0, { persist: false });
   }, [resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
@@ -311,6 +335,7 @@ export const AudioPlayerProvider = ({ children }) => {
     stopKeepAlive();
     utteranceRef.current = null;
     currentChunkIndexRef.current = -1;
+    setIsPreparing(false);
     updatePlaybackPosition(playbackModel.fullText.length, { persist: false });
     clearResumeMarker(notebook.uuid);
 
@@ -366,6 +391,7 @@ export const AudioPlayerProvider = ({ children }) => {
         return;
       }
 
+      setIsPreparing(false);
       setIsPlaying(true);
       startKeepAlive();
     };
@@ -394,7 +420,12 @@ export const AudioPlayerProvider = ({ children }) => {
       currentChunkIndexRef.current = chunkIndex + 1;
       recoveryAttemptsRef.current = 0;
       updatePlaybackPosition(chunk.end, { persist: chunk.end < playbackModel.fullText.length });
-      playChunk(chunkIndex + 1, chunk.end, sessionId, notebook, playbackModel);
+      // Small delay ensures the synthesizer is ready for the next utterance;
+      // without this, some browsers silently drop the next speak() call.
+      setTimeout(() => {
+        if (sessionId !== utteranceIdRef.current) return;
+        playChunk(chunkIndex + 1, chunk.end, sessionId, notebook, playbackModel);
+      }, 50);
     };
 
     utterance.onerror = (event) => {
@@ -407,10 +438,14 @@ export const AudioPlayerProvider = ({ children }) => {
       }
 
       stopKeepAlive();
+      setIsPreparing(false);
       recoverPlayback(notebook, currentOffsetRef.current);
     };
 
     utteranceRef.current = utterance;
+    if (synthRef.current.paused) {
+      synthRef.current.resume();
+    }
     synthRef.current.speak(utterance);
   }, [
     finalizePlayback,
@@ -454,12 +489,20 @@ export const AudioPlayerProvider = ({ children }) => {
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
+    setCurrentNotebook(notebook);
+    currentNotebookRef.current = notebook;
+    setIsPreparing(true);
     setIsPlaying(false);
     isPausedRef.current = false;
     resetBoundaryTracking();
 
     if (resolvedOptions.preserveRecoveryState !== true) {
       recoveryAttemptsRef.current = 0;
+    }
+
+    await waitForSynthToSettle();
+    if (sessionId !== utteranceIdRef.current) {
+      return;
     }
 
     const source = await resolvePlaybackSource(notebook, contentOverride);
@@ -471,8 +514,6 @@ export const AudioPlayerProvider = ({ children }) => {
       maxChunkChars: getChunkCharLimit(rateRef.current),
     });
     currentModelRef.current = playbackModel;
-    setCurrentNotebook(notebook);
-    currentNotebookRef.current = notebook;
     setCurrentFullText(playbackModel.fullText);
 
     const totalChars = playbackModel.fullText.length;
@@ -505,6 +546,7 @@ export const AudioPlayerProvider = ({ children }) => {
     updatePlaybackPosition(safeOffset, { persist: allowSavedResume || safeOffset > 0 });
 
     if (!playbackModel.fullText || playbackModel.chunks.length === 0) {
+      setIsPreparing(false);
       setIsPlaying(false);
       return;
     }
@@ -528,6 +570,7 @@ export const AudioPlayerProvider = ({ children }) => {
     speakChunk,
     stopKeepAlive,
     updatePlaybackPosition,
+    waitForSynthToSettle,
   ]);
 
   useEffect(() => {
@@ -546,6 +589,7 @@ export const AudioPlayerProvider = ({ children }) => {
     stopKeepAlive();
     synthRef.current?.cancel();
     utteranceRef.current = null;
+    setIsPreparing(false);
     setIsPlaying(false);
     updatePlaybackPosition(pausedAtCharRef.current);
   }, [resetRecoveryState, stopKeepAlive, updatePlaybackPosition]);
@@ -556,14 +600,17 @@ export const AudioPlayerProvider = ({ children }) => {
       return;
     }
 
-    if (currentNotebookRef.current?.uuid === targetNotebook.uuid && isPlayingRef.current) {
+    // Currently playing the same notebook → pause
+    if (currentNotebookRef.current?.uuid === targetNotebook.uuid && (isPlayingRef.current || isPreparingRef.current)) {
       pause();
       return;
     }
 
+    // Paused on the same notebook → resume from where we left off
     if (currentNotebookRef.current?.uuid === targetNotebook.uuid && isPausedRef.current) {
       const resumeOffset = pausedAtCharRef.current;
-      isPausedRef.current = false;
+      // play() will clear isPausedRef internally; don't clear it early
+      // to avoid a window where both isPaused and isPlaying are false.
       await play(targetNotebook, contentOverride, {
         force: true,
         charOffset: resumeOffset,
@@ -573,6 +620,7 @@ export const AudioPlayerProvider = ({ children }) => {
       return;
     }
 
+    // Different notebook or fresh start
     await play(targetNotebook, contentOverride);
   }, [pause, play]);
 
@@ -688,6 +736,7 @@ export const AudioPlayerProvider = ({ children }) => {
   const value = {
     currentNotebook,
     isPlaying,
+    isPreparing,
     progress,
     queue,
     togglePlay,

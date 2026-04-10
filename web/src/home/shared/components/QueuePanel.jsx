@@ -28,6 +28,7 @@ const QueuePanel = () => {
   const {
     currentNotebook,
     isPlaying,
+    isPreparing,
     progress,
     queue,
     removeFromQueue,
@@ -79,7 +80,7 @@ const QueuePanel = () => {
               <div className="queue-now-card">
                 <div className="queue-now-art">
                   {currentNotebook.title.charAt(0)}
-                  {isPlaying && (
+                  {(isPlaying || isPreparing) && (
                     <span className="queue-now-bars">
                       <span /><span /><span />
                     </span>

@@ -155,8 +155,6 @@ export const buildProposalComparisonSession = (originalHtml = '', proposedHtml =
     proposedBlocks,
     segments,
     changes,
-    originalChangedBlockIndexes: changes.flatMap((change) => change.originalBlockIndexes),
-    proposedChangedBlockIndexes: changes.flatMap((change) => change.proposedBlockIndexes),
   };
 };
 

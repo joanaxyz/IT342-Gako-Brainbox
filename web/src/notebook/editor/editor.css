@@ -5083,97 +5083,14 @@ a.ai-btn-create {
   cursor: default;
 }
 
-.ai-proposal-inline-review {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: none;
-  width: max-content;
-  max-width: calc(100% - 20px);
-  padding: 6px;
-  border-radius: 18px;
-  border: 1px solid rgba(28, 25, 23, 0.08);
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 38px -30px rgba(15, 23, 42, 0.34);
-  z-index: 121;
-}
-
-.ai-proposal-inline-review-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: nowrap;
-}
-
-.ai-proposal-inline-btn {
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(28, 25, 23, 0.08);
-  border-radius: 12px;
-  background: rgba(248, 247, 244, 0.98);
-  color: var(--ink);
-  cursor: pointer;
-  transition: transform 0.16s var(--ease), background 0.16s var(--ease), border-color 0.16s var(--ease), color 0.16s var(--ease);
-}
-
-.ai-proposal-inline-btn:hover {
-  transform: translateY(-1px);
-}
-
-.ai-proposal-inline-btn:disabled,
 .ai-proposal-mini-dock-btn:disabled {
   opacity: 0.42;
   cursor: default;
   transform: none;
 }
 
-.ai-proposal-inline-btn--accept {
-  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
-  border-color: rgba(22, 163, 74, 0.16);
-  color: #f0fdf4;
-}
-
-.ai-proposal-inline-btn--reject {
-  background: rgba(243, 244, 246, 0.98);
-  border-color: rgba(107, 114, 128, 0.18);
-  color: #374151;
-}
-
-.ai-proposal-inline-btn.is-selected,
 .ai-proposal-mini-dock-btn.is-selected {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.84);
-}
-
-.ai-proposal-inline-review--selection {
-  padding: 8px;
-}
-
-.ai-proposal-inline-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-}
-
-.ai-proposal-inline-status--accepted {
-  background: rgba(240, 253, 244, 0.96);
-  color: #166534;
-  border: 1px solid rgba(34, 197, 94, 0.18);
-}
-
-.ai-proposal-inline-status--rejected {
-  background: rgba(243, 244, 246, 0.98);
-  color: #4b5563;
-  border: 1px solid rgba(107, 114, 128, 0.18);
 }
 
 .ai-proposal-mini-dock {
@@ -5190,43 +5107,6 @@ a.ai-btn-create {
   backdrop-filter: blur(16px);
   box-shadow: 0 18px 36px -28px rgba(15, 23, 42, 0.28);
   z-index: 121;
-}
-
-.ai-proposal-bulk-dock {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: min(520px, calc(100% - 32px));
-  padding: 10px 12px;
-  border-radius: 22px;
-  border: 1px solid rgba(28, 25, 23, 0.08);
-  background: rgba(248, 247, 244, 0.92);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 18px 36px -28px rgba(15, 23, 42, 0.28);
-  z-index: 121;
-}
-
-.ai-proposal-bulk-dock-copy {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.ai-proposal-bulk-dock-copy strong {
-  font-size: 0.82rem;
-  color: var(--ink);
-}
-
-.ai-proposal-bulk-dock-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .ai-proposal-mini-dock-main {
@@ -5284,6 +5164,26 @@ a.ai-btn-create {
 
 .ai-proposal-mini-dock-btn--ghost {
   color: var(--ink-2);
+  background: transparent;
+  border-color: transparent;
+}
+
+.ai-proposal-mini-dock-btn--ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(28, 25, 23, 0.08);
+}
+
+.ai-proposal-mini-dock-btn--ghost.is-selected {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.22);
+  color: #15803d;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+}
+
+.ai-proposal-change-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .ai-proposal-mini-dock-btn--accept {
@@ -5298,60 +5198,6 @@ a.ai-btn-create {
   color: #374151;
 }
 
-.ai-proposal-mini-dock-btn--primary {
-  background: linear-gradient(180deg, #23201d 0%, #11100f 100%);
-  border-color: rgba(17, 16, 15, 0.92);
-  color: #f8f6f2;
-}
-
-.ai-proposal-mini-dock-preview {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 8px;
-}
-
-.ai-proposal-mini-dock-card {
-  min-width: 0;
-  display: grid;
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(28, 25, 23, 0.08);
-  background: rgba(255, 255, 255, 0.84);
-}
-
-.ai-proposal-mini-dock-card--original {
-  border-color: rgba(107, 114, 128, 0.16);
-  background: rgba(243, 244, 246, 0.88);
-}
-
-.ai-proposal-mini-dock-card--proposal {
-  border-color: rgba(34, 197, 94, 0.16);
-  background: rgba(240, 253, 244, 0.9);
-}
-
-.ai-proposal-mini-dock-card span {
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.ai-proposal-mini-dock-card p {
-  margin: 0;
-  max-height: 96px;
-  overflow: auto;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: var(--ink);
-}
-
-.ai-scope-card {
-  border-color: rgba(107, 114, 128, 0.14);
-  background: linear-gradient(180deg, rgba(249, 250, 251, 0.96), rgba(243, 244, 246, 0.9));
-}
-
 @media (max-width: 1280px) {
   .ai-proposal-nav {
     width: 100%;
@@ -5360,37 +5206,26 @@ a.ai-btn-create {
 }
 
 @media (max-width: 980px) {
-  .ai-proposal-bulk-dock,
   .ai-proposal-mini-dock {
     top: 12px;
     right: 12px;
-  }
-
-  .ai-proposal-inline-review {
-    max-width: calc(100% - 24px);
   }
 }
 
 @media (max-width: 720px) {
   .ai-proposal-nav,
-  .ai-proposal-inline-review-actions,
-  .ai-proposal-bulk-dock,
-  .ai-proposal-bulk-dock-actions,
   .ai-proposal-mini-dock-main,
   .ai-proposal-mini-dock-review,
   .ai-proposal-mini-dock-actions {
     width: 100%;
   }
 
-  .ai-proposal-inline-btn,
   .ai-proposal-nav-btn,
-  .ai-proposal-bulk-dock-actions .ai-proposal-mini-dock-btn,
   .ai-proposal-mini-dock-review .ai-proposal-mini-dock-btn,
   .ai-proposal-mini-dock-actions .ai-proposal-mini-dock-btn {
     flex: 1 1 0;
   }
 
-  .ai-proposal-bulk-dock,
   .ai-proposal-mini-dock {
     position: fixed;
     left: 12px;
@@ -5399,17 +5234,6 @@ a.ai-btn-create {
     bottom: 12px;
     width: auto;
     max-width: none;
-  }
-
-  .ai-proposal-inline-review {
-    left: 14px;
-    right: 14px;
-    width: auto;
-    transform: none;
-  }
-
-  .ai-proposal-mini-dock-preview {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 

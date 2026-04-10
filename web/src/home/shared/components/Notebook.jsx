@@ -29,9 +29,10 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showCategoryMove, setShowCategoryMove] = useState(false);
     const menuRef = useRef(null);
-    const { togglePlay, currentNotebook, isPlaying } = useAudioPlayer();
+    const { togglePlay, currentNotebook, isPlaying, isPreparing } = useAudioPlayer();
     const { updateNotebook, deleteNotebook } = useNotebook();
     const { categories } = useCategory();
+    const isNotebookPlaybackActive = currentNotebook?.uuid === notebook.uuid && (isPlaying || isPreparing);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -94,11 +95,11 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
                                     Open
                                 </button>
                                 <button 
-                                    className={`library-play-btn ${currentNotebook?.uuid === notebook.uuid && isPlaying ? 'active' : ''}`} 
+                                    className={`library-play-btn ${isNotebookPlaybackActive ? 'active' : ''}`} 
                                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(notebook); }}
                                     aria-label="Play notebook"
                                 >
-                                    <Play size={14} fill={currentNotebook?.uuid === notebook.uuid && isPlaying ? "currentColor" : "none"} />
+                                    <Play size={14} fill={isNotebookPlaybackActive ? "currentColor" : "none"} />
                                 </button>
                             </div>
                         </div>
@@ -124,10 +125,10 @@ const Notebook = ({ notebook, variant = 'continue' }) => {
                                     <span>Open</span>
                                 </button>
                                 <button 
-                                    className={`recent-action-btn play-btn ${currentNotebook?.uuid === notebook.uuid && isPlaying ? 'active' : ''}`} 
+                                    className={`recent-action-btn play-btn ${isNotebookPlaybackActive ? 'active' : ''}`} 
                                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(notebook); }}
                                 >
-                                    <Play size={14} fill={currentNotebook?.uuid === notebook.uuid && isPlaying ? "currentColor" : "none"} />
+                                    <Play size={14} fill={isNotebookPlaybackActive ? "currentColor" : "none"} />
                                 </button>
                             </div>
                         </div>

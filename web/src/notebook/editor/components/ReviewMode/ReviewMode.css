@@ -1,5 +1,5 @@
 .review-body {
-  --review-playback-height: 116px;
+  --review-playback-height: 64px;
   background: var(--background-color);
 }
 
@@ -174,17 +174,15 @@
 }
 
 .review-article-body .review-reading-word {
-  border-radius: 0.35em;
   scroll-margin-block: 24vh;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-  transition: background 0.08s ease, box-shadow 0.08s ease;
+  transition: color 0.15s ease;
 }
 
-.review-article-body .review-reading-word.reading-highlight {
-  background: rgba(194, 65, 12, 0.16);
-  box-shadow: 0 0 0 1px rgba(194, 65, 12, 0.22);
-  color: inherit;
+.review-article-body .review-reading-word.review-word--active {
+  color: rgb(194, 65, 12);
+  transition: color 0.1s ease;
 }
 
 .outline-item--review.is-active {
@@ -203,7 +201,7 @@
   width: 100%;
   max-width: min(100%, 1680px);
   margin: 0 auto;
-  padding: 8px 18px;
+  padding: 2px 18px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -218,8 +216,8 @@
 .review-playback-divider {
   flex-shrink: 0;
   width: 1px;
-  height: 40px;
-  margin: 0 16px;
+  height: 28px;
+  margin: 0 12px;
   background: linear-gradient(
     180deg,
     rgba(28, 25, 23, 0),
@@ -239,7 +237,7 @@
 .review-playback-player .player-bar-container {
   width: 100%;
   max-width: 100%;
-  min-height: 72px;
+  min-height: 0;
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -282,8 +280,8 @@
   justify-content: center;
   flex-wrap: nowrap;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  padding: 0 10px 4px;
+  gap: 8px;
+  padding: 0 10px 2px;
 }
 
 .review-playback-player .player-controls--review {
@@ -303,8 +301,8 @@
 }
 
 .review-playback-player .player-btn.play-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
 }
 
 .review-playback-player .player-speed-btn {

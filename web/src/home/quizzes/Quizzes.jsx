@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import QuizPlayer from './QuizPlayer';
 import CreateQuizPage from './components/CreateQuizPage';
 import EditQuizPage from './components/EditQuizPage';
@@ -91,6 +92,8 @@ const Quizzes = () => {
   const { quizzes, quizzesLoading, fetchQuizzes, deleteQuiz } = useQuiz();
   const { notebooks } = useNotebook();
   const { addNotification } = useNotification();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [editQuiz, setEditQuiz] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -107,6 +110,21 @@ const Quizzes = () => {
     itemLabel: 'quiz',
     pluralize,
   });
+
+  useEffect(() => {
+    const targetQuizUuid = location.state?.autoOpenQuizUuid;
+    if (!targetQuizUuid || quizzesLoading) {
+      return;
+    }
+
+    const targetQuiz = quizzes.find((quiz) => quiz.uuid === targetQuizUuid);
+    if (!targetQuiz) {
+      return;
+    }
+
+    setActiveQuiz(targetQuiz);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate, quizzes, quizzesLoading]);
 
   if (showCreate) {
     return <CreateQuizPage key="create-quiz-page" onClose={() => setShowCreate(false)} notebooks={notebooks} />;

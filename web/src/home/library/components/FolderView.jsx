@@ -11,7 +11,7 @@ const FolderView = ({ notebooks, categories, selectedCategoryId, onSelectCategor
   const [showCategoryMove, setShowCategoryMove] = useState(false);
   const menuRef = useRef(null);
   const { updateNotebook } = useNotebook();
-  const { togglePlay, addToQueue, currentNotebook, isPlaying } = useAudioPlayer();
+  const { togglePlay, addToQueue, currentNotebook, isPlaying, isPreparing } = useAudioPlayer();
 
   // Calculate notebook counts for each category
   const categoryNotebookCounts = useMemo(() => {
@@ -103,12 +103,15 @@ const FolderView = ({ notebooks, categories, selectedCategoryId, onSelectCategor
 
           {/* Notebooks */}
           {notebooks.map(notebook => (
-            <tr key={notebook.uuid} className={`folder-view-row notebook-row ${currentNotebook?.uuid === notebook.uuid && isPlaying ? 'is-playing' : ''}`}>
+            <tr
+              key={notebook.uuid}
+              className={`folder-view-row notebook-row ${currentNotebook?.uuid === notebook.uuid && (isPlaying || isPreparing) ? 'is-playing' : ''}`}
+            >
               <td className="col-name">
                 <Link {...getNotebookLinkProps(notebook.uuid)} className="notebook-link">
                   <FileText size={18} className="file-icon" />
                   <span>{notebook.title}</span>
-                  {currentNotebook?.uuid === notebook.uuid && isPlaying && (
+                  {currentNotebook?.uuid === notebook.uuid && (isPlaying || isPreparing) && (
                     <div className="playing-indicator">
                       <span></span><span></span><span></span>
                     </div>
@@ -126,7 +129,7 @@ const FolderView = ({ notebooks, categories, selectedCategoryId, onSelectCategor
                     title="Play Notebook"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(notebook, notebook.sections); }}
                   >
-                    <Play size={16} fill={currentNotebook?.uuid === notebook.uuid && isPlaying ? "currentColor" : "none"} />
+                    <Play size={16} fill={currentNotebook?.uuid === notebook.uuid && (isPlaying || isPreparing) ? "currentColor" : "none"} />
                   </button>
                   <button 
                     className="icon-action-btn queue-btn" 

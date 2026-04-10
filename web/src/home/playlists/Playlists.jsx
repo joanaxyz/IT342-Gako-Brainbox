@@ -187,7 +187,7 @@ const Playlists = () => {
   const { notebooks } = useNotebook();
   const { fetchCategories } = useCategory();
   const { playlists, playlistsLoading, fetchPlaylists, createPlaylist, deletePlaylist, addNotebook, removeNotebook } = usePlaylist();
-  const { play, addToQueue, currentNotebook, isPlaying, togglePlay } = useAudioPlayer();
+  const { play, addToQueue, currentNotebook, isPlaying, isPreparing, togglePlay } = useAudioPlayer();
 
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('updatedAt');
@@ -403,6 +403,7 @@ const Playlists = () => {
 
             {displayedNotebooks.map((nb, i) => {
               const isActive = currentNotebook?.uuid === nb.uuid;
+              const isPlaybackActive = isActive && (isPlaying || isPreparing);
               return (
                 <div
                   key={nb.uuid}
@@ -410,7 +411,7 @@ const Playlists = () => {
                   onDoubleClick={() => handlePlay(nb)}
                 >
                   <span className="pl-track-num">
-                    {isActive && isPlaying ? (
+                    {isPlaybackActive ? (
                       <span className="pl-bars">
                         <span /><span /><span />
                       </span>
@@ -418,7 +419,7 @@ const Playlists = () => {
                       <span className="pl-track-idx">{i + 1}</span>
                     )}
                     <button className="pl-track-play-btn" onClick={() => handlePlay(nb)}>
-                      {isActive && isPlaying ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
+                      {isPlaybackActive ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
                     </button>
                   </span>
 

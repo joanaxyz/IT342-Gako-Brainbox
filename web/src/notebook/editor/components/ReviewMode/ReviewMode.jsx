@@ -293,7 +293,7 @@ const ReviewMode = ({
                           activeOffset={activeOffset}
                           isActive={isReviewNotebookActive}
                           isPlaying={isPlaying}
-                          activeWordClassName="reading-highlight"
+                          activeWordClassName="review-word--active"
                           autoScrollAxis="y"
                         />
                       </article>

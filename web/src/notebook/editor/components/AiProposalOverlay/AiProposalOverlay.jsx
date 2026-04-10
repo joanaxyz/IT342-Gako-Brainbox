@@ -2,44 +2,108 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
+  Undo2,
+  Sparkles,
   X,
 } from 'lucide-react';
 
-const SelectionReviewOverlay = ({
+const AiProposalOverlay = ({
+  isOpen,
   changes = [],
-  hoveredChangeIndex = -1,
-  inlineReviewAnchor = null,
+  activeChangeIndex = -1,
+  onNavigate,
   onChangePreview,
   onAcceptAllRemaining,
   onRejectAllRemaining,
 }) => {
-  const currentChange = hoveredChangeIndex >= 0 ? changes[hoveredChangeIndex] || null : null;
-  const isPreviewingOriginal = currentChange?.decision === 'original';
-  const showHoverOverlay = Boolean(currentChange && inlineReviewAnchor);
+  if (!isOpen) {
+    return null;
+  }
+
+  const totalChanges = changes.length;
+  const activeChange = activeChangeIndex >= 0 ? changes[activeChangeIndex] || null : null;
+  const isActiveOriginal = activeChange?.decision === 'original';
 
   const handlePrevious = () => {
-    if (!currentChange) return;
-    onChangePreview?.(hoveredChangeIndex, 'original');
+    if (activeChangeIndex <= 0) return;
+    onNavigate?.(activeChangeIndex - 1);
   };
 
   const handleNext = () => {
-    if (!currentChange) return;
-    onChangePreview?.(hoveredChangeIndex, 'proposal');
+    if (activeChangeIndex >= totalChanges - 1) return;
+    onNavigate?.(activeChangeIndex + 1);
+  };
+
+  const handleToggleDecision = (decision) => {
+    if (activeChangeIndex < 0) return;
+    onChangePreview?.(activeChangeIndex, decision);
   };
 
   return (
-    <>
-      <section className="ai-proposal-bulk-dock" aria-label="AI selection review controls">
-        <div className="ai-proposal-bulk-dock-copy">
-          <span className="ai-proposal-mini-dock-label">AI review</span>
-          <strong>{changes.length > 0 ? `${changes.length} changes` : 'No changes'}</strong>
+    <section className="ai-proposal-mini-dock" aria-label="AI proposal review controls">
+      <div className="ai-proposal-mini-dock-main">
+        <div>
+          <span className="ai-proposal-mini-dock-label">AI proposal</span>
         </div>
-        <div className="ai-proposal-bulk-dock-actions">
+        <div className="ai-proposal-mini-dock-review">
+          <nav className="ai-proposal-nav" aria-label="Change navigation">
+            <button
+              type="button"
+              className="ai-proposal-nav-btn"
+              onClick={handlePrevious}
+              disabled={activeChangeIndex <= 0}
+              aria-label="Previous change"
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <div className="ai-proposal-nav-copy">
+              <strong>
+                {totalChanges > 0
+                  ? `${activeChangeIndex + 1} / ${totalChanges}`
+                  : 'No changes'}
+              </strong>
+            </div>
+            <button
+              type="button"
+              className="ai-proposal-nav-btn"
+              onClick={handleNext}
+              disabled={activeChangeIndex >= totalChanges - 1}
+              aria-label="Next change"
+            >
+              <ChevronRight size={15} />
+            </button>
+          </nav>
+          {activeChange && (
+            <div className="ai-proposal-change-toggle" role="group" aria-label="Choose version for this change">
+              <button
+                type="button"
+                className={`ai-proposal-mini-dock-btn ai-proposal-mini-dock-btn--ghost${isActiveOriginal ? ' is-selected' : ''}`}
+                onClick={() => handleToggleDecision('original')}
+                title="Keep original"
+                aria-pressed={isActiveOriginal}
+              >
+                <Undo2 size={14} />
+                <span>Original</span>
+              </button>
+              <button
+                type="button"
+                className={`ai-proposal-mini-dock-btn ai-proposal-mini-dock-btn--ghost${!isActiveOriginal ? ' is-selected' : ''}`}
+                onClick={() => handleToggleDecision('proposal')}
+                title="Use AI version"
+                aria-pressed={!isActiveOriginal}
+              >
+                <Sparkles size={14} />
+                <span>New</span>
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="ai-proposal-mini-dock-actions">
           <button
             type="button"
             className="ai-proposal-mini-dock-btn ai-proposal-mini-dock-btn--accept"
             onClick={onAcceptAllRemaining}
-            disabled={changes.length === 0}
+            disabled={totalChanges === 0}
           >
             <CheckCheck size={15} />
             <span>Accept</span>
@@ -48,77 +112,15 @@ const SelectionReviewOverlay = ({
             type="button"
             className="ai-proposal-mini-dock-btn ai-proposal-mini-dock-btn--reject"
             onClick={onRejectAllRemaining}
-            disabled={changes.length === 0}
+            disabled={totalChanges === 0}
           >
             <X size={15} />
             <span>Reject</span>
           </button>
         </div>
-      </section>
-
-      {showHoverOverlay && (
-        <section
-          className="ai-proposal-inline-review ai-proposal-inline-review--selection"
-          aria-label="Inline selection review"
-          style={{
-            top: `${inlineReviewAnchor.top}px`,
-            left: `${inlineReviewAnchor.left}px`,
-          }}
-        >
-          <div className="ai-proposal-inline-review-actions">
-            <button
-              type="button"
-              className="ai-proposal-inline-btn"
-              onClick={handlePrevious}
-              aria-label="View original version"
-              title="View original version"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <button
-              type="button"
-              className="ai-proposal-inline-btn"
-              onClick={handleNext}
-              aria-label="View AI version"
-              title="View AI version"
-            >
-              <ChevronRight size={15} />
-            </button>
-          </div>
-        </section>
-      )}
-    </>
+      </div>
+    </section>
   );
-};
-
-const AiProposalOverlay = ({
-  isOpen,
-  changes = [],
-  hoveredChangeIndex = -1,
-  reviewMode = 'diff',
-  onChangePreview,
-  onAcceptAllRemaining,
-  onRejectAllRemaining,
-  inlineReviewAnchor = null,
-}) => {
-  if (!isOpen) {
-    return null;
-  }
-
-  if (reviewMode === 'selection_changes') {
-    return (
-      <SelectionReviewOverlay
-        changes={changes}
-        hoveredChangeIndex={hoveredChangeIndex}
-        inlineReviewAnchor={inlineReviewAnchor}
-        onChangePreview={onChangePreview}
-        onAcceptAllRemaining={onAcceptAllRemaining}
-        onRejectAllRemaining={onRejectAllRemaining}
-      />
-    );
-  }
-
-  return null;
 };
 
 export default AiProposalOverlay;

@@ -1,4 +1,5 @@
 import {
+  startTransition,
   useDeferredValue,
   useState,
   useRef,
@@ -7,10 +8,10 @@ import {
   useMemo,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   CheckCircle2,
-  ExternalLink,
   History,
   Plus,
   Search,
@@ -23,7 +24,6 @@ import {
 import { aiAPI } from '../../../../common/utils/api.jsx';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { useFlashcard, useQuiz } from '../../../shared/hooks/hooks';
-import AiSettingsModal from './AiSettingsModal';
 import AiSettingsModal from './AiSettingsModal';
 
 const createMessageId = () => {
@@ -123,6 +123,214 @@ const REVIEW_TOOL_INSTRUCTIONS = [
   'Review mode keeps the notebook itself unchanged.',
 ];
 
+const QUIZ_ACTION_ALIASES = new Set([
+  'create_quiz',
+  'create_quizzes',
+  'generate_quiz',
+  'generate_quizzes',
+  'quiz',
+  'quizzes',
+]);
+
+const FLASHCARD_ACTION_ALIASES = new Set([
+  'create_flashcard',
+  'create_flashcards',
+  'generate_flashcard',
+  'generate_flashcards',
+  'create_flashcard_deck',
+  'create_deck',
+  'deck',
+  'flashcard',
+  'flashcards',
+]);
+
+const tryParseJsonObject = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return typeof value === 'object' ? value : null;
+};
+
+const normalizeGeneratedAction = (action, { quizDraft, flashcardDraft }) => {
+  const normalizedAction = typeof action === 'string' ? action.trim().toLowerCase() : '';
+
+  if (QUIZ_ACTION_ALIASES.has(normalizedAction)) {
+    return 'create_quiz';
+  }
+
+  if (FLASHCARD_ACTION_ALIASES.has(normalizedAction)) {
+    return 'create_flashcard';
+  }
+
+  if (quizDraft && !flashcardDraft) {
+    return 'create_quiz';
+  }
+
+  if (flashcardDraft && !quizDraft) {
+    return 'create_flashcard';
+  }
+
+  return normalizedAction || 'none';
+};
+
+const normalizeQuizQuestion = (value) => {
+  const question = tryParseJsonObject(value);
+  if (!question) {
+    return null;
+  }
+
+  const text = typeof question.text === 'string' ? question.text.trim() : '';
+  const options = Array.isArray(question.options)
+    ? question.options.filter((option) => typeof option === 'string' && option.trim())
+    : [];
+  const parsedCorrectIndex = Number.parseInt(question.correctIndex, 10);
+  const correctIndex = Number.isFinite(parsedCorrectIndex)
+    && parsedCorrectIndex >= 0
+    && parsedCorrectIndex < options.length
+    ? parsedCorrectIndex
+    : 0;
+
+  if (!text || options.length < 2) {
+    return null;
+  }
+
+  return {
+    type: 'multiple_choice',
+    text,
+    options: options.slice(0, 4),
+    correctIndex,
+  };
+};
+
+const normalizeQuizDraft = (value, notebookUuid) => {
+  const quiz = tryParseJsonObject(value);
+  if (!quiz) {
+    return null;
+  }
+
+  const questionSource = quiz.questions ?? quiz.items ?? quiz.quizQuestions;
+  const questions = Array.isArray(questionSource)
+    ? questionSource.map(normalizeQuizQuestion).filter(Boolean)
+    : [];
+
+  if (questions.length === 0) {
+    return null;
+  }
+
+  return {
+    title: typeof quiz.title === 'string' && quiz.title.trim()
+      ? quiz.title.trim()
+      : 'Generated Quiz',
+    description: typeof quiz.description === 'string' && quiz.description.trim()
+      ? quiz.description.trim()
+      : 'AI-generated quiz from this note.',
+    difficulty: typeof quiz.difficulty === 'string' && quiz.difficulty.trim()
+      ? quiz.difficulty.trim()
+      : 'medium',
+    notebookUuid,
+    questions,
+  };
+};
+
+const normalizeFlashcardCard = (value) => {
+  const card = tryParseJsonObject(value);
+  if (!card) {
+    return null;
+  }
+
+  const front = typeof card.front === 'string' ? card.front.trim() : '';
+  const back = typeof card.back === 'string' ? card.back.trim() : '';
+
+  if (!front || !back) {
+    return null;
+  }
+
+  return { front, back };
+};
+
+const normalizeFlashcardDraft = (value, notebookUuid) => {
+  const flashcardDeck = tryParseJsonObject(value);
+  if (!flashcardDeck) {
+    return null;
+  }
+
+  const cardSource = flashcardDeck.cards
+    ?? flashcardDeck.flashcards
+    ?? flashcardDeck.items
+    ?? flashcardDeck.deckCards;
+  const cards = Array.isArray(cardSource)
+    ? cardSource.map(normalizeFlashcardCard).filter(Boolean)
+    : [];
+
+  if (cards.length === 0) {
+    return null;
+  }
+
+  return {
+    title: typeof flashcardDeck.title === 'string' && flashcardDeck.title.trim()
+      ? flashcardDeck.title.trim()
+      : 'Generated Flashcards',
+    description: typeof flashcardDeck.description === 'string' && flashcardDeck.description.trim()
+      ? flashcardDeck.description.trim()
+      : 'AI-generated flashcard deck from this note.',
+    notebookUuid,
+    cards,
+  };
+};
+
+const resolveGeneratedQuizDraft = (payload, notebookUuid) => {
+  const normalizedPayload = tryParseJsonObject(payload);
+  if (!normalizedPayload) {
+    return null;
+  }
+
+  const candidates = [
+    normalizedPayload.quizData,
+    normalizedPayload.quiz,
+    normalizedPayload.quiz_data,
+    normalizedPayload.generatedQuiz,
+    Array.isArray(normalizedPayload.questions) ? normalizedPayload : null,
+  ];
+
+  return candidates
+    .map((candidate) => normalizeQuizDraft(candidate, notebookUuid))
+    .find(Boolean) ?? null;
+};
+
+const resolveGeneratedFlashcardDraft = (payload, notebookUuid) => {
+  const normalizedPayload = tryParseJsonObject(payload);
+  if (!normalizedPayload) {
+    return null;
+  }
+
+  const candidates = [
+    normalizedPayload.flashcardData,
+    normalizedPayload.flashcardsData,
+    normalizedPayload.flashcardDeck,
+    normalizedPayload.deckData,
+    normalizedPayload.deck,
+    normalizedPayload.generatedDeck,
+    normalizedPayload.generatedFlashcards,
+    (Array.isArray(normalizedPayload.cards) || Array.isArray(normalizedPayload.flashcards))
+      ? normalizedPayload
+      : null,
+  ];
+
+  return candidates
+    .map((candidate) => normalizeFlashcardDraft(candidate, notebookUuid))
+    .find(Boolean) ?? null;
+};
+
 const AiAssistantSidebar = ({
   isOpen,
   onClose,
@@ -144,7 +352,6 @@ const AiAssistantSidebar = ({
   className = '',
 }) => {
   const [showAiSettings, setShowAiSettings] = useState(false);
-  const [showAiSettings, setShowAiSettings] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [historyQuery, setHistoryQuery] = useState('');
@@ -153,6 +360,7 @@ const AiAssistantSidebar = ({
   const [pendingQuiz, setPendingQuiz] = useState(null);
   const [pendingFlashcard, setPendingFlashcard] = useState(null);
   const [createdQuiz, setCreatedQuiz] = useState(null);
+  const [createdFlashcard, setCreatedFlashcard] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvUuid, setActiveConvUuid] = useState(null);
@@ -179,6 +387,7 @@ const AiAssistantSidebar = ({
   const { addNotification } = useNotification();
   const { createQuiz } = useQuiz();
   const { createFlashcard } = useFlashcard();
+  const navigate = useNavigate();
   const resolvedToolInstructions = mode === 'review'
     ? REVIEW_TOOL_INSTRUCTIONS
     : EDITOR_TOOL_INSTRUCTIONS;
@@ -204,6 +413,7 @@ const AiAssistantSidebar = ({
     setPendingQuiz(null);
     setPendingFlashcard(null);
     setCreatedQuiz(null);
+    setCreatedFlashcard(null);
     setActiveConvUuid(null);
     setHistoryQuery('');
     setConversationTitle('New chat');
@@ -426,9 +636,13 @@ const AiAssistantSidebar = ({
         editorContent,
         conversationTitle: aiConversationTitle,
         selectionEdits,
-        quizData,
-        flashcardData,
       } = response.data;
+      const normalizedQuizDraft = resolveGeneratedQuizDraft(response.data, notebookUuid);
+      const normalizedFlashcardDraft = resolveGeneratedFlashcardDraft(response.data, notebookUuid);
+      const normalizedGenerationAction = normalizeGeneratedAction(action, {
+        quizDraft: normalizedQuizDraft,
+        flashcardDraft: normalizedFlashcardDraft,
+      });
 
       const finalMessages = [
         ...nextMessages,
@@ -496,11 +710,11 @@ const AiAssistantSidebar = ({
             3500,
           );
         }
-      } else if (action === 'create_quiz' && quizData) {
-        setPendingQuiz({ ...quizData, notebookUuid });
+      } else if (normalizedGenerationAction === 'create_quiz' && normalizedQuizDraft) {
+        setPendingQuiz(normalizedQuizDraft);
         setPendingFlashcard(null);
-      } else if (action === 'create_flashcard' && flashcardData) {
-        setPendingFlashcard({ ...flashcardData, notebookUuid });
+      } else if (normalizedGenerationAction === 'create_flashcard' && normalizedFlashcardDraft) {
+        setPendingFlashcard(normalizedFlashcardDraft);
         setPendingQuiz(null);
       }
 
@@ -543,6 +757,7 @@ const AiAssistantSidebar = ({
       setPendingQuiz(null);
       setPendingFlashcard(null);
       setCreatedQuiz(null);
+      setCreatedFlashcard(null);
       setIsHistoryModalOpen(false);
     } catch {
       addNotification('Failed to load conversation', 'error', 3000);
@@ -572,6 +787,7 @@ const AiAssistantSidebar = ({
     setPendingQuiz(null);
     setPendingFlashcard(null);
     setCreatedQuiz(null);
+    setCreatedFlashcard(null);
     setActiveConvUuid(null);
     setConversationTitle('New chat');
     setIsHistoryModalOpen(false);
@@ -609,6 +825,7 @@ const AiAssistantSidebar = ({
     try {
       const response = await createFlashcard(pendingFlashcard, false);
       if (response.success) {
+        setCreatedFlashcard(response.data);
         setPendingFlashcard(null);
         addNotification('Flashcard deck created successfully!', 'success', 3000);
       } else {
@@ -620,6 +837,26 @@ const AiAssistantSidebar = ({
       setIsCreating(false);
     }
   };
+
+  const handleViewQuiz = useCallback(() => {
+    if (!createdQuiz?.uuid) {
+      return;
+    }
+
+    startTransition(() => {
+      navigate('/quizzes', { state: { autoOpenQuizUuid: createdQuiz.uuid } });
+    });
+  }, [createdQuiz?.uuid, navigate]);
+
+  const handleViewFlashcardDeck = useCallback(() => {
+    if (!createdFlashcard?.uuid) {
+      return;
+    }
+
+    startTransition(() => {
+      navigate('/flashcards', { state: { autoOpenDeckUuid: createdFlashcard.uuid } });
+    });
+  }, [createdFlashcard?.uuid, navigate]);
 
   const historyModal = isHistoryModalOpen && typeof document !== 'undefined'
     ? createPortal(
@@ -734,8 +971,6 @@ const AiAssistantSidebar = ({
                 type="button"
                 className={`ai-sidebar-icon-btn${showAiSettings ? ' is-active' : ''}`}
                 onClick={() => setShowAiSettings((v) => !v)}
-                className={`ai-sidebar-icon-btn${showAiSettings ? ' is-active' : ''}`}
-                onClick={() => setShowAiSettings((v) => !v)}
                 aria-label="AI provider settings"
                 title="AI settings"
               >
@@ -764,9 +999,6 @@ const AiAssistantSidebar = ({
           </div>
 
           <div className="ai-sidebar-body">
-            <AiSettingsModal isOpen={showAiSettings} onClose={() => setShowAiSettings(false)} />
-            <div className="ai-chat-container">
-              {isToolHelpOpen && (
             <AiSettingsModal isOpen={showAiSettings} onClose={() => setShowAiSettings(false)} />
             <div className="ai-chat-container">
               {isToolHelpOpen && (
@@ -909,14 +1141,35 @@ const AiAssistantSidebar = ({
                       </div>
                       <div className="ai-generated-card-actions">
                         <button type="button" className="ai-btn-dismiss" onClick={() => setCreatedQuiz(null)}>Dismiss</button>
-                        <a
+                        <button
+                          type="button"
                           className="ai-btn-create"
-                          href="/quizzes"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={handleViewQuiz}
                         >
-                          <ExternalLink size={13} /> View Quiz
-                        </a>
+                          View Quiz
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {createdFlashcard && (
+                    <div className="ai-generated-card ai-generated-card--success">
+                      <div className="ai-generated-card-header">
+                        <CheckCircle2 size={14} />
+                        <strong>{createdFlashcard.title || 'Deck created'}</strong>
+                      </div>
+                      <div className="ai-generated-card-meta">
+                        {createdFlashcard.cardCount ?? 0} cards
+                      </div>
+                      <div className="ai-generated-card-actions">
+                        <button type="button" className="ai-btn-dismiss" onClick={() => setCreatedFlashcard(null)}>Dismiss</button>
+                        <button
+                          type="button"
+                          className="ai-btn-create"
+                          onClick={handleViewFlashcardDeck}
+                        >
+                          View Deck
+                        </button>
                       </div>
                     </div>
                   )}
@@ -980,7 +1233,6 @@ const AiAssistantSidebar = ({
                     </button>
                   </div>
                 </div>
-            </div>
             </div>
           </div>
         </div>

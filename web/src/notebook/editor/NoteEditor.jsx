@@ -9,7 +9,6 @@ import { useAiProposalState } from './hooks/useAiProposalState';
 import { useNoteEditorLifecycle } from './hooks/useNoteEditorLifecycle';
 import { useNoteEditorPersistence } from './hooks/useNoteEditorPersistence';
 import useVersionHistory from './hooks/useVersionHistory';
-import useProposalOverlayAnchor from './hooks/useProposalOverlayAnchor';
 import useEditorNavigation from './hooks/useEditorNavigation';
 import EditorNavbar from './components/EditorNavbar/EditorNavbar';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
@@ -113,15 +112,12 @@ const NoteEditor = () => {
     pendingAiSelectionIds,
     clearAllAiSelectionsOnAccept,
     proposalRenderToken,
-    proposalReviewMode,
     proposalChanges,
-    proposalChangeDecisions,
     activeProposalChangeIndex,
     activeProposalWorkingBlockIndexes,
     setActiveEditor,
+    setActiveProposalChangeIndex,
     setProposalChangePreview,
-    acceptAllRemainingProposalChanges,
-    rejectAllRemainingProposalChanges,
     handleAiUpdateContent,
     handleAcceptAiChange: clearAcceptedAiProposal,
     handleRevertAiChange,
@@ -135,8 +131,7 @@ const NoteEditor = () => {
 
   // ── Computed values ───────────────────────────────────────────────────
   const isAiProposalOpen = aiProposedContent !== null && aiOriginalContent !== null;
-  const isSelectionReviewMode = isAiProposalOpen && proposalReviewMode === 'selection_changes';
-  const proposalHighlightFocusIndex = isSelectionReviewMode ? -1 : activeProposalChangeIndex;
+  const proposalHighlightFocusIndex = activeProposalChangeIndex;
   const editorSurfaceState = isAiProposalOpen ? `ai_preview_${proposalRenderToken}` : 'document';
   const editorKey = `${routeNotebook?.uuid ?? notebookUuid}_${editorSurfaceState}`;
   const editorStorageKey = routeNotebook?.uuid || notebookUuid;
@@ -197,16 +192,6 @@ const NoteEditor = () => {
     addNotification,
   });
 
-  const { inlineProposalAnchor, hoveredProposalChangeIndex } = useProposalOverlayAnchor({
-    editorRef,
-    editorContainerRef,
-    isAiProposalOpen,
-    isSelectionReviewMode,
-    activeProposalChangeIndex,
-    activeProposalWorkingBlockIndexes,
-    proposalRenderToken,
-  });
-
   // ── Review mode ───────────────────────────────────────────────────────
   const wasReviewModeRef = useRef(false);
 
@@ -256,18 +241,16 @@ const NoteEditor = () => {
             tone: c.decision === 'original' ? 'original' : 'proposal',
             reviewStatus: '',
             activeBlockIndexes: proposalHighlightFocusIndex === c.index ? c.workingBlockIndexes : [],
-            changeIndex: c.index,
           }))
       );
 
-      const focusBlock = !isSelectionReviewMode ? activeProposalWorkingBlockIndexes?.[0] : null;
+      const focusBlock = activeProposalWorkingBlockIndexes?.[0];
       if (Number.isInteger(focusBlock)) editorRef.current?.scrollToTopLevelBlock?.(focusBlock);
     });
 
     return () => window.cancelAnimationFrame(frame);
   }, [
     activeProposalWorkingBlockIndexes,
-    isSelectionReviewMode,
     proposalChanges,
     proposalHighlightFocusIndex,
     isAiProposalOpen,
@@ -385,8 +368,11 @@ const NoteEditor = () => {
 
   const handleTogglePlay = useCallback(async () => {
     if (!routeNotebook?.uuid) return;
-    await togglePlay(routeNotebook, editorRef.current?.getHTML?.() ?? documentContent ?? '');
-  }, [documentContent, routeNotebook, togglePlay]);
+    const content = isReviewModeOpen
+      ? reviewContent
+      : (editorRef.current?.getHTML?.() ?? documentContent ?? '');
+    await togglePlay(routeNotebook, content || undefined);
+  }, [documentContent, isReviewModeOpen, reviewContent, routeNotebook, togglePlay]);
 
   const handleAiToolSelect = useCallback((toolKey) => {
     setAiSidebarOpen((isOpen) => toolKey === aiToolKey ? !isOpen : true);
@@ -533,12 +519,11 @@ const NoteEditor = () => {
                 <AiProposalOverlay
                   isOpen={isAiProposalOpen}
                   changes={proposalChanges}
-                  hoveredChangeIndex={hoveredProposalChangeIndex}
-                  reviewMode={proposalReviewMode}
+                  activeChangeIndex={activeProposalChangeIndex}
                   onChangePreview={setProposalChangePreview}
+                  onNavigate={setActiveProposalChangeIndex}
                   onAcceptAllRemaining={handleAcceptAiChange}
-                  onRejectAllRemaining={rejectAllRemainingProposalChanges}
-                  inlineReviewAnchor={inlineProposalAnchor}
+                  onRejectAllRemaining={handleRevertAiChange}
                 />
 
                 <EditorCanvasToolbar

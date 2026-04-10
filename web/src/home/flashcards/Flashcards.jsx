@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import FlashcardPlayer from './FlashcardPlayer';
 import CreateDeckPage from './components/CreateDeckPage';
 import EditDeckPage from './components/EditDeckPage';
@@ -80,6 +81,8 @@ const Flashcards = () => {
   const { flashcards, flashcardsLoading, fetchFlashcards, deleteFlashcard } = useFlashcard();
   const { notebooks } = useNotebook();
   const { addNotification } = useNotification();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeDeck, setActiveDeck] = useState(null);
   const [editDeck, setEditDeck] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -96,6 +99,21 @@ const Flashcards = () => {
     itemLabel: 'deck',
     pluralize,
   });
+
+  useEffect(() => {
+    const targetDeckUuid = location.state?.autoOpenDeckUuid;
+    if (!targetDeckUuid || flashcardsLoading) {
+      return;
+    }
+
+    const targetDeck = flashcards.find((deck) => deck.uuid === targetDeckUuid);
+    if (!targetDeck) {
+      return;
+    }
+
+    setActiveDeck(targetDeck);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [flashcards, flashcardsLoading, location.pathname, location.state, navigate]);
 
   if (showCreate) {
     return <CreateDeckPage key="create-deck-page" onClose={() => setShowCreate(false)} notebooks={notebooks} />;
