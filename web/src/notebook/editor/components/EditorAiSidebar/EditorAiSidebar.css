@@ -1,0 +1,248 @@
+.editor-ai-shell {
+  --editor-ai-rail-width: 72px;
+  --editor-ai-panel-width: min(360px, 28vw);
+  width: 0;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, var(--editor-ai-panel-width)) var(--editor-ai-rail-width);
+  overflow: hidden;
+  border-left: 0 solid rgba(28, 25, 23, 0.06);
+  background: rgba(255, 255, 255, 0.68);
+  transition: width 0.22s var(--ease), border-color 0.22s var(--ease), background 0.22s var(--ease);
+}
+
+.editor-ai-shell.is-open {
+  width: calc(var(--editor-ai-panel-width) + var(--editor-ai-rail-width));
+  border-left-width: 1px;
+  pointer-events: auto;
+}
+
+.editor-ai-shell.is-closed {
+  pointer-events: none;
+}
+
+.editor-ai-shell.has-no-rail {
+  grid-template-columns: minmax(0, var(--editor-ai-panel-width));
+}
+
+.editor-ai-shell-panel {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-ai-shell .ai-sidebar {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  border-left: 0 !important;
+  border-right: 1px solid rgba(28, 25, 23, 0.06);
+  border-radius: 0 !important;
+  background: rgba(248, 247, 244, 0.95) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transform: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  overflow: hidden !important;
+}
+
+.editor-ai-shell .review-ai-sidebar {
+  background-color: rgba(250, 248, 245, 0.99) !important;
+}
+
+.editor-ai-shell .ai-sidebar-inner,
+.editor-ai-shell .ai-sidebar-body,
+.editor-ai-shell .ai-chat-container {
+  min-height: 0;
+}
+
+.editor-ai-shell .ai-sidebar-inner {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+}
+
+.editor-ai-shell .ai-sidebar-header,
+.editor-ai-shell .ai-sidebar-header--conversation {
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+.editor-ai-shell .ai-sidebar-body {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.editor-ai-shell .ai-chat-container {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+}
+
+.editor-ai-shell .ai-chat-messages {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+.editor-ai-shell .ai-chat-input-wrapper {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
+.editor-ai-shell .editor-ai-rail {
+  width: var(--editor-ai-rail-width);
+  height: 100%;
+  position: relative !important;
+  inset: auto !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  z-index: auto !important;
+}
+
+.editor-ai-shell .editor-ai-rail-group,
+.editor-ai-shell .editor-ai-rail-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-ai-shell .editor-ai-rail-footer {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.editor-ai-shell .editor-ai-rail-divider {
+  width: 24px;
+  height: 1px;
+  background: rgba(28, 25, 23, 0.1);
+}
+
+.editor-ai-shell .editor-ai-rail-btn {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid rgba(28, 25, 23, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.editor-ai-shell .editor-ai-rail-btn:hover,
+.editor-ai-shell .editor-ai-rail-btn.is-active {
+  transform: translateY(-1px);
+  background: rgba(255, 247, 237, 0.94);
+  border-color: rgba(194, 65, 12, 0.14);
+  color: var(--accent-dark);
+}
+
+.editor-ai-shell .editor-ai-rail-btn--help {
+  border-style: dashed;
+}
+
+@media (max-width: 1280px) {
+  .editor-ai-shell {
+      --editor-ai-panel-width: min(340px, 32vw);
+    }
+}
+
+@media (max-width: 1180px) {
+  .editor-ai-shell {
+      --editor-ai-rail-width: 48px;
+      --editor-ai-panel-width: min(360px, calc(100vw - 32px - var(--editor-ai-rail-width)));
+      position: fixed;
+      top: calc(var(--editor-navbar-height) + var(--editor-mobile-toolbar-clearance, 84px) + 8px);
+      right: 8px;
+      bottom: calc(var(--page-bottom-clearance-mobile) + 8px);
+      z-index: 85;
+      border: 1px solid rgba(28, 25, 23, 0.08);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+  .editor-ai-shell.is-open {
+      width: calc(var(--editor-ai-panel-width) + var(--editor-ai-rail-width));
+    }
+
+  .editor-ai-shell.is-closed {
+      width: 0;
+      border-width: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+  .editor-ai-shell--review {
+      bottom: calc(var(--review-playback-height, 136px) + 8px);
+    }
+
+  .editor-ai-shell .ai-sidebar {
+      border-right: 1px solid rgba(28, 25, 23, 0.06);
+    }
+
+  .editor-ai-shell .editor-ai-rail {
+      padding: 10px 6px;
+    }
+
+  .editor-ai-shell .editor-ai-rail-group,
+    .editor-ai-shell .editor-ai-rail-footer {
+      flex-direction: column;
+    }
+}
+
+@media (max-width: 560px) {
+  .editor-ai-shell {
+      --editor-ai-rail-width: 44px;
+      --editor-ai-panel-width: min(340px, calc(100vw - 24px - var(--editor-ai-rail-width)));
+    }
+
+  .editor-ai-shell .editor-ai-rail {
+      padding: 8px 4px;
+    }
+
+  .editor-ai-shell .editor-ai-rail-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+    }
+}

@@ -4,7 +4,7 @@ import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import { TableMap, columnResizingPluginKey } from '@tiptap/pm/tables';
 
 const TABLE_META = 'brainbox-table-normalized';
-const tablePluginKey = new PluginKey('brainboxTableEnhancements');
+const tablePluginKey = new PluginKey('brainboxTableLayout');
 const tableResizeOverlayKey = new PluginKey('brainboxTableResizeOverlay');
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -215,7 +215,7 @@ const getPairLockedColumnWidths = (currentWidths, previousWidths, previousTableN
   };
 };
 
-const getLockedPreviewWidths = (baseWidths, changedIndex, desiredWidth, cellMinWidth, lockedWidth) => {
+const getLockedPreviewWidths = (baseWidths, changedIndex, desiredWidth, cellMinWidth, lockedWidth, maxWidth) => {
   if (!Array.isArray(baseWidths) || changedIndex < 0 || changedIndex >= baseWidths.length) {
     return null;
   }
@@ -248,7 +248,13 @@ const getLockedPreviewWidths = (baseWidths, changedIndex, desiredWidth, cellMinW
     };
   }
 
-  const targetWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+  let targetWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+
+  if (isFiniteNumber(maxWidth) && targetWidth > maxWidth) {
+    const excess = targetWidth - maxWidth;
+    adjustedWidths[changedIndex] = Math.max(cellMinWidth, adjustedWidths[changedIndex] - excess);
+    targetWidth = adjustedWidths.reduce((sum, value) => sum + value, 0);
+  }
 
   return {
     widths: adjustedWidths,
@@ -305,7 +311,8 @@ const normalizeTableNode = (tr, tableNode, previousTableNode, tablePos, containe
   const previousWidths = previousTableNode ? getStoredColumnWidths(previousTableNode, cellMinWidth) : [];
   const currentTotalWidth = currentWidths.reduce((sum, value) => sum + value, 0);
   const storedWidth = isFiniteNumber(tableNode.attrs.tableWidth) ? Math.round(tableNode.attrs.tableWidth) : null;
-  const lockedResize = hasExplicitColumnWidths(tableNode)
+  const hasExplicit = hasExplicitColumnWidths(tableNode);
+  const lockedResize = hasExplicit
     ? getPairLockedColumnWidths(
       currentWidths,
       previousWidths,
@@ -316,17 +323,7 @@ const normalizeTableNode = (tr, tableNode, previousTableNode, tablePos, containe
     : null;
   const targetWidth = lockedResize
     ? lockedResize.targetWidth
-    : hasExplicitColumnWidths(tableNode)
-      ? clamp(
-        currentTotalWidth || storedWidth || minimumWidth,
-        minimumWidth,
-        availableWidth,
-      )
-      : clamp(
-        storedWidth ?? availableWidth,
-        minimumWidth,
-        availableWidth,
-      );
+    : availableWidth;
   const nextWidths = lockedResize?.widths || normalizeColumnWidths(currentWidths, targetWidth, cellMinWidth);
   const nextAlign = normalizeTableAlign(tableNode.attrs.tableAlign);
   const shouldUpdateTable = tableNode.attrs.tableWidth !== targetWidth || tableNode.attrs.tableAlign !== nextAlign;
@@ -411,15 +408,15 @@ const normalizeSelectionAfterTable = (tr) => {
 
 const getContainerWidth = (editor, fallbackWidth, preferredWidth) => {
   if (isFiniteNumber(preferredWidth)) {
-    return Math.round(preferredWidth);
+    return Math.round(preferredWidth) - 2;
   }
 
   const width = editor?.view?.dom?.clientWidth;
-  return isFiniteNumber(width) ? Math.round(width) : fallbackWidth;
+  return isFiniteNumber(width) ? Math.round(width) - 2 : fallbackWidth;
 };
 
 const normalizeTablesInDoc = (tr, doc, previousDoc, editor, cellMinWidth) => {
-  const containerWidth = getContainerWidth(editor, null, editor?.extensionStorage?.tableEnhancements?.containerWidth);
+  const containerWidth = getContainerWidth(editor, null, editor?.extensionStorage?.tableLayout?.containerWidth);
   let didChange = false;
 
   doc.descendants((node, pos) => {
@@ -503,8 +500,10 @@ const applyLiveResizePreview = (view, pluginState, cellMinWidth, pointerX) => {
     tableNode,
     baseWidths.reduce((sum, value) => sum + value, 0),
   );
+  const rawContainerWidth = view.dom?.clientWidth || null;
+  const containerWidth = isFiniteNumber(rawContainerWidth) ? rawContainerWidth - 2 : null;
   const desiredWidth = Math.max(cellMinWidth, pluginState.dragging.startWidth + (pointerX - pluginState.dragging.startX));
-  const preview = getLockedPreviewWidths(baseWidths, columnIndex, desiredWidth, cellMinWidth, tableWidth);
+  const preview = getLockedPreviewWidths(baseWidths, columnIndex, desiredWidth, cellMinWidth, tableWidth, containerWidth);
 
   if (!preview) {
     return;
@@ -582,8 +581,8 @@ export class BrainboxTableView extends BaseTableView {
   }
 }
 
-export const TableEnhancements = Extension.create({
-  name: 'tableEnhancements',
+export const TableLayout = Extension.create({
+  name: 'tableLayout',
 
   addOptions() {
     return {

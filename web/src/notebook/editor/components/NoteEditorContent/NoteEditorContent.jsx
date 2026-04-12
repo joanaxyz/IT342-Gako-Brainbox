@@ -21,7 +21,9 @@ import {
   aiSelectionHighlightKey,
   createEditorExtensions,
   getAiSelectionRanges,
+  ttsWordHighlightKey,
 } from '../../tiptap/createEditorExtensions';
+import { findRangeIndexForOffset } from '../../../../common/audio/playbackModel';
 import TableBubbleMenu from '../TableBubbleMenu/TableBubbleMenu';
 import './NoteEditorContent.css';
 
@@ -50,6 +52,44 @@ const buildOutlineItems = (editor) => {
   return items;
 };
 
+const WORD_PATTERN = /\S+/g;
+
+const buildTtsPositionMap = (editor) => {
+  if (!editor) return [];
+
+  const positions = [];
+  let charOffset = 0;
+  let isFirstBlock = true;
+
+  editor.state.doc.descendants((node, pos) => {
+    if (node.isBlock && !node.isTextblock) return;
+
+    if (node.isTextblock) {
+      if (!isFirstBlock) {
+        charOffset += 1;
+      }
+      isFirstBlock = false;
+      return;
+    }
+
+    if (node.isText && node.text) {
+      const text = node.text;
+      for (const match of text.matchAll(WORD_PATTERN)) {
+        const wordStart = match.index;
+        positions.push({
+          charStart: charOffset + wordStart,
+          charEnd: charOffset + wordStart + match[0].length,
+          from: pos + wordStart,
+          to: pos + wordStart + match[0].length,
+        });
+      }
+      charOffset += text.length;
+    }
+  });
+
+  return positions;
+};
+
 const NoteEditorContent = forwardRef(({
   storageKey,
   content,
@@ -63,10 +103,15 @@ const NoteEditorContent = forwardRef(({
   onSelectionStateChange,
   onEditorReady,
   readOnly = false,
+  reviewMode = false,
   paperWidth = DEFAULT_PAPER_WIDTH,
   paperHeight = DEFAULT_PAPER_HEIGHT,
   zoom = 1,
   aiSelectionMode = false,
+  ttsActiveOffset = 0,
+  ttsIsActive = false,
+  ttsIsPlaying = false,
+  ttsWordRanges = [],
 }, ref) => {
   const viewportRef = useRef(null);
   const paperRef = useRef(null);
@@ -81,11 +126,12 @@ const NoteEditorContent = forwardRef(({
 
   const editorExtensions = useMemo(() => createEditorExtensions({
     enableAiHighlight: true,
-    enableAiSelectionHighlight: !readOnly,
+    enableAiSelectionHighlight: reviewMode || !readOnly,
+    enableTtsWordHighlight: reviewMode,
     enableTableNormalization: !readOnly,
     cellMinWidth: TABLE_CELL_MIN_WIDTH,
     tableContainerWidth: bodyWidth,
-  }), [bodyWidth, readOnly]);
+  }), [bodyWidth, readOnly, reviewMode]);
 
   const scratchExtensions = useMemo(() => createEditorExtensions({
     enableAiHighlight: false,
@@ -99,7 +145,7 @@ const NoteEditorContent = forwardRef(({
   }, [onOutlineChange]);
 
   const emitSelectionState = useCallback((currentEditor) => {
-    if (!currentEditor || readOnly) {
+    if (!currentEditor || (readOnly && !reviewMode)) {
       onSelectionStateChange?.({
         hasTextSelection: false,
         aiSelectionCount: 0,
@@ -120,7 +166,7 @@ const NoteEditorContent = forwardRef(({
       selectedText,
       isEditorFocused: Boolean(currentEditor.isFocused),
     });
-  }, [onSelectionStateChange, readOnly]);
+  }, [onSelectionStateChange, readOnly, reviewMode]);
 
   const editor = useEditor({
     extensions: editorExtensions,
@@ -167,12 +213,15 @@ const NoteEditorContent = forwardRef(({
       onUpdateContent?.(html);
     },
     onSelectionUpdate: ({ editor: currentEditor }) => {
-      if (!isEditable) {
+      if (!isEditable && !reviewMode) {
         return;
       }
 
-      const pos = currentEditor.state.selection.from;
-      localStorage.setItem(`noteEditorPos_${storageKey}`, pos.toString());
+      if (isEditable) {
+        const pos = currentEditor.state.selection.from;
+        localStorage.setItem(`noteEditorPos_${storageKey}`, pos.toString());
+      }
+
       emitSelectionState(currentEditor);
     },
     onBlur: ({ editor: currentEditor }) => {
@@ -321,18 +370,93 @@ const NoteEditorContent = forwardRef(({
     };
   }, [content, paperHeight, paperWidth, zoom]);
 
+  // ── TTS word highlight (review mode only) ─────────────────────────────
+  const ttsPositionMapRef = useRef([]);
+
+  useEffect(() => {
+    if (!editor || !reviewMode) {
+      ttsPositionMapRef.current = [];
+      return;
+    }
+    ttsPositionMapRef.current = buildTtsPositionMap(editor);
+  }, [editor, reviewMode, content]);
+
+  useEffect(() => {
+    if (!editor?.view || !reviewMode) return;
+
+    if (!ttsIsActive || ttsWordRanges.length === 0) {
+      editor.view.dispatch(editor.state.tr.setMeta(ttsWordHighlightKey, { from: 0, to: 0 }));
+      return;
+    }
+
+    const wordIndex = findRangeIndexForOffset(ttsWordRanges, ttsActiveOffset);
+    if (wordIndex < 0 || wordIndex >= ttsWordRanges.length) {
+      editor.view.dispatch(editor.state.tr.setMeta(ttsWordHighlightKey, { from: 0, to: 0 }));
+      return;
+    }
+
+    const word = ttsWordRanges[wordIndex];
+    const posMap = ttsPositionMapRef.current;
+
+    // Find the matching ProseMirror position for this word's char offset
+    let pmFrom = 0;
+    let pmTo = 0;
+    for (let i = 0; i < posMap.length; i++) {
+      if (posMap[i].charStart <= word.start && posMap[i].charEnd >= word.end) {
+        pmFrom = posMap[i].from;
+        pmTo = posMap[i].to;
+        break;
+      }
+      if (posMap[i].charStart >= word.start) {
+        pmFrom = posMap[i].from;
+        pmTo = posMap[i].to;
+        break;
+      }
+    }
+
+    if (pmFrom > 0 && pmTo > pmFrom) {
+      editor.view.dispatch(editor.state.tr.setMeta(ttsWordHighlightKey, { from: pmFrom, to: pmTo }));
+
+      // Auto-scroll active word into view when playing
+      if (ttsIsPlaying) {
+        try {
+          const coords = editor.view.coordsAtPos(pmFrom);
+          const viewport = viewportRef.current;
+          if (coords && viewport) {
+            const vpRect = viewport.getBoundingClientRect();
+            const padding = 32;
+            if (coords.top < vpRect.top + padding || coords.bottom > vpRect.bottom - padding) {
+              const domNode = editor.view.domAtPos(pmFrom);
+              if (domNode?.node) {
+                const el = domNode.node.nodeType === 3 ? domNode.node.parentElement : domNode.node;
+                el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+              }
+            }
+          }
+        } catch {
+          // coords calculation can fail at edge positions
+        }
+      }
+    } else {
+      editor.view.dispatch(editor.state.tr.setMeta(ttsWordHighlightKey, { from: 0, to: 0 }));
+    }
+  }, [editor, reviewMode, ttsIsActive, ttsIsPlaying, ttsActiveOffset, ttsWordRanges]);
+
   const scrollToHeading = useCallback((pos) => {
     if (!editor) {
       return;
     }
 
-    editor.commands.focus(pos);
+    if (!reviewMode) {
+      editor.commands.focus(pos);
+    }
+
     const element = editor.view?.nodeDOM(pos);
 
     if (element instanceof HTMLElement) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
     }
-  }, [editor]);
+  }, [editor, reviewMode]);
 
   const resolveAiSelectionTargets = useCallback((currentEditor) => {
     if (!currentEditor) {
@@ -791,13 +915,13 @@ const NoteEditorContent = forwardRef(({
           >
             <div className="note-editor-paper-shell">
               <article
-                className={`note-editor-paper${readOnly ? ' is-readonly' : ''}`}
+                className={`note-editor-paper${readOnly ? ' is-readonly' : ''}${reviewMode ? ' is-review-mode' : ''}`}
                 ref={paperRef}
-                aria-label={readOnly ? 'Document preview' : 'Document editor'}
+                aria-label={reviewMode ? 'Document review' : readOnly ? 'Document preview' : 'Document editor'}
               >
                 <div className="note-editor-flow">
                   <EditorContent editor={editor} />
-                  {!readOnly && editor && <TableBubbleMenu editor={editor} />}
+                  {!readOnly && editor && <TableBubbleMenu editor={editor} zoom={effectiveZoom} />}
                 </div>
                 {!readOnly && (
                   <div className="note-editor-spacer" onClick={() => editor?.commands.focus('end')} />

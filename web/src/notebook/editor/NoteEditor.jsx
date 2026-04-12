@@ -14,22 +14,26 @@ import EditorNavbar from './components/EditorNavbar/EditorNavbar';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
 import NoteEditorContent from './components/NoteEditorContent/NoteEditorContent';
 import OutlineNav from './components/OutlineNav/OutlineNav';
-import { EDITOR_AI_TOOLS } from './components/AiSidebar/editorAiTools';
+import { EDITOR_AI_TOOLS, REVIEW_AI_TOOLS } from './components/AiSidebar/editorAiTools';
 import EditorAiSidebar from './components/EditorAiSidebar/EditorAiSidebar';
 import EditorCanvasToolbar from './components/EditorCanvasToolbar/EditorCanvasToolbar';
 import AiProposalOverlay from './components/AiProposalOverlay/AiProposalOverlay';
 import VersionHistorySidebar from './components/VersionHistorySidebar/VersionHistorySidebar';
 import VersionPreviewOverlay from './components/VersionPreviewOverlay/VersionPreviewOverlay';
-import ReviewMode from './components/ReviewMode/ReviewMode';
+import PlayerBar from '../../home/shared/components/PlayerBar';
 import { useAudioPlayer, useNotification } from '../../common/hooks/hooks';
+import { buildPlaybackModel } from '../../common/audio/playbackModel';
+import './components/ReviewMode/ReviewMode.css';
 import './editor.css';
 
 const NoteEditor = () => {
   const { id: notebookUuid } = useParams();
   const { state: locationState, search } = useLocation();
   const editorRef = useRef(null);
+  const reviewEditorRef = useRef(null);
   const editorContainerRef = useRef(null);
   const lastEditorSelectionTextRef = useRef('');
+  const lastReviewSelectionTextRef = useRef('');
   const autoAppliedSelectionReviewRef = useRef(null);
 
   // Merge mode from URL query param and location state
@@ -52,7 +56,7 @@ const NoteEditor = () => {
   } = useNotebook();
   const { categories, fetchCategories } = useCategory();
   const { addNotification } = useNotification();
-  const { togglePlay, stopPlayback } = useAudioPlayer();
+  const { currentNotebook: audioNotebook, currentCharOffset, isPlaying, togglePlay, stopPlayback, seek } = useAudioPlayer();
   const routeNotebook = currentNotebook?.uuid === notebookUuid ? currentNotebook : null;
 
   useNoteEditorData({ notebookUuid, fetchNotebook });
@@ -66,6 +70,8 @@ const NoteEditor = () => {
   const [isAiToolHelpOpen, setIsAiToolHelpOpen] = useState(false);
   const [isNavigatorMobileOpen, setIsNavigatorMobileOpen] = useState(false);
   const [aiSelectionState, setAiSelectionState] = useState({ hasTextSelection: false, aiSelectionCount: 0 });
+  const [reviewOutline, setReviewOutline] = useState([]);
+  const [reviewAiSelectionState, setReviewAiSelectionState] = useState({ hasTextSelection: false, aiSelectionCount: 0 });
 
   // Reset all per-notebook UI state when the notebook changes
   useEffect(() => {
@@ -74,7 +80,10 @@ const NoteEditor = () => {
     setIsAiToolHelpOpen(false);
     setIsNavigatorMobileOpen(false);
     setAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
+    setReviewOutline([]);
+    setReviewAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
     lastEditorSelectionTextRef.current = '';
+    lastReviewSelectionTextRef.current = '';
     autoAppliedSelectionReviewRef.current = null;
   }, [notebookUuid]);
 
@@ -219,6 +228,54 @@ const NoteEditor = () => {
     setIsAiToolHelpOpen(false);
     if (nextValue) handleCloseHistory();
   }, [getCurrentDocumentContent, handleCloseHistory, setIsReviewModeOpen]);
+
+  // ── Review mode: playback model & audio state ─────────────────────────
+  const reviewPlaybackModel = useMemo(
+    () => (isReviewModeOpen ? buildPlaybackModel(reviewContent) : { words: [], headings: [], fullText: '' }),
+    [isReviewModeOpen, reviewContent],
+  );
+  const isReviewNotebookActive = audioNotebook?.uuid === (routeNotebook?.uuid ?? notebookUuid);
+  const reviewActiveOffset = isReviewNotebookActive ? currentCharOffset : 0;
+
+  const handleReviewSelectionStateChange = useCallback((nextState) => {
+    setReviewAiSelectionState({
+      hasTextSelection: Boolean(nextState?.hasTextSelection),
+      aiSelectionCount: nextState?.aiSelectionCount ?? 0,
+    });
+
+    const selectedText = typeof nextState?.selectedText === 'string' ? nextState.selectedText.trim() : '';
+    if (selectedText) {
+      lastReviewSelectionTextRef.current = selectedText;
+      return;
+    }
+    if (nextState?.isEditorFocused) lastReviewSelectionTextRef.current = '';
+  }, []);
+
+  const getReviewEditorSelection = useCallback(() => {
+    const live = reviewEditorRef.current?.getSelectedText?.() || '';
+    const trimmed = live.trim();
+    if (trimmed) { lastReviewSelectionTextRef.current = trimmed; return live; }
+    if (!reviewEditorRef.current?.isFocused?.()) return lastReviewSelectionTextRef.current || '';
+    return '';
+  }, []);
+
+  const getReviewAiSelections = useCallback(() => reviewEditorRef.current?.getAiSelectionTargets?.() || [], []);
+
+  const handleAddReviewAiSelection = useCallback(() => {
+    const next = reviewEditorRef.current?.addAiSelectionFromCurrentSelection?.();
+    if (!next) {
+      addNotification('Select text in the review first, then add it as an AI highlight.', 'error', 3000);
+      return;
+    }
+    addNotification('Saved AI highlight for targeted edits.', 'success', 2200);
+  }, [addNotification]);
+
+  const handleClearReviewAiSelections = useCallback(() => {
+    const current = reviewEditorRef.current?.getAiSelectionTargets?.() || [];
+    if (current.length === 0) return;
+    reviewEditorRef.current?.clearAiSelections?.();
+    addNotification('Cleared AI highlights.', 'success', 2200);
+  }, [addNotification]);
 
   // ── AI proposal acceptance ────────────────────────────────────────────
   useEffect(() => {
@@ -467,19 +524,92 @@ const NoteEditor = () => {
       {!isReviewModeOpen && <div className="editor-toolbar-shell">{toolbar}</div>}
 
       {isReviewModeOpen ? (
-        <ReviewMode
-          key={routeNotebook?.uuid ?? notebookUuid}
-          notebookUuid={routeNotebook?.uuid ?? notebookUuid}
-          onTogglePlay={handleTogglePlay}
-          content={reviewContent}
-          paperWidth={paperWidth}
-          fontFamily={fontFamily}
-          zoomLevel={zoomLevel}
-          onZoomChange={handleZoomChange}
-          onZoomStep={handleZoomStep}
-          isAssistantOpen={aiSidebarOpen}
-          onAssistantOpenChange={setAiSidebarOpen}
-        />
+        <>
+          <div className="editor-body review-body">
+            <OutlineNav
+              outline={reviewOutline}
+              onSelect={(pos) => {
+                reviewEditorRef.current?.scrollToHeading(pos);
+                const headingIndex = reviewOutline.findIndex((h) => h.pos === pos);
+                if (headingIndex >= 0 && isReviewNotebookActive && reviewPlaybackModel.fullText.length > 0) {
+                  const match = reviewPlaybackModel.headings[headingIndex];
+                  if (match) seek(match.charOffset / reviewPlaybackModel.fullText.length);
+                }
+              }}
+              mobileOverlayOpen={isNavigatorMobileOpen}
+              onMobileOverlayOpenChange={setIsNavigatorMobileOpen}
+            />
+
+            <main className="editor-main">
+              <div className="editor-container" ref={editorContainerRef}>
+                <section className="editor-primary-panel">
+                  {routeNotebook && (
+                    <NoteEditorContent
+                      key={`review-${routeNotebook.uuid}`}
+                      ref={reviewEditorRef}
+                      content={reviewContent}
+                      readOnly
+                      reviewMode
+                      ttsActiveOffset={reviewActiveOffset}
+                      ttsIsActive={isReviewNotebookActive}
+                      ttsIsPlaying={isPlaying}
+                      ttsWordRanges={reviewPlaybackModel.words}
+                      onSelectionStateChange={handleReviewSelectionStateChange}
+                      fontFamily={fontFamily}
+                      paperWidth={paperWidth}
+                      paperHeight={paperHeight}
+                      zoom={zoomLevel}
+                      onOutlineChange={setReviewOutline}
+                    />
+                  )}
+                </section>
+              </div>
+            </main>
+
+            <EditorAiSidebar
+              className="editor-ai-shell--review"
+              sidebarClassName="review-ai-sidebar"
+              isOpen={aiSidebarOpen}
+              onClose={() => { setAiSidebarOpen(false); setIsAiToolHelpOpen(false); }}
+              notebookUuid={routeNotebook?.uuid ?? null}
+              activeToolKey={aiToolKey}
+              onActiveToolChange={setAiToolKey}
+              mode="review"
+              quickTools={REVIEW_AI_TOOLS}
+              getSelectionText={getReviewEditorSelection}
+              getAiSelections={getReviewAiSelections}
+              isToolHelpOpen={isAiToolHelpOpen}
+              onToolHelpClose={() => setIsAiToolHelpOpen(false)}
+              onSelectTool={handleAiToolSelect}
+              onToggleHelp={handleToggleAiToolHelp}
+              railVisible
+            />
+          </div>
+
+          <div className="review-playback-wrapper">
+            <div className="review-playback-inner">
+              <div className="review-playback-player">
+                <PlayerBar variant="review" onTogglePlay={handleTogglePlay} />
+              </div>
+              <div className="review-playback-divider" aria-hidden="true" />
+              <div className="review-playback-tools">
+                <EditorCanvasToolbar
+                  zoomLevel={zoomLevel}
+                  onZoomChange={handleZoomChange}
+                  onZoomStep={handleZoomStep}
+                  hasTextSelection={reviewAiSelectionState.hasTextSelection}
+                  aiSelectionCount={reviewAiSelectionState.aiSelectionCount}
+                  onAddAiSelection={handleAddReviewAiSelection}
+                  onClearAiSelections={handleClearReviewAiSelections}
+                  isAiSelectionDisabled={!routeNotebook?.uuid}
+                  showLeadingDivider={false}
+                  layout="dock"
+                  className="review-canvas-toolbar"
+                />
+              </div>
+            </div>
+          </div>
+        </>
       ) : (
         <>
           <div className="editor-body">

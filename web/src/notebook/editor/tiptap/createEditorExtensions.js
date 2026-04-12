@@ -1,22 +1,21 @@
 import { Extension, Node, mergeAttributes } from '@tiptap/core';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import Highlight from '@tiptap/extension-highlight';
-import Link from '@tiptap/extension-link';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
-import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { BlockMath, InlineMath } from './mathExtensions';
-import { BrainboxTableView, TableEnhancements } from './tableEnhancements';
+import { BrainboxTableView, TableLayout } from './tableLayout';
 
 export const aiHighlightKey = new PluginKey('aiHighlight');
 export const aiSelectionHighlightKey = new PluginKey('aiSelectionHighlight');
+export const ttsWordHighlightKey = new PluginKey('ttsWordHighlight');
 
 const mapSelectionRanges = (ranges, tr) => ranges
   .map((range) => {
@@ -150,6 +149,39 @@ export const AiSelectionHighlight = Extension.create({
   },
 });
 
+export const TtsWordHighlight = Extension.create({
+  name: 'ttsWordHighlight',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: ttsWordHighlightKey,
+        state: {
+          init: () => ({ from: 0, to: 0 }),
+          apply(tr, previous) {
+            const meta = tr.getMeta(ttsWordHighlightKey);
+            return meta !== undefined ? meta : previous;
+          },
+        },
+        props: {
+          decorations(state) {
+            const { from, to } = ttsWordHighlightKey.getState(state);
+
+            if (!from || !to || from >= to) {
+              return DecorationSet.empty;
+            }
+
+            const decoration = Decoration.inline(from, to, {
+              class: 'tts-word--active',
+            });
+
+            return DecorationSet.create(state.doc, [decoration]);
+          },
+        },
+      }),
+    ];
+  },
+});
+
 export const FontSize = Extension.create({
   name: 'fontSize',
 
@@ -262,16 +294,18 @@ export const PageBreak = Node.create({
 export const createEditorExtensions = ({
   enableAiHighlight = true,
   enableAiSelectionHighlight = true,
+  enableTtsWordHighlight = false,
   enableTableNormalization = true,
   cellMinWidth = 96,
   tableContainerWidth = null,
 } = {}) => {
   const extensions = [
-    StarterKit,
-    Underline,
-    Link.configure({
-      openOnClick: false,
-      HTMLAttributes: { class: 'editor-link' },
+    StarterKit.configure({
+      link: {
+        openOnClick: false,
+        HTMLAttributes: { class: 'editor-link' },
+      },
+      underline: {},
     }),
     TextAlign.configure({
       types: ['heading', 'paragraph'],
@@ -300,7 +334,7 @@ export const createEditorExtensions = ({
   ];
 
   if (enableTableNormalization) {
-    extensions.push(TableEnhancements.configure({
+    extensions.push(TableLayout.configure({
       cellMinWidth,
       containerWidth: tableContainerWidth,
     }));
@@ -312,6 +346,10 @@ export const createEditorExtensions = ({
 
   if (enableAiSelectionHighlight) {
     extensions.push(AiSelectionHighlight);
+  }
+
+  if (enableTtsWordHighlight) {
+    extensions.push(TtsWordHighlight);
   }
 
   return extensions;

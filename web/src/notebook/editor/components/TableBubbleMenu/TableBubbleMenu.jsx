@@ -117,7 +117,7 @@ const tableHasHeaderRow = (tableNode) => {
   return hasHeaderCells;
 };
 
-const TableBubbleMenu = ({ editor }) => {
+const TableBubbleMenu = ({ editor, zoom = 1 }) => {
   const [anchor, setAnchor] = useState(null);
   const [buttonPosition, setButtonPosition] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -153,33 +153,6 @@ const TableBubbleMenu = ({ editor }) => {
 
     const dom = editor.view.dom;
 
-    const handlePointerOver = (event) => {
-      const nextAnchor = resolveTableAnchorFromTarget(event.target, dom);
-
-      setAnchor((previousAnchor) => {
-        if (nextAnchor) {
-          return isSameAnchor(previousAnchor, nextAnchor) ? previousAnchor : nextAnchor;
-        }
-
-        if (menuPosition) {
-          return previousAnchor;
-        }
-
-        const selectionAnchor = resolveSelectionTableAnchor(editor);
-        return isSameAnchor(previousAnchor, selectionAnchor) ? previousAnchor : selectionAnchor;
-      });
-    };
-    const handleMouseLeave = () => {
-      if (menuPosition) {
-        return;
-      }
-
-      const selectionAnchor = resolveSelectionTableAnchor(editor);
-      setAnchor((previousAnchor) => (
-        isSameAnchor(previousAnchor, selectionAnchor) ? previousAnchor : selectionAnchor
-      ));
-    };
-
     const handleContextMenu = (event) => {
       const nextAnchor = resolveTableAnchorFromTarget(event.target, dom);
 
@@ -196,8 +169,6 @@ const TableBubbleMenu = ({ editor }) => {
       syncAnchorFromSelection();
     };
 
-    dom.addEventListener('mouseover', handlePointerOver);
-    dom.addEventListener('mouseleave', handleMouseLeave);
     dom.addEventListener('contextmenu', handleContextMenu);
     editor.on('selectionUpdate', handleEditorUpdate);
     editor.on('update', handleEditorUpdate);
@@ -205,8 +176,6 @@ const TableBubbleMenu = ({ editor }) => {
     syncAnchorFromSelection();
 
     return () => {
-      dom.removeEventListener('mouseover', handlePointerOver);
-      dom.removeEventListener('mouseleave', handleMouseLeave);
       dom.removeEventListener('contextmenu', handleContextMenu);
       editor.off('selectionUpdate', handleEditorUpdate);
       editor.off('update', handleEditorUpdate);
@@ -241,7 +210,7 @@ const TableBubbleMenu = ({ editor }) => {
       window.removeEventListener('scroll', syncButtonPosition, true);
       window.removeEventListener('resize', syncButtonPosition);
     };
-  }, [anchor]);
+  }, [anchor, zoom]);
 
   useEffect(() => {
     if (!menuPosition) {
@@ -278,12 +247,15 @@ const TableBubbleMenu = ({ editor }) => {
     }
 
     syncAnchorFromSelection();
+    const scaledButtonSize = Math.round(24 * zoom);
+    const menuLeft = buttonPosition.left;
+    const menuTop = buttonPosition.top + scaledButtonSize + 4;
     setMenuPosition((currentPosition) => (
       currentPosition
         ? null
-        : clampMenuPosition(buttonPosition.left + 28 - MENU_WIDTH, buttonPosition.top + 36)
+        : clampMenuPosition(menuLeft, menuTop)
     ));
-  }, [buttonPosition, syncAnchorFromSelection]);
+  }, [buttonPosition, syncAnchorFromSelection, zoom]);
 
   const runAction = useCallback((action) => {
     if (!editor || !tableContext) {
@@ -355,7 +327,7 @@ const TableBubbleMenu = ({ editor }) => {
         <button
           type="button"
           className={`table-dropdown-trigger${menuPosition ? ' is-open' : ''}`}
-          style={{ top: buttonPosition.top, left: buttonPosition.left }}
+          style={{ top: buttonPosition.top, left: buttonPosition.left, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
           aria-label="Open table options"
           title="Table options"
           onMouseDown={(event) => {
@@ -372,7 +344,7 @@ const TableBubbleMenu = ({ editor }) => {
         <div
           ref={menuRef}
           className="table-dropdown-menu"
-          style={{ top: menuPosition.y, left: menuPosition.x }}
+          style={{ top: menuPosition.y, left: menuPosition.x, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
         >
           {menuItems.map((item, index) => {
             if (item.divider) {
