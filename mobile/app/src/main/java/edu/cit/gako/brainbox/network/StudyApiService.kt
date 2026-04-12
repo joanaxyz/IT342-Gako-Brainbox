@@ -2,8 +2,10 @@
 
 import edu.cit.gako.brainbox.network.models.ApiEnvelope
 import edu.cit.gako.brainbox.network.models.FlashcardAttemptRequest
+import edu.cit.gako.brainbox.network.models.FlashcardDeckCreateRequest
 import edu.cit.gako.brainbox.network.models.FlashcardDeckDetail
 import edu.cit.gako.brainbox.network.models.FlashcardDeckSummary
+import edu.cit.gako.brainbox.network.models.QuizCreateRequest
 import edu.cit.gako.brainbox.network.models.QuizAttemptRequest
 import edu.cit.gako.brainbox.network.models.QuizDetail
 import edu.cit.gako.brainbox.network.models.QuizSummary
@@ -16,6 +18,11 @@ interface StudyApiService {
     @GET("api/quizzes")
     suspend fun getQuizzesEnvelope(): ApiEnvelope<List<QuizSummary>>
 
+    @POST("api/quizzes")
+    suspend fun createQuizEnvelope(
+        @Body request: QuizCreateRequest
+    ): ApiEnvelope<QuizDetail>
+
     @GET("api/quizzes/{uuid}")
     suspend fun getQuizEnvelope(@Path("uuid") uuid: String): ApiEnvelope<QuizDetail>
 
@@ -27,6 +34,11 @@ interface StudyApiService {
 
     @GET("api/flashcards")
     suspend fun getFlashcardsEnvelope(): ApiEnvelope<List<FlashcardDeckSummary>>
+
+    @POST("api/flashcards")
+    suspend fun createFlashcardEnvelope(
+        @Body request: FlashcardDeckCreateRequest
+    ): ApiEnvelope<FlashcardDeckDetail>
 
     @GET("api/flashcards/{uuid}")
     suspend fun getFlashcardEnvelope(@Path("uuid") uuid: String): ApiEnvelope<FlashcardDeckDetail>

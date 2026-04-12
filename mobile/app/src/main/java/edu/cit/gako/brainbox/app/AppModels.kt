@@ -1,5 +1,6 @@
-﻿package edu.cit.gako.brainbox.app
+package edu.cit.gako.brainbox.app
 
+import edu.cit.gako.brainbox.audio.PlaybackUiState
 import edu.cit.gako.brainbox.network.models.FlashcardDeckDetail
 import edu.cit.gako.brainbox.network.models.FlashcardDeckSummary
 import edu.cit.gako.brainbox.network.models.NotebookSummary
@@ -41,11 +42,6 @@ data class HomeBundle(
     val homeData: HomeData
 )
 
-data class NotebookEditorHostStatus(
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null
-)
-
 data class AppState(
     val isBootstrapping: Boolean = true,
     val isBusy: Boolean = false,
@@ -60,6 +56,7 @@ data class AppState(
     val activeFlashcardDeck: FlashcardDeckDetail? = null,
     val activeNotebookUuid: String? = null,
     val activeNotebookOriginTab: HomeTab? = null,
-    val notebookEditorStatus: NotebookEditorHostStatus = NotebookEditorHostStatus()
+    val studyReturnNotebookUuid: String? = null,
+    val playbackState: PlaybackUiState = PlaybackUiState(),
+    val offlineSyncState: OfflineSyncState = OfflineSyncState()
 )
-

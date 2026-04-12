@@ -18,9 +18,8 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import edu.cit.gako.brainbox.app.BrainBoxApp
 import edu.cit.gako.brainbox.app.BrainBoxAppController
-import edu.cit.gako.brainbox.data.BrainBoxRepository
-import edu.cit.gako.brainbox.network.RetrofitClient
-import edu.cit.gako.brainbox.network.SessionManager
+import edu.cit.gako.brainbox.app.BrainBoxAppGraph
+import edu.cit.gako.brainbox.data.worker.BrainBoxSyncWorkScheduler
 import edu.cit.gako.brainbox.ui.theme.BrainboxTheme
 import kotlinx.coroutines.launch
 
@@ -35,10 +34,9 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val sessionManager = SessionManager(this)
-        RetrofitClient.init(sessionManager)
-        val repository = BrainBoxRepository(RetrofitClient.apiService, sessionManager)
-        controller = BrainBoxAppController(repository, lifecycleScope, ::showMessage)
+        val appGraph = BrainBoxAppGraph.from(applicationContext)
+        BrainBoxSyncWorkScheduler.enqueueWhenOnline(this)
+        controller = BrainBoxAppController(appGraph, lifecycleScope, ::showMessage)
         credentialManager = CredentialManager.create(this)
 
         setContent {
@@ -59,14 +57,13 @@ class MainActivity : ComponentActivity() {
                     onResetPassword = controller::handleResetPassword,
                     onAuthStageChange = controller::handleAuthStageChange,
                     onTabSelected = controller::handleTabSelected,
+                    onCreateNotebook = controller::handleCreateNotebook,
                     onOpenNotebook = controller::handleOpenNotebook,
                     onCloseNotebookEditor = controller::handleCloseNotebookEditor,
                     onOpenQuiz = controller::handleOpenQuiz,
+                    onOpenQuizFromNotebook = controller::handleOpenQuizFromNotebook,
                     onOpenFlashcardDeck = controller::handleOpenFlashcardDeck,
-                    onNotebookEditorLoadingStarted = controller::handleNotebookEditorLoadingStarted,
-                    onNotebookEditorReady = controller::handleNotebookEditorReady,
-                    onNotebookEditorError = controller::handleNotebookEditorError,
-                    onEmbeddedSessionCleared = controller::handleEmbeddedSessionCleared,
+                    onOpenFlashcardDeckFromNotebook = controller::handleOpenFlashcardDeckFromNotebook,
                     onExitStudySession = controller::handleExitStudySession,
                     onRecordQuizAttempt = controller::handleRecordQuizAttempt,
                     onRecordFlashcardAttempt = controller::handleRecordFlashcardAttempt,

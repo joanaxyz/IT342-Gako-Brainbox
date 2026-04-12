@@ -47,8 +47,6 @@ internal fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text("Profile", style = MaterialTheme.typography.headlineLarge, color = Ink)
-            Spacer(modifier = Modifier.height(6.dp))
             Text("The same account, reshaped for the mobile shell.", style = MaterialTheme.typography.bodyMedium, color = Ink2)
         }
         item {

@@ -11,6 +11,7 @@ import edu.cit.gako.brainbox.notebook.entity.QuizAttempt;
 
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> {
     List<QuizAttempt> findByQuizId(Long quizId);
+    Optional<QuizAttempt> findByUserIdAndClientMutationId(Long userId, String clientMutationId);
     long countByQuizId(Long quizId);
     void deleteByQuizId(Long quizId);
 

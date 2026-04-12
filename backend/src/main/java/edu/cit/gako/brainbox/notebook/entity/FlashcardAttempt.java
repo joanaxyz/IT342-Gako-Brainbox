@@ -11,6 +11,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "client_mutation_id"}))
 public class FlashcardAttempt {
 
     @Id
@@ -26,6 +27,9 @@ public class FlashcardAttempt {
     private User user;
 
     private int mastery;
+
+    @Column(name = "client_mutation_id")
+    private String clientMutationId;
 
     private Instant createdAt;
 

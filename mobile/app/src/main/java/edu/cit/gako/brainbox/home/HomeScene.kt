@@ -1,6 +1,7 @@
-﻿package edu.cit.gako.brainbox.home
+package edu.cit.gako.brainbox.home
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,19 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import edu.cit.gako.brainbox.app.AppState
 import edu.cit.gako.brainbox.app.HomeTab
-import edu.cit.gako.brainbox.home.DashboardScreen
-import edu.cit.gako.brainbox.home.FlashcardsScreen
-import edu.cit.gako.brainbox.home.LibraryScreen
-import edu.cit.gako.brainbox.home.PlaylistsScreen
-import edu.cit.gako.brainbox.home.ProfileScreen
-import edu.cit.gako.brainbox.home.QuizzesScreen
-import edu.cit.gako.brainbox.home.HomeBottomBar
-import edu.cit.gako.brainbox.home.HomeTopBar
+import edu.cit.gako.brainbox.audio.BrainBoxAudioClient
 import edu.cit.gako.brainbox.ui.theme.Accent
 import edu.cit.gako.brainbox.ui.theme.AccentBg
 import edu.cit.gako.brainbox.ui.theme.Cream
@@ -29,6 +25,7 @@ import edu.cit.gako.brainbox.ui.theme.Cream
 internal fun HomeScene(
     state: AppState,
     onTabSelected: (HomeTab) -> Unit,
+    onCreateNotebook: () -> Unit,
     onOpenNotebook: (String) -> Unit,
     onOpenQuiz: (String) -> Unit,
     onOpenFlashcardDeck: (String) -> Unit,
@@ -36,16 +33,30 @@ internal fun HomeScene(
     onLogout: () -> Unit,
     onFeatureRequest: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val audioClient = remember(context.applicationContext) { BrainBoxAudioClient(context.applicationContext) }
+
     Scaffold(
         containerColor = Cream,
         topBar = {
             HomeTopBar(currentTab = state.currentTab)
         },
         bottomBar = {
-            HomeBottomBar(
-                currentTab = state.currentTab,
-                onTabSelected = onTabSelected
-            )
+            Column {
+                GlobalPlaybar(
+                    playbackState = state.playbackState,
+                    onResume = audioClient::resume,
+                    onPause = audioClient::pause,
+                    onReplay = {
+                        audioClient.seekToChunk(state.playbackState.currentChunkIndex.coerceAtLeast(0))
+                    },
+                    onStop = audioClient::stop
+                )
+                HomeBottomBar(
+                    currentTab = state.currentTab,
+                    onTabSelected = onTabSelected
+                )
+            }
         }
     ) { innerPadding ->
         Box(
@@ -67,7 +78,7 @@ internal fun HomeScene(
                 start = 20.dp,
                 top = if (state.isBusy) 18.dp else 12.dp,
                 end = 20.dp,
-                bottom = 112.dp
+                bottom = if (state.playbackState.isVisible) 176.dp else 112.dp
             )
 
             when (state.currentTab) {
@@ -76,6 +87,7 @@ internal fun HomeScene(
                     homeData = state.homeData,
                     contentPadding = contentPadding,
                     onGoToTab = onTabSelected,
+                    onCreateNotebook = onCreateNotebook,
                     onOpenNotebook = onOpenNotebook,
                     onOpenQuiz = onOpenQuiz,
                     onOpenFlashcardDeck = onOpenFlashcardDeck,
@@ -103,10 +115,13 @@ internal fun HomeScene(
                     onOpenFlashcardDeck = onOpenFlashcardDeck
                 )
                 HomeTab.PLAYLISTS -> PlaylistsScreen(
+                    notebooks = state.homeData.notebooks,
                     playlists = state.homeData.playlists,
+                    playbackState = state.playbackState,
                     syncNotice = state.homeData.syncNotice,
                     syncedAtLabel = state.homeData.syncedAtLabel,
                     contentPadding = contentPadding,
+                    onOpenNotebook = onOpenNotebook,
                     onFeatureRequest = onFeatureRequest
                 )
                 HomeTab.PROFILE -> ProfileScreen(
@@ -120,5 +135,3 @@ internal fun HomeScene(
         }
     }
 }
-
-

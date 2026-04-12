@@ -66,10 +66,17 @@ public class FlashcardService {
     @Transactional
     public FlashcardResponse recordAttempt(String uuid, Long userId, FlashcardAttemptRequest request) {
         Flashcard flashcard = getFlashcardByUuidAndUserId(uuid, userId);
+        if (request != null && request.getClientMutationId() != null && !request.getClientMutationId().isBlank()) {
+            if (flashcardAttemptRepository.findByUserIdAndClientMutationId(userId, request.getClientMutationId()).isPresent()) {
+                return mapToResponse(flashcard);
+            }
+        }
+
         FlashcardAttempt attempt = new FlashcardAttempt();
         attempt.setFlashcard(flashcard);
         attempt.setUser(userService.findById(userId));
         attempt.setMastery(request.getMastery());
+        attempt.setClientMutationId(request != null ? request.getClientMutationId() : null);
         flashcardAttemptRepository.save(attempt);
         return mapToResponse(flashcard);
     }

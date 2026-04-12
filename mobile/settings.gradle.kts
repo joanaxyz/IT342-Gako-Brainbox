@@ -19,6 +19,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven(url = "https://a8c-libs.s3.amazonaws.com/android")
     }
 }
 

@@ -10,12 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import edu.cit.gako.brainbox.auth.annotation.RequireAuth;
+import edu.cit.gako.brainbox.notebook.dto.request.NotebookMutationRequest;
 import edu.cit.gako.brainbox.notebook.dto.request.NotebookContentRequest;
 import edu.cit.gako.brainbox.notebook.dto.request.NotebookRequest;
 import edu.cit.gako.brainbox.notebook.dto.response.NotebookFullResponse;
 import edu.cit.gako.brainbox.notebook.dto.response.NotebookOverviewResponse;
 import org.springframework.web.bind.annotation.GetMapping;
-
 
 @RestController
 @RequestMapping("/api/notebooks")
@@ -60,8 +60,15 @@ public class NotebookController {
 
     @RequireAuth
     @PatchMapping("/update-review/{uuid}")
-    public ResponseEntity<ApiResponse<Void>> updateReview(@PathVariable("uuid") String notebookUuid, @RequestAttribute Long userId) {
-        notebookService.markNotebookReviewed(notebookUuid, userId);
+    public ResponseEntity<ApiResponse<Void>> updateReview(
+            @PathVariable("uuid") String notebookUuid,
+            @RequestBody(required = false) NotebookMutationRequest body,
+            @RequestAttribute Long userId) {
+        notebookService.markNotebookReviewed(
+                notebookUuid,
+                userId,
+                body != null ? body.getBaseVersion() : null,
+                body != null ? body.getClientMutationId() : null);
         return ResponseEntity.ok(ApiResponse.success());
     }
 
@@ -72,14 +79,21 @@ public class NotebookController {
             @RequestBody NotebookContentRequest body,
             @RequestAttribute Long userId) {
         return ResponseEntity.ok(ApiResponse.success(
-                notebookService.saveContent(notebookUuid, userId, body.getContent())
+                notebookService.saveContent(notebookUuid, userId, body.getContent(), body.getBaseVersion(), body.getClientMutationId())
         ));
     }
 
     @RequireAuth
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<ApiResponse<Void>> deleteNotebook(@PathVariable("uuid") String notebookUuid, @RequestAttribute Long userId) {
-        notebookService.deleteNotebook(notebookUuid, userId);
+    public ResponseEntity<ApiResponse<Void>> deleteNotebook(
+            @PathVariable("uuid") String notebookUuid,
+            @RequestBody(required = false) NotebookMutationRequest body,
+            @RequestAttribute Long userId) {
+        notebookService.deleteNotebook(
+                notebookUuid,
+                userId,
+                body != null ? body.getBaseVersion() : null,
+                body != null ? body.getClientMutationId() : null);
         return ResponseEntity.ok(ApiResponse.success());
     }
 }

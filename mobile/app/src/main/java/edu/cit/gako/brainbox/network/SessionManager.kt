@@ -1,43 +1,42 @@
-﻿package edu.cit.gako.brainbox.network
+package edu.cit.gako.brainbox.network
 
 import android.content.Context
-import android.content.SharedPreferences
+import edu.cit.gako.brainbox.data.persistence.EncryptedSessionStore
+import edu.cit.gako.brainbox.data.persistence.SessionCredentials
+import edu.cit.gako.brainbox.data.persistence.SessionStore
 
 class SessionManager(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("brainbox_prefs", Context.MODE_PRIVATE)
-
-    companion object {
-        private const val ACCESS_TOKEN = "access_token"
-        private const val REFRESH_TOKEN = "refresh_token"
-        private const val USERNAME = "username"
-    }
+    private val sessionStore: SessionStore = EncryptedSessionStore(context.applicationContext)
 
     fun saveAuthToken(token: String) {
-        prefs.edit().putString(ACCESS_TOKEN, token).apply()
+        sessionStore.saveAccessToken(token)
     }
 
     fun fetchAuthToken(): String? {
-        return prefs.getString(ACCESS_TOKEN, null)
+        return sessionStore.read().accessToken
     }
 
     fun saveRefreshToken(token: String) {
-        prefs.edit().putString(REFRESH_TOKEN, token).apply()
+        sessionStore.saveRefreshToken(token)
     }
 
     fun fetchRefreshToken(): String? {
-        return prefs.getString(REFRESH_TOKEN, null)
+        return sessionStore.read().refreshToken
     }
 
     fun saveUsername(username: String) {
-        prefs.edit().putString(USERNAME, username).apply()
+        sessionStore.saveUsername(username)
     }
 
     fun fetchUsername(): String? {
-        return prefs.getString(USERNAME, null)
+        return sessionStore.read().username
+    }
+
+    fun replace(credentials: SessionCredentials) {
+        sessionStore.save(credentials)
     }
 
     fun clearSession() {
-        prefs.edit().clear().apply()
+        sessionStore.clear()
     }
 }
-

@@ -7,4 +7,6 @@ import lombok.Setter;
 @Setter
 public class NotebookContentRequest {
     private String content;
+    private Long baseVersion;
+    private String clientMutationId;
 }

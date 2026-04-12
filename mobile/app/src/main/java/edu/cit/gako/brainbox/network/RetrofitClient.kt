@@ -14,6 +14,26 @@ object RetrofitClient {
     private var apiServiceInstance: ApiService? = null
 
     fun init(sessionManager: SessionManager) {
+        getOrCreate(sessionManager)
+    }
+
+    fun getOrCreate(sessionManager: SessionManager): ApiService {
+        val existing = apiServiceInstance
+        if (existing != null) {
+            return existing
+        }
+
+        return synchronized(this) {
+            apiServiceInstance ?: buildApiService(sessionManager).also { apiServiceInstance = it }
+        }
+    }
+
+    val apiService: ApiService
+        get() = checkNotNull(apiServiceInstance) {
+            "RetrofitClient.init(sessionManager) must be called before accessing apiService."
+        }
+
+    private fun buildApiService(sessionManager: SessionManager): ApiService {
         val refreshApiService = createRetrofit(OkHttpClient.Builder().build())
             .create(AuthApiService::class.java)
 
@@ -21,13 +41,8 @@ object RetrofitClient {
             .addInterceptor(AuthInterceptor(sessionManager, refreshApiService))
             .build()
 
-        apiServiceInstance = createRetrofit(authedClient).create(ApiService::class.java)
+        return createRetrofit(authedClient).create(ApiService::class.java)
     }
-
-    val apiService: ApiService
-        get() = checkNotNull(apiServiceInstance) {
-            "RetrofitClient.init(sessionManager) must be called before accessing apiService."
-        }
 
     private fun createRetrofit(client: OkHttpClient): Retrofit {
         return Retrofit.Builder()

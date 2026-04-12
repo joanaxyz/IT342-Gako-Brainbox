@@ -47,6 +47,7 @@ internal fun DashboardScreen(
     homeData: HomeData,
     contentPadding: PaddingValues,
     onGoToTab: (HomeTab) -> Unit,
+    onCreateNotebook: () -> Unit,
     onOpenNotebook: (String) -> Unit,
     onOpenQuiz: (String) -> Unit,
     onOpenFlashcardDeck: (String) -> Unit,
@@ -88,7 +89,7 @@ internal fun DashboardScreen(
                     Text("Ready to learn, $displayName?", style = MaterialTheme.typography.headlineLarge, color = Ink)
                     Text(dashboardSubtitle(homeData), style = MaterialTheme.typography.bodyMedium, color = Ink2)
                     OutlinedActionButton("+ New Notebook") {
-                        onFeatureRequest("Notebook creation is the next mobile workflow to wire up.")
+                        onCreateNotebook()
                     }
                 }
             }

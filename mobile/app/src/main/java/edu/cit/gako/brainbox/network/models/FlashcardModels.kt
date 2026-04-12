@@ -20,6 +20,13 @@ data class FlashcardCard(
     @SerializedName("back") val back: String
 )
 
+data class FlashcardDeckCreateRequest(
+    @SerializedName("title") val title: String,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("notebookUuid") val notebookUuid: String? = null,
+    @SerializedName("cards") val cards: List<FlashcardCard> = emptyList()
+)
+
 data class FlashcardDeckDetail(
     @SerializedName("uuid") val uuid: String,
     @SerializedName("title") val title: String,
@@ -35,6 +42,7 @@ data class FlashcardDeckDetail(
 )
 
 data class FlashcardAttemptRequest(
-    @SerializedName("mastery") val mastery: Int
+    @SerializedName("mastery") val mastery: Int,
+    @SerializedName("clientMutationId") val clientMutationId: String? = null
 )
 

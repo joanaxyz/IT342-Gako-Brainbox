@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class QuizAttemptRequest {
     private int score;
+    private String clientMutationId;
 }

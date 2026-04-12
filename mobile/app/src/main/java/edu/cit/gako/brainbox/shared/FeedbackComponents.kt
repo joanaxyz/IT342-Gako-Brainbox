@@ -23,9 +23,13 @@ import edu.cit.gako.brainbox.ui.theme.Ink
 import edu.cit.gako.brainbox.ui.theme.Ink3
 
 @Composable
-internal fun SyncNoticeBanner(message: String, meta: String?) {
+internal fun SyncNoticeBanner(
+    message: String?,
+    meta: String? = null,
+    modifier: Modifier = Modifier
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = AccentBg,
         border = BorderStroke(1.dp, Accent.copy(alpha = 0.18f))
@@ -34,7 +38,7 @@ internal fun SyncNoticeBanner(message: String, meta: String?) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(message, style = MaterialTheme.typography.bodyMedium, color = AccentDark)
+            Text(message.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = AccentDark)
             meta?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = AccentDark.copy(alpha = 0.72f))
             }

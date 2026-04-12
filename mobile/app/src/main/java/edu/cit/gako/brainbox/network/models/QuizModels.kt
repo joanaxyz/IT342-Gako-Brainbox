@@ -24,6 +24,14 @@ data class QuizQuestion(
     @SerializedName("correctIndex") val correctIndex: Int
 )
 
+data class QuizCreateRequest(
+    @SerializedName("title") val title: String,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("difficulty") val difficulty: String? = null,
+    @SerializedName("notebookUuid") val notebookUuid: String? = null,
+    @SerializedName("questions") val questions: List<QuizQuestion> = emptyList()
+)
+
 data class QuizDetail(
     @SerializedName("uuid") val uuid: String,
     @SerializedName("title") val title: String,
@@ -41,6 +49,7 @@ data class QuizDetail(
 )
 
 data class QuizAttemptRequest(
-    @SerializedName("score") val score: Int
+    @SerializedName("score") val score: Int,
+    @SerializedName("clientMutationId") val clientMutationId: String? = null
 )
 

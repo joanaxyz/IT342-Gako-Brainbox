@@ -1,31 +1,23 @@
 import java.util.Properties
-import org.gradle.api.tasks.Sync
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("org.jetbrains.kotlin.kapt")
 }
 
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) load(file.inputStream())
 }
-val embeddedEditorDistDir = rootProject.file("../web/dist")
-val embeddedEditorAssetsDir = layout.buildDirectory.dir("generated/embeddedEditorAssets")
-
-val syncEmbeddedEditorAssets by tasks.registering(Sync::class) {
-    from(embeddedEditorDistDir)
-    into(embeddedEditorAssetsDir)
-}
-
 android {
     namespace = "edu.cit.gako.brainbox"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "edu.cit.gako.brainbox"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -69,11 +61,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    sourceSets["main"].assets.srcDir(embeddedEditorAssetsDir)
-}
-
-tasks.named("preBuild") {
-    dependsOn(syncEmbeddedEditorAssets)
 }
 
 dependencies {
@@ -89,6 +76,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.constraintlayout)
     implementation(libs.material)
     implementation(libs.retrofit)
@@ -98,6 +86,17 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.androidx.webkit)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.session)
+    implementation("org.wordpress:aztec:v1.6.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

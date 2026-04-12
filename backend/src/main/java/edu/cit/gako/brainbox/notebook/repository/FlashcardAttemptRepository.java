@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import edu.cit.gako.brainbox.notebook.entity.FlashcardAttempt;
 
 public interface FlashcardAttemptRepository extends JpaRepository<FlashcardAttempt, Long> {
+    Optional<FlashcardAttempt> findByUserIdAndClientMutationId(Long userId, String clientMutationId);
     long countByFlashcardId(Long flashcardId);
     void deleteByFlashcardId(Long flashcardId);
 

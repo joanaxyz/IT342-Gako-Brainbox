@@ -3,7 +3,7 @@
 import androidx.compose.runtime.Composable
 import edu.cit.gako.brainbox.auth.AuthScene
 import edu.cit.gako.brainbox.home.HomeScene
-import edu.cit.gako.brainbox.notebook.NotebookEditorHostScreen
+import edu.cit.gako.brainbox.notebook.NativeNotebookEditorScreen
 import edu.cit.gako.brainbox.study.FlashcardStudyScreen
 import edu.cit.gako.brainbox.study.QuizStudyScreen
 
@@ -18,14 +18,13 @@ fun BrainBoxApp(
     onResetPassword: (String) -> Unit,
     onAuthStageChange: (AuthStage) -> Unit,
     onTabSelected: (HomeTab) -> Unit,
+    onCreateNotebook: () -> Unit,
     onOpenNotebook: (String) -> Unit,
     onCloseNotebookEditor: () -> Unit,
     onOpenQuiz: (String) -> Unit,
+    onOpenQuizFromNotebook: (String) -> Unit,
     onOpenFlashcardDeck: (String) -> Unit,
-    onNotebookEditorLoadingStarted: () -> Unit,
-    onNotebookEditorReady: () -> Unit,
-    onNotebookEditorError: (String) -> Unit,
-    onEmbeddedSessionCleared: () -> Unit,
+    onOpenFlashcardDeckFromNotebook: (String) -> Unit,
     onExitStudySession: () -> Unit,
     onRecordQuizAttempt: (String, Int) -> Unit,
     onRecordFlashcardAttempt: (String, Int) -> Unit,
@@ -46,14 +45,11 @@ fun BrainBoxApp(
             onAuthStageChange = onAuthStageChange,
             onFeatureRequest = onFeatureRequest
         )
-        state.activeNotebookUuid != null -> NotebookEditorHostScreen(
+        state.activeNotebookUuid != null -> NativeNotebookEditorScreen(
             notebookUuid = state.activeNotebookUuid,
-            status = state.notebookEditorStatus,
             onClose = onCloseNotebookEditor,
-            onLoadingStarted = onNotebookEditorLoadingStarted,
-            onReady = onNotebookEditorReady,
-            onError = onNotebookEditorError,
-            onSessionCleared = onEmbeddedSessionCleared
+            onOpenQuiz = onOpenQuizFromNotebook,
+            onOpenFlashcardDeck = onOpenFlashcardDeckFromNotebook
         )
         state.activeQuiz != null -> QuizStudyScreen(
             quiz = state.activeQuiz,
@@ -68,6 +64,7 @@ fun BrainBoxApp(
         else -> HomeScene(
             state = state,
             onTabSelected = onTabSelected,
+            onCreateNotebook = onCreateNotebook,
             onOpenNotebook = onOpenNotebook,
             onOpenQuiz = onOpenQuiz,
             onOpenFlashcardDeck = onOpenFlashcardDeck,

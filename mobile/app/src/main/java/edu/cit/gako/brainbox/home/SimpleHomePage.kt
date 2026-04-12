@@ -24,6 +24,7 @@ internal fun SimpleHomePage(
     syncNotice: String?,
     syncedAtLabel: String?,
     contentPadding: PaddingValues,
+    showHeader: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     LazyColumn(
@@ -32,9 +33,13 @@ internal fun SimpleHomePage(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(title, style = MaterialTheme.typography.headlineLarge, color = Ink)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(description, style = MaterialTheme.typography.bodyMedium, color = Ink2)
+            if (showHeader) {
+                Text(title, style = MaterialTheme.typography.headlineLarge, color = Ink)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(description, style = MaterialTheme.typography.bodyMedium, color = Ink2)
+            } else {
+                Text(description, style = MaterialTheme.typography.bodyMedium, color = Ink2)
+            }
         }
         if (!syncNotice.isNullOrBlank()) {
             item { SyncNoticeBanner(syncNotice, syncedAtLabel) }

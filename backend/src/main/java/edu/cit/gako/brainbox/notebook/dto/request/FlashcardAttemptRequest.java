@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class FlashcardAttemptRequest {
     private int mastery;
+    private String clientMutationId;
 }

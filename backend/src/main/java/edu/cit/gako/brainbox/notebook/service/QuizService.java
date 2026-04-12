@@ -66,10 +66,17 @@ public class QuizService {
     @Transactional
     public QuizResponse recordAttempt(String uuid, Long userId, QuizAttemptRequest request) {
         Quiz quiz = getQuizByUuidAndUserId(uuid, userId);
+        if (request != null && request.getClientMutationId() != null && !request.getClientMutationId().isBlank()) {
+            if (quizAttemptRepository.findByUserIdAndClientMutationId(userId, request.getClientMutationId()).isPresent()) {
+                return mapToResponse(quiz);
+            }
+        }
+
         QuizAttempt attempt = new QuizAttempt();
         attempt.setQuiz(quiz);
         attempt.setUser(userService.findById(userId));
         attempt.setScore(request.getScore());
+        attempt.setClientMutationId(request != null ? request.getClientMutationId() : null);
         quizAttemptRepository.save(attempt);
         return mapToResponse(quiz);
     }

@@ -40,6 +40,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("FORBIDDEN", ex.getMessage()));
     }
 
+    @ExceptionHandler(NotebookVersionConflictException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotebookVersionConflictException(NotebookVersionConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("VERSION_CONFLICT", ex.getMessage(), ex.getLatestNotebook()));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
         log.error("Internal server error: {}", ex.getMessage(), ex);

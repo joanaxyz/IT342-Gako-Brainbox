@@ -1,21 +1,52 @@
-﻿package edu.cit.gako.brainbox.app
+package edu.cit.gako.brainbox.app
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import edu.cit.gako.brainbox.data.BrainBoxRepository
+import com.google.gson.Gson
+import edu.cit.gako.brainbox.audio.toPlaybackUiState
+import edu.cit.gako.brainbox.data.local.model.OfflineEntityType
+import edu.cit.gako.brainbox.data.local.model.PendingMutation
+import edu.cit.gako.brainbox.data.local.model.PendingMutationOperation
+import edu.cit.gako.brainbox.data.local.toDocument
+import edu.cit.gako.brainbox.network.models.NotebookSummary
 import edu.cit.gako.brainbox.network.models.UserProfile
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
+private data class QuizAttemptQueuePayload(
+    val score: Int
+)
+
+private data class FlashcardAttemptQueuePayload(
+    val mastery: Int
+)
+
 class BrainBoxAppController(
-    private val repository: BrainBoxRepository,
+    appGraph: BrainBoxAppGraph,
     private val scope: CoroutineScope,
     private val onMessage: (String) -> Unit
 ) {
+    private val repository = appGraph.repository
+    private val localInfrastructure = appGraph.localInfrastructure
+    private val audioStore = appGraph.audioStore
+    private val gson = Gson()
+
     var state by mutableStateOf(AppState())
         private set
+
+    init {
+        observePlaybackState()
+        observeOfflineSyncState()
+    }
 
     fun bootstrap() {
         scope.launch {
@@ -169,7 +200,30 @@ class BrainBoxAppController(
         state = state.copy(currentTab = tab)
     }
 
+    fun handleCreateNotebook() {
+        state = state.copy(
+            activeNotebookUuid = "new",
+            activeNotebookOriginTab = state.currentTab
+        )
+    }
+
     fun handleOpenQuiz(uuid: String) {
+        openQuiz(uuid, returnToNotebookUuid = null)
+    }
+
+    fun handleOpenQuizFromNotebook(uuid: String) {
+        openQuiz(uuid, returnToNotebookUuid = state.activeNotebookUuid)
+    }
+
+    fun handleOpenFlashcardDeck(uuid: String) {
+        openFlashcardDeck(uuid, returnToNotebookUuid = null)
+    }
+
+    fun handleOpenFlashcardDeckFromNotebook(uuid: String) {
+        openFlashcardDeck(uuid, returnToNotebookUuid = state.activeNotebookUuid)
+    }
+
+    private fun openQuiz(uuid: String, returnToNotebookUuid: String?) {
         scope.launch {
             state = state.copy(isBusy = true)
 
@@ -178,7 +232,9 @@ class BrainBoxAppController(
                 state = state.copy(
                     isBusy = false,
                     activeQuiz = quiz,
-                    activeFlashcardDeck = null
+                    activeFlashcardDeck = null,
+                    activeNotebookUuid = null,
+                    studyReturnNotebookUuid = returnToNotebookUuid
                 )
                 syncStudyContext(quiz.notebookUuid)
             } catch (_: Exception) {
@@ -188,7 +244,7 @@ class BrainBoxAppController(
         }
     }
 
-    fun handleOpenFlashcardDeck(uuid: String) {
+    private fun openFlashcardDeck(uuid: String, returnToNotebookUuid: String?) {
         scope.launch {
             state = state.copy(isBusy = true)
 
@@ -197,7 +253,9 @@ class BrainBoxAppController(
                 state = state.copy(
                     isBusy = false,
                     activeFlashcardDeck = deck,
-                    activeQuiz = null
+                    activeQuiz = null,
+                    activeNotebookUuid = null,
+                    studyReturnNotebookUuid = returnToNotebookUuid
                 )
                 syncStudyContext(deck.notebookUuid)
             } catch (_: Exception) {
@@ -210,8 +268,7 @@ class BrainBoxAppController(
     fun handleOpenNotebook(uuid: String) {
         state = state.copy(
             activeNotebookUuid = uuid,
-            activeNotebookOriginTab = state.currentTab,
-            notebookEditorStatus = NotebookEditorHostStatus(isLoading = true)
+            activeNotebookOriginTab = state.currentTab
         )
     }
 
@@ -222,8 +279,7 @@ class BrainBoxAppController(
         state = state.copy(
             activeNotebookUuid = null,
             activeNotebookOriginTab = null,
-            currentTab = restoreTab,
-            notebookEditorStatus = NotebookEditorHostStatus()
+            currentTab = restoreTab
         )
 
         if (shouldRefresh) {
@@ -233,39 +289,13 @@ class BrainBoxAppController(
         }
     }
 
-    fun handleNotebookEditorLoadingStarted() {
-        state = state.copy(
-            notebookEditorStatus = NotebookEditorHostStatus(isLoading = true)
-        )
-    }
-
-    fun handleNotebookEditorReady() {
-        state = state.copy(
-            notebookEditorStatus = NotebookEditorHostStatus()
-        )
-    }
-
-    fun handleNotebookEditorError(message: String) {
-        state = state.copy(
-            notebookEditorStatus = NotebookEditorHostStatus(
-                isLoading = false,
-                errorMessage = message.ifBlank { "We couldn't load the notebook editor." }
-            )
-        )
-    }
-
-    fun handleEmbeddedSessionCleared() {
-        scope.launch {
-            repository.logout()
-            state = AppState(isBootstrapping = false)
-            showMessage("Your session ended. Sign in again to keep going.")
-        }
-    }
-
     fun handleExitStudySession() {
+        val returnNotebookUuid = state.studyReturnNotebookUuid
         state = state.copy(
             activeQuiz = null,
-            activeFlashcardDeck = null
+            activeFlashcardDeck = null,
+            activeNotebookUuid = returnNotebookUuid,
+            studyReturnNotebookUuid = null
         )
     }
 
@@ -275,7 +305,8 @@ class BrainBoxAppController(
                 repository.recordQuizAttempt(uuid, score)
                 syncHome(setBusy = false)
             }.onFailure {
-                showMessage("We couldn't save your quiz score.")
+                queueQuizAttempt(uuid, score)
+                showMessage("Quiz score saved offline. We'll sync it when you're back online.")
             }
         }
     }
@@ -286,7 +317,8 @@ class BrainBoxAppController(
                 repository.recordFlashcardAttempt(uuid, mastery)
                 syncHome(setBusy = false)
             }.onFailure {
-                showMessage("We couldn't save your deck progress.")
+                queueFlashcardAttempt(uuid, mastery)
+                showMessage("Deck progress saved offline. We'll sync it when you're back online.")
             }
         }
     }
@@ -320,27 +352,62 @@ class BrainBoxAppController(
                 homeData = bundle.homeData
             )
         } catch (error: HttpException) {
-            repository.logout()
-            state = AppState(isBootstrapping = false)
-            showMessage(
-                if (error.code() == 401) {
-                    "Your session expired. Sign in again to keep going."
-                } else {
-                    "We couldn't sync the home data right now."
-                }
-            )
+            if (error.code() == 401) {
+                repository.logout()
+                state = AppState(isBootstrapping = false)
+                showMessage("Your session expired. Sign in again to keep going.")
+            } else {
+                loadOfflineHome("Showing your offline library while live data catches up.")
+            }
         } catch (_: Exception) {
-            state = state.copy(
-                isBootstrapping = false,
-                isBusy = false,
-                isAuthenticated = repository.hasSession(),
-                user = state.user ?: fallbackUser(),
-                homeData = state.homeData.copy(
-                    syncNotice = "The shell is ready, but live home data is still catching up."
-                )
-            )
-            showMessage("The mobile shell is live. Home data syncing is still catching up.")
+            loadOfflineHome("Showing your offline library while live data catches up.")
         }
+    }
+
+    private suspend fun loadOfflineHome(notice: String) {
+        val offlineNotebooks = localInfrastructure.database.notebookDao()
+            .getAllNotebooksOnce()
+            .map { it.toDocument() }
+
+        val notebookSummaries = offlineNotebooks.map { document ->
+            NotebookSummary(
+                uuid = document.uuid,
+                title = document.title,
+                wordCount = document.wordCount,
+                createdAt = document.createdAt,
+                updatedAt = document.updatedAt,
+                lastReviewedAt = document.lastReviewedAt,
+                version = document.version,
+                categoryId = document.categoryId,
+                categoryName = document.categoryName
+            )
+        }
+
+        val recentlyReviewed = notebookSummaries
+            .filter { !it.lastReviewedAt.isNullOrBlank() }
+            .sortedByDescending { it.lastReviewedAt }
+            .take(6)
+
+        val lastSyncAtMillis = localInfrastructure.preferencesStore.preferences
+            .firstOrNull()
+            ?.lastSyncAtMillis
+
+        state = state.copy(
+            isBootstrapping = false,
+            isBusy = false,
+            isAuthenticated = repository.hasSession(),
+            user = state.user ?: fallbackUser(),
+            homeData = HomeData(
+                notebooks = notebookSummaries,
+                recentlyEdited = notebookSummaries.take(6),
+                recentlyReviewed = recentlyReviewed,
+                quizzes = emptyList(),
+                flashcards = emptyList(),
+                playlists = emptyList(),
+                syncNotice = notice,
+                syncedAtLabel = lastSyncAtMillis?.let(::formatSyncLabel)
+            )
+        )
     }
 
     private fun fallbackUser(): UserProfile {
@@ -368,8 +435,66 @@ class BrainBoxAppController(
         }
     }
 
+    private fun observePlaybackState() {
+        scope.launch {
+            audioStore.snapshotFlow.collect { snapshot ->
+                state = state.copy(playbackState = snapshot.toPlaybackUiState())
+            }
+        }
+    }
+
+    private fun observeOfflineSyncState() {
+        scope.launch {
+            combine(
+                localInfrastructure.offlineRepository.observePendingMutations(),
+                localInfrastructure.preferencesStore.preferences
+            ) { pendingMutations, preferences ->
+                OfflineSyncState(
+                    pendingMutationCount = pendingMutations.size,
+                    hasPendingMutations = pendingMutations.isNotEmpty(),
+                    lastSyncAtMillis = preferences.lastSyncAtMillis,
+                    lastSyncLabel = preferences.lastSyncAtMillis?.let(::formatSyncLabel)
+                )
+            }.collect { offlineSyncState ->
+                state = state.copy(offlineSyncState = offlineSyncState)
+            }
+        }
+    }
+
+    private suspend fun queueQuizAttempt(uuid: String, score: Int) {
+        localInfrastructure.offlineRepository.queueMutation(
+            PendingMutation(
+                clientMutationId = UUID.randomUUID().toString(),
+                entityType = OfflineEntityType.QUIZ,
+                entityUuid = uuid,
+                operation = PendingMutationOperation.RECORD_QUIZ_ATTEMPT,
+                payloadJson = gson.toJson(QuizAttemptQueuePayload(score)),
+                queuedAt = System.currentTimeMillis(),
+                priority = 1
+            )
+        )
+    }
+
+    private suspend fun queueFlashcardAttempt(uuid: String, mastery: Int) {
+        localInfrastructure.offlineRepository.queueMutation(
+            PendingMutation(
+                clientMutationId = UUID.randomUUID().toString(),
+                entityType = OfflineEntityType.FLASHCARD_DECK,
+                entityUuid = uuid,
+                operation = PendingMutationOperation.RECORD_FLASHCARD_ATTEMPT,
+                payloadJson = gson.toJson(FlashcardAttemptQueuePayload(mastery)),
+                queuedAt = System.currentTimeMillis(),
+                priority = 1
+            )
+        )
+    }
+
+    private fun formatSyncLabel(timestampMillis: Long): String {
+        val formatter = DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.ENGLISH)
+        return "Updated ${Instant.ofEpochMilli(timestampMillis).atZone(ZoneId.systemDefault()).format(formatter)}"
+    }
+
     private fun showMessage(message: String) {
         onMessage(message)
     }
 }
-

@@ -1,4 +1,3 @@
-﻿package edu.cit.gako.brainbox.network
+package edu.cit.gako.brainbox.network
 
-interface ApiService : AuthApiService, HomeApiService, StudyApiService
-
+interface ApiService : AuthApiService, HomeApiService, StudyApiService, NotebookApiService, AiApiService
