@@ -178,8 +178,9 @@ export const AudioPlayerProvider = ({ children }) => {
           return;
         }
 
-        synthRef.current.pause();
-        synthRef.current.resume();
+        // Avoid calling pause()/resume() here — it can cut speech mid-utterance
+        // in some browsers/voices. The stalled check above will trigger recovery
+        // when appropriate; otherwise allow the synthesizer to continue.
         return;
       }
 

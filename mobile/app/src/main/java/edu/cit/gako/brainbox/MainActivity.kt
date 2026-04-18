@@ -67,14 +67,23 @@ class MainActivity : ComponentActivity() {
                     onExitStudySession = controller::handleExitStudySession,
                     onRecordQuizAttempt = controller::handleRecordQuizAttempt,
                     onRecordFlashcardAttempt = controller::handleRecordFlashcardAttempt,
-                    onRefreshHome = controller::refreshHome,
                     onLogout = controller::handleLogout,
-                    onFeatureRequest = ::showMessage
+                    onFeatureRequest = ::showMessage,
+                    onAddToQueue = controller::handleAddToQueue,
+                    onRemoveFromQueue = controller::handleRemoveFromQueue,
+                    onSkipNext = controller::handleSkipNext
                 )
             }
         }
 
         controller.bootstrap()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::controller.isInitialized) {
+            controller.handleAppForegrounded()
+        }
     }
 
     private fun launchGoogleSignIn() {

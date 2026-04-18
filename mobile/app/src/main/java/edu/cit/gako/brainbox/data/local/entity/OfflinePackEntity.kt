@@ -31,6 +31,9 @@ data class OfflinePackEntity(
     val includeFlashcardData: Boolean = true,
     val includePlaylistData: Boolean = true,
     val lastServerVersion: Long? = null,
-    val estimatedBytes: Long? = null
+    val estimatedBytes: Long? = null,
+    val quizPayloadJson: String? = null,
+    val flashcardPayloadJson: String? = null,
+    val playlistPayloadJson: String? = null
 )
 

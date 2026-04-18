@@ -4,11 +4,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.gson.Gson
+import edu.cit.gako.brainbox.audio.BrainBoxAudioClient
+import edu.cit.gako.brainbox.audio.BrainBoxAudioPlaybackStatus
+import edu.cit.gako.brainbox.audio.buildNotebookTtsRequest
 import edu.cit.gako.brainbox.audio.toPlaybackUiState
 import edu.cit.gako.brainbox.data.local.model.OfflineEntityType
 import edu.cit.gako.brainbox.data.local.model.PendingMutation
 import edu.cit.gako.brainbox.data.local.model.PendingMutationOperation
 import edu.cit.gako.brainbox.data.local.toDocument
+import edu.cit.gako.brainbox.data.worker.BrainBoxSyncWorkScheduler
 import edu.cit.gako.brainbox.network.models.NotebookSummary
 import edu.cit.gako.brainbox.network.models.UserProfile
 import java.time.Instant
@@ -35,10 +39,13 @@ class BrainBoxAppController(
     private val scope: CoroutineScope,
     private val onMessage: (String) -> Unit
 ) {
+    private val appContext = appGraph.context
     private val repository = appGraph.repository
     private val localInfrastructure = appGraph.localInfrastructure
     private val audioStore = appGraph.audioStore
+    private val audioClient = BrainBoxAudioClient(appGraph.context)
     private val gson = Gson()
+    private var lastAutomaticRefreshAtMillis = 0L
 
     var state by mutableStateOf(AppState())
         private set
@@ -198,6 +205,9 @@ class BrainBoxAppController(
 
     fun handleTabSelected(tab: HomeTab) {
         state = state.copy(currentTab = tab)
+        if (tab == HomeTab.PROFILE) {
+            requestAutomaticRefresh()
+        }
     }
 
     fun handleCreateNotebook() {
@@ -226,42 +236,112 @@ class BrainBoxAppController(
     private fun openQuiz(uuid: String, returnToNotebookUuid: String?) {
         scope.launch {
             state = state.copy(isBusy = true)
+            val canAttemptRemote = localInfrastructure.connectivityMonitor.currentState().isConnected
 
-            try {
-                val quiz = repository.getQuiz(uuid)
+            if (canAttemptRemote) {
+                runCatching { repository.getQuiz(uuid) }
+                    .onSuccess { quiz ->
+                        state = state.copy(
+                            isBusy = false,
+                            activeQuiz = quiz,
+                            activeFlashcardDeck = null,
+                            activeNotebookUuid = null,
+                            studyReturnNotebookUuid = returnToNotebookUuid
+                        )
+                        syncStudyContext(quiz.notebookUuid)
+                        return@launch
+                    }
+                    .onFailure {
+                        val lostConnection = !localInfrastructure.connectivityMonitor.currentState().isConnected
+                        if (lostConnection) {
+                            val offlineQuiz = localInfrastructure.offlineRepository.getOfflineQuiz(uuid)
+                            if (offlineQuiz != null) {
+                                state = state.copy(
+                                    isBusy = false,
+                                    activeQuiz = offlineQuiz,
+                                    activeFlashcardDeck = null,
+                                    activeNotebookUuid = null,
+                                    studyReturnNotebookUuid = returnToNotebookUuid
+                                )
+                                return@launch
+                            }
+                        }
+                        state = state.copy(isBusy = false)
+                        showMessage("We couldn't open that quiz yet.")
+                    }
+                return@launch
+            }
+
+            val offlineQuiz = localInfrastructure.offlineRepository.getOfflineQuiz(uuid)
+            if (offlineQuiz != null) {
                 state = state.copy(
                     isBusy = false,
-                    activeQuiz = quiz,
+                    activeQuiz = offlineQuiz,
                     activeFlashcardDeck = null,
                     activeNotebookUuid = null,
                     studyReturnNotebookUuid = returnToNotebookUuid
                 )
-                syncStudyContext(quiz.notebookUuid)
-            } catch (_: Exception) {
-                state = state.copy(isBusy = false)
-                showMessage("We couldn't open that quiz yet.")
+                return@launch
             }
+
+            state = state.copy(isBusy = false)
+            showMessage("That quiz isn't available offline yet.")
         }
     }
 
     private fun openFlashcardDeck(uuid: String, returnToNotebookUuid: String?) {
         scope.launch {
             state = state.copy(isBusy = true)
+            val canAttemptRemote = localInfrastructure.connectivityMonitor.currentState().isConnected
 
-            try {
-                val deck = repository.getFlashcardDeck(uuid)
+            if (canAttemptRemote) {
+                runCatching { repository.getFlashcardDeck(uuid) }
+                    .onSuccess { deck ->
+                        state = state.copy(
+                            isBusy = false,
+                            activeFlashcardDeck = deck,
+                            activeQuiz = null,
+                            activeNotebookUuid = null,
+                            studyReturnNotebookUuid = returnToNotebookUuid
+                        )
+                        syncStudyContext(deck.notebookUuid)
+                        return@launch
+                    }
+                    .onFailure {
+                        val lostConnection = !localInfrastructure.connectivityMonitor.currentState().isConnected
+                        if (lostConnection) {
+                            val offlineDeck = localInfrastructure.offlineRepository.getOfflineFlashcardDeck(uuid)
+                            if (offlineDeck != null) {
+                                state = state.copy(
+                                    isBusy = false,
+                                    activeFlashcardDeck = offlineDeck,
+                                    activeQuiz = null,
+                                    activeNotebookUuid = null,
+                                    studyReturnNotebookUuid = returnToNotebookUuid
+                                )
+                                return@launch
+                            }
+                        }
+                        state = state.copy(isBusy = false)
+                        showMessage("We couldn't open that deck yet.")
+                    }
+                return@launch
+            }
+
+            val offlineDeck = localInfrastructure.offlineRepository.getOfflineFlashcardDeck(uuid)
+            if (offlineDeck != null) {
                 state = state.copy(
                     isBusy = false,
-                    activeFlashcardDeck = deck,
+                    activeFlashcardDeck = offlineDeck,
                     activeQuiz = null,
                     activeNotebookUuid = null,
                     studyReturnNotebookUuid = returnToNotebookUuid
                 )
-                syncStudyContext(deck.notebookUuid)
-            } catch (_: Exception) {
-                state = state.copy(isBusy = false)
-                showMessage("We couldn't open that deck yet.")
+                return@launch
             }
+
+            state = state.copy(isBusy = false)
+            showMessage("That deck isn't available offline yet.")
         }
     }
 
@@ -323,10 +403,45 @@ class BrainBoxAppController(
         }
     }
 
-    fun refreshHome() {
+    fun handleAddToQueue(notebook: NotebookSummary) {
+        if (state.playbackQueue.any { it.uuid == notebook.uuid }) return
+        state = state.copy(playbackQueue = state.playbackQueue + notebook)
         scope.launch {
-            syncHome(setBusy = true)
+            runCatching { repository.addToQueue(notebook.uuid) }
         }
+    }
+
+    fun handleRemoveFromQueue(notebookUuid: String) {
+        state = state.copy(playbackQueue = state.playbackQueue.filter { it.uuid != notebookUuid })
+        scope.launch {
+            runCatching { repository.removeFromQueue(notebookUuid) }
+        }
+    }
+
+    fun handleClearQueue() {
+        state = state.copy(playbackQueue = emptyList())
+        scope.launch {
+            runCatching { repository.clearQueue() }
+        }
+    }
+
+    fun handleSkipNext() {
+        val queue = state.playbackQueue
+        if (queue.isEmpty()) return
+        val next = queue.first()
+        state = state.copy(playbackQueue = queue.drop(1))
+        scope.launch {
+            runCatching { repository.removeFromQueue(next.uuid) }
+            runCatching { repository.getNotebook(next.uuid) }
+                .onSuccess { detail ->
+                    audioClient.play(buildNotebookTtsRequest(notebook = detail, html = detail.content, offlineOnly = false))
+                }
+                .onFailure { showMessage("Couldn't load \"${next.title}\" for playback.") }
+        }
+    }
+
+    fun handleAppForegrounded() {
+        requestAutomaticRefresh()
     }
 
     fun handleLogout() {
@@ -349,7 +464,8 @@ class BrainBoxAppController(
                 isBusy = false,
                 isAuthenticated = true,
                 user = bundle.user,
-                homeData = bundle.homeData
+                homeData = bundle.homeData,
+                playbackQueue = bundle.homeData.playbackQueue
             )
         } catch (error: HttpException) {
             if (error.code() == 401) {
@@ -368,6 +484,7 @@ class BrainBoxAppController(
         val offlineNotebooks = localInfrastructure.database.notebookDao()
             .getAllNotebooksOnce()
             .map { it.toDocument() }
+        val offlineStudyCollections = localInfrastructure.offlineRepository.getOfflineStudyCollections()
 
         val notebookSummaries = offlineNotebooks.map { document ->
             NotebookSummary(
@@ -401,9 +518,9 @@ class BrainBoxAppController(
                 notebooks = notebookSummaries,
                 recentlyEdited = notebookSummaries.take(6),
                 recentlyReviewed = recentlyReviewed,
-                quizzes = emptyList(),
-                flashcards = emptyList(),
-                playlists = emptyList(),
+                quizzes = offlineStudyCollections.quizzes,
+                flashcards = offlineStudyCollections.flashcards,
+                playlists = offlineStudyCollections.playlists,
                 syncNotice = notice,
                 syncedAtLabel = lastSyncAtMillis?.let(::formatSyncLabel)
             )
@@ -438,13 +555,19 @@ class BrainBoxAppController(
     private fun observePlaybackState() {
         scope.launch {
             audioStore.snapshotFlow.collect { snapshot ->
+                val wasPlaying = state.playbackState.isPlaying
                 state = state.copy(playbackState = snapshot.toPlaybackUiState())
+                if (wasPlaying && snapshot.status == BrainBoxAudioPlaybackStatus.ENDED
+                        && state.playbackQueue.isNotEmpty()) {
+                    handleSkipNext()
+                }
             }
         }
     }
 
     private fun observeOfflineSyncState() {
         scope.launch {
+            var previousSyncState: OfflineSyncState? = null
             combine(
                 localInfrastructure.offlineRepository.observePendingMutations(),
                 localInfrastructure.preferencesStore.preferences
@@ -456,7 +579,24 @@ class BrainBoxAppController(
                     lastSyncLabel = preferences.lastSyncAtMillis?.let(::formatSyncLabel)
                 )
             }.collect { offlineSyncState ->
-                state = state.copy(offlineSyncState = offlineSyncState)
+                val hadPendingMutations = previousSyncState?.hasPendingMutations == true
+                val syncTimestampChanged =
+                    previousSyncState?.lastSyncAtMillis != offlineSyncState.lastSyncAtMillis
+
+                state = state.copy(
+                    offlineSyncState = offlineSyncState,
+                    homeData = state.homeData.copy(syncedAtLabel = offlineSyncState.lastSyncLabel)
+                )
+                previousSyncState = offlineSyncState
+
+                val shouldRefreshHome =
+                    state.isAuthenticated &&
+                        syncTimestampChanged &&
+                        (hadPendingMutations || offlineSyncState.hasPendingMutations)
+
+                if (shouldRefreshHome) {
+                    syncHome(setBusy = false)
+                }
             }
         }
     }
@@ -473,6 +613,7 @@ class BrainBoxAppController(
                 priority = 1
             )
         )
+        BrainBoxSyncWorkScheduler.enqueueWhenOnline(appContext)
     }
 
     private suspend fun queueFlashcardAttempt(uuid: String, mastery: Int) {
@@ -487,6 +628,24 @@ class BrainBoxAppController(
                 priority = 1
             )
         )
+        BrainBoxSyncWorkScheduler.enqueueWhenOnline(appContext)
+    }
+
+    private fun requestAutomaticRefresh(force: Boolean = false) {
+        if (!state.isAuthenticated || state.isBusy) {
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        if (!force && now - lastAutomaticRefreshAtMillis < AUTOMATIC_REFRESH_THROTTLE_MILLIS) {
+            return
+        }
+
+        lastAutomaticRefreshAtMillis = now
+        scope.launch {
+            BrainBoxSyncWorkScheduler.enqueueWhenOnline(appContext)
+            syncHome(setBusy = false)
+        }
     }
 
     private fun formatSyncLabel(timestampMillis: Long): String {
@@ -496,5 +655,9 @@ class BrainBoxAppController(
 
     private fun showMessage(message: String) {
         onMessage(message)
+    }
+
+    private companion object {
+        const val AUTOMATIC_REFRESH_THROTTLE_MILLIS = 30_000L
     }
 }

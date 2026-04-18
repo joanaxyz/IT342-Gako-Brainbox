@@ -1,12 +1,13 @@
 .player-bar-wrapper {
   position: fixed;
-  bottom: max(var(--spacing-lg), env(safe-area-inset-bottom, 0px));
+  /* keep safe-area inset but reduce overall bottom spacing to use space more tightly */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   left: 0;
   right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   z-index: 2000;
   pointer-events: none;
 }
@@ -14,7 +15,7 @@
 /* ── Subtitle / teleprompter strip ───────────────────── */
 .player-subtitle-strip {
   width: min(calc(100% - 2 * var(--page-gutter)), 920px);
-  height: 38px;
+  height: 32px;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: var(--blur-lg);
   -webkit-backdrop-filter: var(--blur-lg);
@@ -26,7 +27,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  padding: 0 28px;
+  padding: 0 18px;
   gap: 6px;
   pointer-events: auto;
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
@@ -52,7 +53,7 @@
 
 .player-bar-container {
   width: min(calc(100% - 2 * var(--page-gutter)), 920px);
-  height: 96px;
+  height: 72px;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: var(--blur-lg);
   -webkit-backdrop-filter: var(--blur-lg);
@@ -75,9 +76,9 @@
 .player-seek-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 var(--spacing-lg);
-  height: 22px;
+  gap: 8px;
+  padding: 0 var(--spacing-md);
+  height: 20px;
   flex-shrink: 0;
 }
 
@@ -154,7 +155,7 @@
   display: grid;
   grid-template-columns: 1.2fr 1fr 1.2fr;
   align-items: center;
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--spacing-md);
   gap: var(--spacing-md);
 }
 

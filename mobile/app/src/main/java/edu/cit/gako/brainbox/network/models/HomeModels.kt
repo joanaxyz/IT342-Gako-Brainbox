@@ -23,3 +23,23 @@ data class PlaylistSummary(
     @SerializedName("queue") val queue: List<NotebookSummary> = emptyList()
 )
 
+data class PlaylistCreateRequest(
+    @SerializedName("title") val title: String
+)
+
+data class PlaylistAddNotebookBody(
+    @SerializedName("notebookUuid") val notebookUuid: String
+)
+
+data class PlaybackQueueResponse(
+    @SerializedName("items") val items: List<NotebookSummary> = emptyList()
+)
+
+data class QueueAddNotebookBody(
+    @SerializedName("notebookUuid") val notebookUuid: String
+)
+
+data class QueueReorderBody(
+    @SerializedName("notebookUuids") val notebookUuids: List<String>
+)
+

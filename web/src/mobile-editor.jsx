@@ -15,10 +15,13 @@ import NoteEditor from './notebook/editor/NoteEditor';
 import {
   clearHostSession,
   getEmbeddedNotebookId,
+  isAndroidHost,
   reportHostError,
 } from './app/host/brainBoxHost';
 
 const EmbeddedRoot = () => <Outlet />;
+const embeddedAndroidHost = isAndroidHost();
+const EmbeddedRouteFallback = () => (embeddedAndroidHost ? null : <RouteFallback />);
 
 const EmbeddedSessionGuard = () => {
   const { isAuthReady, isAuthenticated } = useAuth();
@@ -33,11 +36,11 @@ const EmbeddedSessionGuard = () => {
   }, [isAuthReady, isAuthenticated]);
 
   if (!isAuthReady) {
-    return <RouteFallback />;
+    return <EmbeddedRouteFallback />;
   }
 
   if (!isAuthenticated) {
-    return <RouteFallback />;
+    return <EmbeddedRouteFallback />;
   }
 
   return <Outlet />;
@@ -48,7 +51,7 @@ const MissingNotebookScreen = () => {
     reportHostError('No notebook was provided for the embedded editor.');
   }, []);
 
-  return <RouteFallback />;
+  return <EmbeddedRouteFallback />;
 };
 
 const setupEmbeddedErrorReporting = () => {
@@ -76,7 +79,7 @@ const embeddedRouter = createMemoryRouter(
   createRoutesFromElements(
     <Route
       element={(
-        <AppShell>
+        <AppShell showGlobalLoadingOverlay={!embeddedAndroidHost}>
           <EmbeddedRoot />
         </AppShell>
       )}

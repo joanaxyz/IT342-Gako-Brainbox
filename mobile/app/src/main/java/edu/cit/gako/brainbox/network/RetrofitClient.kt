@@ -1,14 +1,22 @@
-﻿package edu.cit.gako.brainbox.network
+package edu.cit.gako.brainbox.network
 
+import edu.cit.gako.brainbox.BuildConfig
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private val baseUrl: String
+        get() = BuildConfig.BRAINBOX_API_BASE_URL
+            .trim()
+            .ifBlank { "http://10.0.2.2:8080/" }
+            .let { candidate ->
+                if (candidate.endsWith("/")) candidate else "$candidate/"
+            }
+
     val apiBaseUrl: String
-        get() = "${BASE_URL.removeSuffix("/")}/api"
+        get() = "${baseUrl.removeSuffix("/")}/api"
 
     @Volatile
     private var apiServiceInstance: ApiService? = null
@@ -46,11 +54,10 @@ object RetrofitClient {
 
     private fun createRetrofit(client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 }
-

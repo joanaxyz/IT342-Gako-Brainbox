@@ -23,6 +23,7 @@ import VersionPreviewOverlay from './components/VersionPreviewOverlay/VersionPre
 import PlayerBar from '../../home/shared/components/PlayerBar';
 import { useAudioPlayer, useNotification } from '../../common/hooks/hooks';
 import { buildPlaybackModel } from '../../common/audio/playbackModel';
+import { isAndroidHost, reportHostReady } from '../../app/host/brainBoxHost';
 import './components/ReviewMode/ReviewMode.css';
 import './editor.css';
 
@@ -32,9 +33,11 @@ const NoteEditor = () => {
   const editorRef = useRef(null);
   const reviewEditorRef = useRef(null);
   const editorContainerRef = useRef(null);
+  const hasReportedHostReadyRef = useRef(false);
   const lastEditorSelectionTextRef = useRef('');
   const lastReviewSelectionTextRef = useRef('');
   const autoAppliedSelectionReviewRef = useRef(null);
+  const isEmbeddedAndroidHost = useMemo(() => isAndroidHost(), []);
 
   // Merge mode from URL query param and location state
   const editorLocationState = useMemo(() => {
@@ -82,6 +85,7 @@ const NoteEditor = () => {
     setAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
     setReviewOutline([]);
     setReviewAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
+    hasReportedHostReadyRef.current = false;
     lastEditorSelectionTextRef.current = '';
     lastReviewSelectionTextRef.current = '';
     autoAppliedSelectionReviewRef.current = null;
@@ -453,6 +457,19 @@ const NoteEditor = () => {
     addNotification(`"${filename}" imported successfully`, 'success', 3000);
   }, [addNotification, handleDocumentChange]);
 
+  const handleEditorReady = useCallback((currentEditor) => {
+    setActiveEditor(currentEditor);
+
+    if (!isEmbeddedAndroidHost || hasReportedHostReadyRef.current || !routeNotebook?.uuid) {
+      return;
+    }
+
+    hasReportedHostReadyRef.current = true;
+    window.requestAnimationFrame(() => {
+      reportHostReady();
+    });
+  }, [isEmbeddedAndroidHost, routeNotebook?.uuid, setActiveEditor]);
+
   // ── Toolbar (pre-built to avoid re-creating the JSX on every render) ──
   const toolbar = (
     <FormatToolbar
@@ -554,6 +571,7 @@ const NoteEditor = () => {
                       ttsIsActive={isReviewNotebookActive}
                       ttsIsPlaying={isPlaying}
                       ttsWordRanges={reviewPlaybackModel.words}
+                      onEditorReady={handleEditorReady}
                       onSelectionStateChange={handleReviewSelectionStateChange}
                       fontFamily={fontFamily}
                       paperWidth={paperWidth}
@@ -633,7 +651,7 @@ const NoteEditor = () => {
                       onUpdateContent={handleDocumentChange}
                       onBlur={handleBlurSave}
                       onFocus={setActiveEditor}
-                      onEditorReady={setActiveEditor}
+                      onEditorReady={handleEditorReady}
                       onSelectionStateChange={handleEditorSelectionStateChange}
                       fontFamily={fontFamily}
                       paperWidth={paperWidth}

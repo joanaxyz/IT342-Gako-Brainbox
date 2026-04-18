@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -20,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import edu.cit.gako.brainbox.app.HomeData
 import edu.cit.gako.brainbox.network.models.UserProfile
-import edu.cit.gako.brainbox.shared.OutlinedActionButton
 import edu.cit.gako.brainbox.shared.PrimaryActionButton
 import edu.cit.gako.brainbox.shared.ProfileAvatar
 import edu.cit.gako.brainbox.shared.ProfileDetailRow
@@ -37,7 +34,6 @@ internal fun ProfileScreen(
     user: UserProfile?,
     homeData: HomeData,
     contentPadding: PaddingValues,
-    onRefreshHome: () -> Unit,
     onLogout: () -> Unit
 ) {
     val profile = user ?: UserProfile("BrainBox User", "", null)
@@ -97,8 +93,12 @@ internal fun ProfileScreen(
                     modifier = Modifier.padding(22.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Home controls", style = MaterialTheme.typography.titleMedium, color = Ink)
-                    OutlinedActionButton("Sync now", onClick = onRefreshHome)
+                    Text("Account", style = MaterialTheme.typography.titleMedium, color = Ink)
+                    Text(
+                        "Mobile sync runs automatically whenever your changes can reach the server again.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink3
+                    )
                     PrimaryActionButton("Log out", isBusy = false, onClick = onLogout)
                 }
             }

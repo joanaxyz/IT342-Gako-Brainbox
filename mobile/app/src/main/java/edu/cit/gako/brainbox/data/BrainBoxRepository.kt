@@ -12,6 +12,10 @@ import edu.cit.gako.brainbox.network.models.CategoryDetail
 import edu.cit.gako.brainbox.network.models.FlashcardDeckDetail
 import edu.cit.gako.brainbox.network.models.FlashcardDeckCreateRequest
 import edu.cit.gako.brainbox.network.models.NotebookDetail
+import edu.cit.gako.brainbox.network.models.NotebookSummary
+import edu.cit.gako.brainbox.network.models.PlaylistAddNotebookBody
+import edu.cit.gako.brainbox.network.models.PlaylistCreateRequest
+import edu.cit.gako.brainbox.network.models.PlaylistSummary
 import edu.cit.gako.brainbox.network.models.NotebookVersionItem
 import edu.cit.gako.brainbox.network.models.OfflineNotebookBundle
 import edu.cit.gako.brainbox.network.models.QuizCreateRequest
@@ -20,7 +24,7 @@ import edu.cit.gako.brainbox.network.models.UserProfile
 import java.util.UUID
 
 class BrainBoxRepository(
-    apiService: ApiService,
+    private val apiService: ApiService,
     sessionManager: SessionManager
 ) {
     private val authRepository = BrainBoxAuthRepository(apiService, sessionManager)
@@ -28,6 +32,7 @@ class BrainBoxRepository(
     private val studyRepository = BrainBoxStudyRepository(apiService)
     private val notebookRepository = BrainBoxNotebookRepository(apiService)
     private val aiRepository = BrainBoxAiRepository(apiService)
+    private val queueRepository = BrainBoxQueueRepository(apiService)
 
     fun hasSession(): Boolean = authRepository.hasSession()
 
@@ -59,6 +64,35 @@ class BrainBoxRepository(
     }
 
     suspend fun loadHome(): HomeBundle = homeRepository.loadHome()
+
+    suspend fun createPlaylist(title: String): PlaylistSummary =
+        apiService.createPlaylistEnvelope(PlaylistCreateRequest(title))
+            .requireData("Couldn't create playlist.")
+
+    suspend fun deletePlaylist(uuid: String) {
+        apiService.deletePlaylistEnvelope(uuid)
+    }
+
+    suspend fun addNotebookToPlaylist(playlistUuid: String, notebookUuid: String): PlaylistSummary =
+        apiService.addNotebookToPlaylistEnvelope(playlistUuid, PlaylistAddNotebookBody(notebookUuid))
+            .requireData("Couldn't add notebook to playlist.")
+
+    suspend fun removeNotebookFromPlaylist(playlistUuid: String, notebookUuid: String): PlaylistSummary =
+        apiService.removeNotebookFromPlaylistEnvelope(playlistUuid, notebookUuid)
+            .requireData("Couldn't remove notebook from playlist.")
+
+    suspend fun getQueue(): List<NotebookSummary> = queueRepository.getQueue()
+
+    suspend fun addToQueue(notebookUuid: String): List<NotebookSummary> =
+        queueRepository.addNotebook(notebookUuid)
+
+    suspend fun removeFromQueue(notebookUuid: String): List<NotebookSummary> =
+        queueRepository.removeNotebook(notebookUuid)
+
+    suspend fun clearQueue() = queueRepository.clearQueue()
+
+    suspend fun reorderQueue(notebookUuids: List<String>): List<NotebookSummary> =
+        queueRepository.reorderQueue(notebookUuids)
 
     suspend fun markNotebookReviewed(
         uuid: String,

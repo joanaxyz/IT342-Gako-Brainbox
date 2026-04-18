@@ -4,6 +4,11 @@ import { getHostApiBaseUrl } from '../../app/host/brainBoxHost';
 let isRefreshing = false;
 let refreshQueue = [];
 
+const buildTimeoutMessage = (timeoutMs, label = 'Request') => {
+  const seconds = Math.max(1, Math.round(timeoutMs / 1000));
+  return `${label} timed out after ${seconds} second${seconds === 1 ? '' : 's'}. Check your connection and try again.`;
+};
+
 const processQueue = (error, token = null) => {
   refreshQueue.forEach((request) => {
     if (error) {
@@ -81,6 +86,46 @@ const createNetworkErrorResponse = (error) => ({
   message: error.message || 'Network error',
 });
 
+const fetchWithTimeout = async (url, options, timeoutMs = 0) => {
+  if (!timeoutMs || typeof AbortController === 'undefined') {
+    return { response: await fetch(url, options), didTimeout: false };
+  }
+
+  const timeoutController = new AbortController();
+  let timeoutId = null;
+  let didTimeout = false;
+  const upstreamSignal = options.signal;
+  const forwardAbort = () => timeoutController.abort();
+
+  if (upstreamSignal) {
+    if (upstreamSignal.aborted) {
+      forwardAbort();
+    } else {
+      upstreamSignal.addEventListener('abort', forwardAbort, { once: true });
+    }
+  }
+
+  timeoutId = setTimeout(() => {
+    didTimeout = true;
+    timeoutController.abort();
+  }, timeoutMs);
+
+  try {
+    return {
+      response: await fetch(url, {
+        ...options,
+        signal: timeoutController.signal,
+      }),
+      didTimeout,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+    if (upstreamSignal) {
+      upstreamSignal.removeEventListener('abort', forwardAbort);
+    }
+  }
+};
+
 const refreshAccessToken = async (baseUrl, requestOptions, endpoint, method, body, headers) => {
   const refreshToken = getCookie('refreshToken');
 
@@ -109,10 +154,16 @@ const refreshAccessToken = async (baseUrl, requestOptions, endpoint, method, bod
   }
 
   isRefreshing = true;
+  let didTimeout = false;
 
   try {
     const refreshUrl = `${baseUrl}/auth/refresh-token?refreshToken=${refreshToken}`;
-    const refreshResponse = await fetch(refreshUrl, { method: 'POST' });
+    const { response: refreshResponse, didTimeout: timedOut } = await fetchWithTimeout(
+      refreshUrl,
+      { method: 'POST' },
+      requestOptions.timeoutMs
+    );
+    didTimeout = timedOut;
 
     if (!refreshResponse.ok) {
       processQueue(new Error('Refresh failed'));
@@ -139,6 +190,9 @@ const refreshAccessToken = async (baseUrl, requestOptions, endpoint, method, bod
     return apiCall(endpoint, method, body, headers, true, requestOptions, nextAccessToken);
   } catch (error) {
     processQueue(error);
+    if (didTimeout) {
+      return createNetworkErrorResponse(new Error(buildTimeoutMessage(requestOptions.timeoutMs, 'Refreshing your session')));
+    }
     return {
       success: false,
       status: 401,
@@ -168,6 +222,7 @@ export const apiCall = async (
   const isFormDataBody = typeof FormData !== 'undefined' && body instanceof FormData;
   const {
     skipAuthRefresh = false,
+    timeoutMs = 0,
     ...fetchOptions
   } = requestOptions;
 
@@ -193,8 +248,12 @@ export const apiCall = async (
     options.body = isFormDataBody ? body : JSON.stringify(body);
   }
 
+  let didTimeout = false;
+
   try {
-    const response = await fetch(url, options);
+    const fetchResult = await fetchWithTimeout(url, options, timeoutMs);
+    const response = fetchResult.response;
+    didTimeout = fetchResult.didTimeout;
 
     if (response.status === 401 && !isRefreshAttempt && !skipAuthRefresh) {
       const refreshedResponse = await refreshAccessToken(baseUrl, requestOptions, endpoint, normalizedMethod, body, headers);
@@ -210,8 +269,11 @@ export const apiCall = async (
 
     return parseApiResponse(response.status, data);
   } catch (error) {
+    const errorToReport = didTimeout
+      ? new Error(buildTimeoutMessage(timeoutMs))
+      : error;
     console.error(`API call to ${endpoint} failed (${url}):`, error);
-    return createNetworkErrorResponse(error);
+    return createNetworkErrorResponse(errorToReport);
   }
 };
 

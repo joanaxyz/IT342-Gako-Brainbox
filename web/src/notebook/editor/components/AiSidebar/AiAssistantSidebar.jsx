@@ -24,7 +24,10 @@ import {
 import { aiAPI } from '../../../../common/utils/api.jsx';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { useFlashcard, useQuiz } from '../../../shared/hooks/hooks';
+import { isAndroidHost, openHostQuiz, openHostFlashcardDeck } from '../../../../app/host/brainBoxHost';
 import AiSettingsModal from './AiSettingsModal';
+import MarkdownIt from 'markdown-it';
+import DOMPurify from 'dompurify';
 
 const createMessageId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -384,6 +387,20 @@ const AiAssistantSidebar = ({
   const activeTool = quickTools.find((tool) => tool.key === activeToolKey) || quickTools[0] || null;
   const ActiveToolIcon = activeTool?.icon;
   const messagesListRef = useRef(null);
+
+  const md = useMemo(() => new MarkdownIt({ html: false, linkify: true, typographer: true }), []);
+  const renderMarkdown = useCallback((value) => {
+    if (!value) return '';
+    try {
+      const raw = md.render(typeof value === 'string' ? value : String(value));
+      if (typeof DOMPurify !== 'undefined' && typeof window !== 'undefined') {
+        return DOMPurify.sanitize(raw);
+      }
+      return raw;
+    } catch (e) {
+      return String(value);
+    }
+  }, [md]);
   const { addNotification } = useNotification();
   const { createQuiz } = useQuiz();
   const { createFlashcard } = useFlashcard();
@@ -843,6 +860,11 @@ const AiAssistantSidebar = ({
       return;
     }
 
+    if (isAndroidHost()) {
+      openHostQuiz(createdQuiz.uuid);
+      return;
+    }
+
     startTransition(() => {
       navigate('/quizzes', { state: { autoOpenQuizUuid: createdQuiz.uuid } });
     });
@@ -850,6 +872,11 @@ const AiAssistantSidebar = ({
 
   const handleViewFlashcardDeck = useCallback(() => {
     if (!createdFlashcard?.uuid) {
+      return;
+    }
+
+    if (isAndroidHost()) {
+      openHostFlashcardDeck(createdFlashcard.uuid);
       return;
     }
 
@@ -1059,9 +1086,16 @@ const AiAssistantSidebar = ({
 
                     return (
                       <div key={entry.id} className={`ai-message ai-message--${entry.role}`}>
-                        <div className="ai-message-content" style={{ whiteSpace: 'pre-wrap' }}>
-                          {entry.content}
-                        </div>
+                        {entry.role === 'assistant' ? (
+                          <div
+                            className="ai-message-content"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(entry.content || '') }}
+                          />
+                        ) : (
+                          <div className="ai-message-content" style={{ whiteSpace: 'pre-wrap' }}>
+                            {entry.content}
+                          </div>
+                        )}
                         {entry.role === 'user' && (isProposalSource || hasCheckpoint) && (
                           <div className="ai-message-footer">
                             {isProposalSource && (
@@ -1198,12 +1232,6 @@ const AiAssistantSidebar = ({
                 </div>
 
                 <div className="ai-chat-input-wrapper">
-                  {activeConvUuid && (
-                    <div className="ai-conv-active-bar">
-                      <span>Continuing {conversationTitle}</span>
-                      <button type="button" className="ai-conv-new-btn" onClick={handleNewChat}>New chat</button>
-                    </div>
-                  )}
                   <div className="ai-chat-input-container">
                     <textarea
                       placeholder={

@@ -28,9 +28,11 @@ fun BrainBoxApp(
     onExitStudySession: () -> Unit,
     onRecordQuizAttempt: (String, Int) -> Unit,
     onRecordFlashcardAttempt: (String, Int) -> Unit,
-    onRefreshHome: () -> Unit,
     onLogout: () -> Unit,
-    onFeatureRequest: (String) -> Unit
+    onFeatureRequest: (String) -> Unit,
+    onAddToQueue: (edu.cit.gako.brainbox.network.models.NotebookSummary) -> Unit = {},
+    onRemoveFromQueue: (String) -> Unit = {},
+    onSkipNext: () -> Unit = {}
 ) {
     when {
         state.isBootstrapping -> LoadingScreen()
@@ -68,9 +70,11 @@ fun BrainBoxApp(
             onOpenNotebook = onOpenNotebook,
             onOpenQuiz = onOpenQuiz,
             onOpenFlashcardDeck = onOpenFlashcardDeck,
-            onRefreshHome = onRefreshHome,
             onLogout = onLogout,
-            onFeatureRequest = onFeatureRequest
+            onFeatureRequest = onFeatureRequest,
+            onAddToQueue = onAddToQueue,
+            onRemoveFromQueue = onRemoveFromQueue,
+            onSkipNext = onSkipNext
         )
     }
 }

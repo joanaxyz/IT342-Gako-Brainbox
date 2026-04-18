@@ -20,12 +20,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import edu.cit.gako.brainbox.data.BrainBoxRepository
-import edu.cit.gako.brainbox.data.local.model.BrainBoxNotebookDocument
-import edu.cit.gako.brainbox.data.local.model.NotebookSyncState
 import edu.cit.gako.brainbox.data.offline.BrainBoxLocalInfrastructureFactory
+import edu.cit.gako.brainbox.data.offline.downloadOfflinePack
 import edu.cit.gako.brainbox.network.RetrofitClient
 import edu.cit.gako.brainbox.network.SessionManager
-import edu.cit.gako.brainbox.network.models.NotebookDetail
 import edu.cit.gako.brainbox.network.models.NotebookSummary
 import edu.cit.gako.brainbox.shared.BrandedSearchField
 import edu.cit.gako.brainbox.shared.EmptyStateCard
@@ -54,6 +52,7 @@ internal fun LibraryScreen(
     val offlinePacks by localInfrastructure.offlineRepository.observeActiveOfflinePacks().collectAsState(initial = emptyList())
     val offlinePackMap = remember(offlinePacks) { offlinePacks.associateBy { it.notebookUuid } }
     var offlineMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeOfflineNotebookUuid by rememberSaveable { mutableStateOf<String?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = notebooks.filter {
         query.isBlank() ||
@@ -79,96 +78,69 @@ internal fun LibraryScreen(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 filtered.forEach { notebook ->
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NotebookCard(notebook, "Open editor") {
-                            onOpenNotebook(notebook.uuid)
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    scope.launch {
-                                        val existingPack = offlinePackMap[notebook.uuid]
-                                        if (existingPack != null) {
-                                            localInfrastructure.offlineRepository.removeOfflinePack(notebook.uuid)
-                                            offlineMessage = "\"${notebook.title}\" was removed from offline storage."
-                                        } else {
-                                            runCatching {
-                                                repository.getOfflineBundle(listOf(notebook.uuid))
-                                            }.onSuccess { bundle ->
-                                                val item = bundle.notebooks.firstOrNull()
-                                                if (item != null) {
-                                                    localInfrastructure.offlineRepository.saveNotebookSnapshot(
-                                                        document = item.notebook.toNotebookDocument(),
-                                                        pinned = true
-                                                    )
-                                                    offlineMessage = "\"${notebook.title}\" is now available offline."
-                                                }
-                                            }.onFailure {
-                                                offlineMessage = "We couldn't download that notebook for offline use right now."
-                                            }
-                                        }
-                                    }
-                                }
+                    val isOffline = offlinePackMap.containsKey(notebook.uuid)
+                    val isWorking = activeOfflineNotebookUuid == notebook.uuid
+                    NotebookCard(
+                        notebook = notebook,
+                        action = "Open editor",
+                        footer = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            activeOfflineNotebookUuid = notebook.uuid
+                                            if (isOffline) {
+                                                localInfrastructure.offlineRepository.removeOfflinePack(notebook.uuid)
+                                                offlineMessage = "\"${notebook.title}\" was removed from offline storage."
+                                            } else {
+                                                downloadOfflinePack(
+                                                    notebookUuid = notebook.uuid,
+                                                    repository = repository,
+                                                    offlineRepository = localInfrastructure.offlineRepository
+                                                ).onSuccess { result ->
+                                                    val details = buildList {
+                                                        if (result.quizCount > 0) add("${result.quizCount} quizzes")
+                                                        if (result.flashcardCount > 0) add("${result.flashcardCount} flashcards")
+                                                    }
+                                                    offlineMessage = if (details.isEmpty()) {
+                                                        "\"${result.notebookTitle}\" is now available offline."
+                                                    } else {
+                                                        "\"${result.notebookTitle}\" is now available offline with ${details.joinToString(" and ")}."
+                                                    }
+                                                }.onFailure {
+                                                    offlineMessage = "We couldn't download that notebook for offline use right now."
+                                                }
+                                            }
+                                            activeOfflineNotebookUuid = null
+                                        }
+                                    },
+                                    enabled = !isWorking
+                                ) {
+                                    Text(
+                                        when {
+                                            isWorking && isOffline -> "Removing..."
+                                            isWorking -> "Downloading..."
+                                            isOffline -> "Remove offline"
+                                            else -> "Make available offline"
+                                        }
+                                    )
+                                }
                                 Text(
-                                    if (offlinePackMap.containsKey(notebook.uuid)) {
-                                        "Remove offline"
-                                    } else {
-                                        "Make available offline"
-                                    }
+                                    text = if (isOffline) "Available offline" else "Online only",
+                                    color = if (isOffline) Accent else Ink3
                                 )
                             }
-                            Text(
-                                text = offlinePackMap[notebook.uuid]?.state?.name?.replace('_', ' ') ?: "Online only",
-                                color = if (offlinePackMap.containsKey(notebook.uuid)) Accent else Ink3
-                            )
                         }
-                    }
+                    ) {
+                            onOpenNotebook(notebook.uuid)
+                        }
                 }
             }
         }
     }
-}
-
-private fun NotebookSummary.toNotebookDocument(): BrainBoxNotebookDocument {
-    return BrainBoxNotebookDocument(
-        uuid = uuid,
-        title = title,
-        categoryId = categoryId,
-        categoryName = categoryName,
-        contentHtml = "",
-        wordCount = wordCount,
-        version = version ?: 0L,
-        lastReviewedAt = lastReviewedAt,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        isAvailableOffline = true,
-        syncState = NotebookSyncState.CLEAN,
-        localUpdatedAt = System.currentTimeMillis(),
-        remoteUpdatedAt = System.currentTimeMillis()
-    )
-}
-
-private fun NotebookDetail.toNotebookDocument(): BrainBoxNotebookDocument {
-    return BrainBoxNotebookDocument(
-        uuid = uuid,
-        title = title,
-        categoryId = categoryId,
-        categoryName = categoryName,
-        contentHtml = content,
-        wordCount = wordCount,
-        version = version ?: 0L,
-        lastReviewedAt = lastReviewedAt,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        isAvailableOffline = true,
-        syncState = NotebookSyncState.CLEAN,
-        localUpdatedAt = System.currentTimeMillis(),
-        remoteUpdatedAt = System.currentTimeMillis()
-    )
 }
 
 
