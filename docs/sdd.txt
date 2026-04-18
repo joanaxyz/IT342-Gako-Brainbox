@@ -1,6 +1,3 @@
-
-
-
 IT342-[Section]
 System Integration and Architecture
 
@@ -9,7 +6,7 @@ System Design Document (SDD)
 Project Title: Brainbox: 
 Prepared By: Gako, Joana Carla D.
 
-Version: 2.0
+Version: 3.0
 Date: February 27, 2026
 Status: Final
 
@@ -29,8 +26,58 @@ Draft
 0.2
 02/27/26
 Joana Carla Gako
-Final
-Final
+Removed the editor section/tabs feature and refactored the API endpoint specifications.
+Draft
+0.3
+02/27/26
+Joana Carla Gako
+Refactored the register endpoint specification.
+Draft
+1.0
+03/01/26
+Joana Carla Gako
+Added Flashcard and FlashcardCard entity specs, mastery attempt tracking, and /api/flashcards/* endpoint definitions to Sections 5 and 6.
+Draft
+1.1
+03/04/26
+Joana Carla Gako
+Replaced /api/queue/* placeholder with /api/playlists/* endpoint definitions; added reorder, current-index, and add/remove notebook operations; added Playlist entity field definitions.
+Draft
+1.2
+03/08/26
+Joana Carla Gako
+Added AiConfig entity spec (including encrypted apiKey field) and /api/ai/config/* endpoint definitions.
+Draft
+1.3
+03/12/26
+Joana Carla Gako
+Added AiConversation entity spec and /api/ai/conversations/* endpoints; updated AI endpoint paths from /api/ai/chat and /api/ai/history/* to /api/ai/query and /api/ai/conversations/*.
+Draft
+2.0
+03/18/26
+Joana Carla Gako
+Expanded database design section: full field definitions with types, nullability, and FK relationships for all entities; added Code and RefreshToken entity specs.
+Draft
+2.1
+03/22/26
+Joana Carla Gako
+Added step-by-step Google OAuth and password reset flows to the Security Design section; documented JWT token expiry values.
+Draft
+2.2
+03/28/26
+Joana Carla Gako
+Added system architecture section: package structure overview, UserOwned interface, AuthInterceptor, and NotebookCacheInterceptor descriptions.
+Draft
+2.3
+03/31/26
+Joana Carla Gako
+Added Design Patterns section: Strategy + Factory Method (email service), Builder (notebook entity construction), Adapter (AI provider), Observer (notebook version snapshots), Template Method (AI prompt building), Facade (authentication layer).
+Draft
+3.0
+04/08/26
+Joana Carla Gako
+Corrected API endpoint specifications to align with the implemented system: replaced legacy quiz and flashcard sub-path endpoints with correct /api/quizzes/* and /api/flashcards/* endpoints; added recently-edited, recently-reviewed, save-content, Google OAuth, AI Config management, Update Profile, and Change Password endpoints; removed non-existent /api/ai/generate-quiz and /api/ai/generate-flashcards endpoints; fixed notebook path parameters from {id} to {uuid}; corrected DB schema details.
+Draft
 
 
 
@@ -42,9 +89,48 @@ EXECUTIVE SUMMARY	4
 3.0 NON-FUNCTIONAL REQUIREMENTS	8
 4.0 SYSTEM ARCHITECTURE	9
 5.0 API CONTRACT & COMMUNICATION	10
-Authentication Endpoints	11
+Authentication Endpoints	
 User Registration	11
-User Login	11
+User Login
+Email Verification
+Forgot Password
+Verify Reset Code
+Reset Password
+User Logout
+Refresh Token
+User & Profile Endpoints	
+Get Current User
+Notebook Management Endpoints	
+Get Notebooks
+Create Notebook
+Update Notebook
+Delete Notebook
+Update Recently Reviewed (Standalone)
+Version Control Endpoints	
+Get Notebook Versions
+Create Notebook Version
+Restore Notebook Version
+Category Endpoints	
+Get All Categories
+Create Category
+Get Category by ID
+Delete Category
+Playlist Endpoints	
+List Playlists
+Create Playlist
+Add Notebook to Playlist
+Remove Notebook from Playlist
+Reorder Playlist Queue
+AI Assistant Endpoints	
+AI Query
+Quiz Management & Attempts Endpoints	
+Get Quiz Details
+Create Quiz
+Delete Quiz
+Flashcard Deck & Flashcards Management	
+
+
+	11
 6.0 DATABASE DESIGN	13
 7.0 UI/UX DESIGN	14
 8.0 PLAN	17
@@ -65,37 +151,37 @@ User Login	11
 
 EXECUTIVE SUMMARY
 1.1 Project Overview
-BrainBox is a focused, AI-enhanced learning workspace designed for understanding and long-term retention. Unlike general-purpose document editors, BrainBox is a structured learning engine where every feature exists to reduce distraction and strengthen comprehension. Content is organized into Notebooks, providing the structure required for AI assistance, quiz generation, and text-to-speech review.
+BrainBox is a study workspace designed around the full learning loop: capture ideas in structured notebooks, review them in a focused read-only mode, reinforce understanding through quizzes and flashcards, and continue listening through playlist-based audio review. The platform combines notebook authoring, library organization, study tools, and per-notebook AI assistance into one product model shared across the backend, web application, and mobile experience. 
 1.2 Objectives
-Build a notebook editor that supports rich text content managed by an outline generated from headers.
-Implement a focused editor for deep work and comprehension.
-Integrate a context-aware AI assistant capable of modifying notebook content, generating summaries, quizzes, and brainstorming prompts.
-Develop a read-only Review Mode with built-in text-to-speech and playback controls.
-Deliver consistent experiences across a React web application and a native Android mobile app, backed by a Spring Boot API
+Provide a structured notebook editor with rich formatting, outline navigation, and recoverable version history. 
+Support a focused review experience with text-to-speech, synced highlighting, playback controls, and resume behavior.
+Enable quiz and flashcard study flows tied to notebook content, with attempt tracking for repeated practice. 
+Keep notebooks organized through categories, search, sorting, and named playlists for continuous listening. 
+Offer secure account management, profile settings, and per-user AI configuration for OpenAI-compatible providers. 
+Spring Boot REST API consumed by a React web app and a Kotlin Android app.
+
 1.3 Scope
 Included Features:
-User authentication with JWT (register, login, logout)
-Library for organizing notebooks by category
-Rich text document editor with header-based outline navigation.
-AI assistant for content expansion, summaries, explanations, quiz generation, and structural improvements.
-Manual and AI-generated quiz creation
-Read-only Review Mode with text-to-speech and playback controls.
-Responsive web interface built with React
-Native Android mobile application built with Kotlin and Jetpack Compose
-PostgreSQL database with relational schema
-Version control for notebook history and revisions.
+User authentication with registration, login, logout, email verification, password reset, refresh token support, and Google sign-in. 
+Notebook creation, editing, categorization, recent-study surfaces, version snapshots, preview, restore, and export. 
+Library organization through category management, notebook search, sorting, batch actions, and notebook reassignment. 
+Review Mode with outline navigation, device text-to-speech, synced highlighting, playback speed control, and saved listening progress. 
+Quizzes: CRUD with multiple-choice questions, attempt scoring.
+Quiz and flashcard creation, editing, study, and attempt tracking, including AI assisted generation within the notebook study flow. 
+Named playlists with queue management, reordering, and current-item tracking for continuous listening sessions. 
+AI conversations and AI configuration management with one selectable active provider profile per user.
+Profile management across web and mobile, including username/email updates and password changes. 
+Mobile integration that extends authentication, dashboard continuation, review, playlists, and study access. 
 Excluded Features:
 Real-time collaborative editing
-Third-party cloud storage import (Google Drive, Notion, etc.)
-Flashcard spaced repetition scheduling
-Gamification or achievement systems
-Social sharing or public notebook publishing
-Email notification system
-Advanced analytics dashboard
+Third-party cloud storage import (Google Drive, Notion)
+Spaced-repetition scheduling
+Social sharing / public notebooks
+Advanced analytics
 
 1.0 INTRODUCTION
 1.1 Purpose
-This document serves as the comprehensive design specification for the BrainBox system. It provides detailed requirements, architectural decisions, API contracts, database design, and implementation roadmap to guide development and ensure all components: backend, web frontend, and mobile, integrate seamlessly into a cohesive learning platform.
+This document serves as the primary design specification for BrainBox. It defines the system requirements, architecture, API contracts, and database schema to guide development of the backend, web frontend, and mobile application. All components — Spring Boot API, React web app, and Kotlin Android app — are expected to be built in accordance with this specification.
 
 2.0 FUNCTIONAL REQUIREMENTS SPECIFICATION
 2.1 Project Overview
@@ -104,116 +190,173 @@ Domain: EdTech / Personal Knowledge Management
 Primary Users: 
 Students, self-directed learners.
 Professionals studying reference material.
-Problem Statement: Learners struggle to retain information from long, unstructured documents. Existing editors prioritize creation over comprehension, offering no meaningful integration between note organization, review, and active recall tools.
-Solution: A focused notebook environment where content is supported by an AI assistant and a dedicated Review Mode — so the platform actively helps users understand and remember what they write.
+Problem Statement: earners often write notes in one tool, review them in another, and practice recall somewhere else. That fragmentation weakens continuity, makes review inconsistent, and turns study materials into static documents instead of reusable learning assets. 
+Solution: BrainBox treats each notebook as a study asset that can be written, organized, reviewed, listened to, discussed with AI, and transformed into quizzes, flashcards, and playlists without leaving the platform. 
 2.2 Core User Journeys
 Journey 1: Notebook Creation & Structured Editing
-The user visits the web application and creates an account
-From the Dashboard or Library, the user creates a new Notebook
-The user assigns a title and selects a Category
-The Notebook Editor opens, allowing the user to begin writing
-The user adds content using the rich text toolbar for formatting and structure
-The user uses headers to organize content, which automatically populates a navigable outline
-The user uses the outline to jump to different parts of the notebook
-The user continues expanding the notebook by adding and refining content
-The AI Assistant is used to expand content, improve structure, or generate ideas directly within the document
-Journey 2: Active Study Session
-A logged-in user opens an existing Notebook from the Library
-Activates Review Mode for a read-only pass through the material
-Uses the outline in Review Mode to navigate between sections of content
-Uses the AI assistant to request a summary of the notebook
-Generates an AI quiz to test recall on the most difficult topics
-Reviews quiz results and jumps back to relevant content from the results view
-Journey 3: Audio Review on the Go
-User opens the Review Mode on the app
-Enables text-to-speech playback for the notebook
-Uses the outline to jump to specific parts of the audio review
-Pauses and resumes playback as needed; the system remembers the last played position
-Journey 4: Quiz & Flashcard Practice
-User navigates to the Quiz or Flashcards tab of a Notebook
-Requests an AI-generated deck scoped to the notebook
-Takes the quiz or reviews flashcards
-Saves the session progress to track mastery over time
-Journey 5: Library Management
-The user opens the Library to organize their collection
-Uses Search and Category filters to find specific Notebooks
-Assigns Notebooks to relevant Categories
-Moves or renames Notebooks to maintain organization
-Deletes old or unneeded Notebooks to keep the workspace clean
-Journey 6: Study Playlists & Continuous Playback
-User navigates to the Playlists section to prepare for a long study session
-Creates a new Study Playlist for a specific subject or exam
-Adds multiple Notebooks to the Playlist for continuous listening
-Reorders the Playlist to prioritize specific topics
-Starts the Playlist to begin a hands-free audio review session
+The user signs in and starts a notebook from the Dashboard or Library. 
+The user assigns a title, selects a category, and opens the notebook editor.
+The user structures content with headings, lists, tables, links, highlights, and other supported rich-text tools. 
+The outline updates automatically from the document headings and is used for quick navigation while editing.
+The AI assistant helps refine, expand, or reorganize content inside the notebook when the user requests it. 
+The user saves progress, creates manual snapshots when needed, and can preview or restore previous versions later. 
+Journey 2: Review Mode & Guided Listening 
+The user opens an existing notebook and switches to Review Mode. 
+BrainBox renders the notebook in a read-only study layout with the outline available on the side. 
+The user starts text-to-speech playback, adjusts speed, and moves between sections using the outline. 
+Highlighted content follows the active playback position while the player preserves the user's place for later continuation. 
+The AI assistant remains available in a read-only study mode for explanations, summaries, and study-asset generation without directly rewriting notebook content. 
+Journey 3: Quiz & Flashcard Practice 
+The user navigates from a notebook to its associated quiz or flashcard deck, or creates a new deck linked to that notebook. 
+The study set may be authored manually or generated from notebook context through the AI assistant. 
+For a quiz, the user answers each question and submits the attempt to receive a score; for a flashcard deck, the user flips through cards and marks their mastery level at the end. 
+The user reviews their score or mastery result and can view attempt history to track improvement over time. 
+The user can return to the source notebook to edit content and regenerate study materials through the AI assistant to continue the learning cycle. 
+Journey 4: Library Organization & Playlist-Based Listening 
+The user opens the Library to search, sort, and browse notebooks across categories, using filters and sort options to quickly locate specific notebooks. 
+The user assigns or changes the category of a notebook, and can batch-select multiple notebooks to reorganize, move, or delete them at once. 
+The user creates a named playlist and adds one or more notebooks to build a study queue. 
+The user reorders notebooks in the playlist to match the intended study sequence. 
+The user starts a playlist session: notebooks play in sequence through review mode, and the current position within the playlist is preserved so the session can be resumed exactly where it left off. 
 2.3 Feature List (MoSCoW)
 MUST HAVE
-User authentication (register, login, logout)
-Rich text editor with header-based outline navigation
-Category-based notebooks
-Version control for notebook history
-Manually created quizzes
-Manually created flashcards
-Read-only Review Mode with text-to-speech
-Study Playlists for continuous playback
+User authentication, account recovery, and profile access. 
+Dashboard study surfaces for recent work and quick continuation. 
+Rich notebook editing with outline navigation, category assignment, version history, and export. 
+Library organization with categories, search, sorting, and batch notebook actions. 
+Review Mode with read-only study layout, text-to-speech, synced highlighting, and resume support. 
+Quiz and flashcard management with attempt tracking. 
+AI assistant, AI conversations, and AI configuration management. 
+Named playlists with queue ordering and current-item tracking.
 SHOULD HAVE
-AI assistant capable of direct content modification and expansion (summaries, explanations, brainstorming)
-AI-generated quizzes
-AI-generated flashcards
-Recently reviewed notebooks area
-Filtering menus in the Library
+Google sign-in alongside email/password authentication. 
+AI-assisted generation flows for quizzes and flashcards from notebook context. 
+Version preview before restore and explicit manual snapshot creation. 
+Cross-surface continuation through mobile dashboard, review, and playlist entry points. 
+Dedicated settings for password change and AI provider selection. 
 COULD HAVE
-AI-generated audio summaries for Review Mode
-Notebook search across the full library
+Expanded progress analytics across quizzes, flashcards, and review sessions. 
+Deeper offline study support for selected mobile continuation flows. 
 WON'T HAVE
-Real-time collaboration
-Spaced repetition scheduling
-Social sharing
-Email notifications
-Multi-language support
+Real-time collaborative editing. 
+Automated spaced-repetition scheduling.
+Public or social notebook sharing. 
+Third-party cloud document import 
 2.4 Detailed Feature Specifications
 Feature: User Authentication
-Screens: Registration, Login, Forgot Password
-Fields: Username, Email, Password, Confirm Password
-Validation: Email format, password strength, uniqueness
-API Endpoints: POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout, GET /api/auth/verify-email, POST /api/auth/forgot-password, POST /api/auth/verify-code, POST /api/auth/reset-password
-Security: Stateless JWT authentication with access and refresh tokens. Passwords hashed with bcrypt. Email verification via Resend.
+Screens: Registration, Login, Forgot Password, Password Reset, and verification redirect flow. 
+Fields: Username, Email, Password, reset code, new password, and Google access token. 
+Validation: Email format, password strength, uniqueness, reset-code verification, and authenticated session checks. 
+API Endpoints: 
+POST /api/auth/register, 
+POST /api/auth/login, 
+POST /api/auth/google, 
+GET /api/auth/verify-email, 
+POST /api/auth/forgot password, 
+POST /api/auth/verify-code, 
+POST /api/auth/reset-password, 
+POST /api/auth/logout, 
+POST /api/auth/refresh-token. 
+Security: JWT-based authentication with access and refresh tokens, BCrypt password hashing, and email verification before normal account use.
 Feature: Dashboard
-Screens: Dashboard (home screen).
-Functions: Welcome greeting. "Continue learning" area for the two most recently edited notebooks. "Recently Reviewed" area for quick access to audio review. Quick actions for notebook creation.
-API Endpoints: GET /api/notebooks
-Feature: Notebook Management
-Screens: Library
-Functions: Primary hub for notebook management. Create, rename, delete notebooks. Organize notebooks into categories. Search, filter, and sort (A-Z, Last Edited, Last Reviewed). 
-API Endpoints: GET /api/notebooks, POST /api/notebooks, PUT /api/notebooks/{id}, DELETE /api/notebooks/{id}, GET /api/categories, POST /api/categories.
+Screens: Dashboard home
+Functions: Greeting, quick-create entry point, study statistics, recent notebook continuation, quiz and flashcard access, and progress-led study surfaces. 
+API Endpoints: 
+GET /api/notebooks, 
+GET /api/notebooks/recently-edited, 
+GET /api/notebooks/recently-reviewed, 
+GET /api/quizzes, 
+GET /api/flashcards. 
+Feature: Library & Notebook Management 
+Screens: Library, category manager, and notebook entry points from Dashboard and Playlists. 
+Functions: Create, rename, update, and delete notebooks; assign categories; search notebooks; sort by title, last modified, or word count; batch-select notebooks; and reassign notebooks between categories. 
+API Endpoints: GET /api/notebooks, 
+POST /api/notebooks, 
+GET /api/notebooks/{uuid}, 
+PUT /api/notebooks/{uuid}, 
+DELETE /api/notebooks/{uuid}, 
+GET /api/categories, 
+POST /api/categories, 
+GET /api/categories/{id}, 
+DELETE /api/categories/{id}. 
 Feature: Editor
 Screens: Notebook editor.
 Structure: Each Notebook contains rich text content organized by headers.
-Outline: Dynamic navigation outline generated automatically from document headers (H1, H2, H3). Clicking an outline item scrolls the editor to the corresponding header.
-Editor Formatting: Bold, italic, bullet lists, numbered lists, quote blocks, code blocks, basic alignment. No decorative fonts, text colors, or complex layout tools.
-Feature: Version Control
-Functions: Automatically save revisions of the notebook content. View history of changes. Restore previous versions.
-API Endpoints: GET /api/notebooks/{id}/versions, POST /api/notebooks/{id}/versions, POST /api/notebooks/{id}/versions/{versionId}/restore.
+Outline: Dynamic navigation outline generated automatically from document headers (H1, H2, H3). Clicking an outline item scrolls the editor to the corresponding header. 
+Editor Formatting: Bold, italic, underline, lists, quotes, code, tables, text alignment, links, highlights, task lists, superscript, subscript, page breaks, font sizing, and math-capable content blocks. 
+Version Control:  Supports manual snapshots, history browsing, preview before restore, and restore actions that replace the current content. Snapshot creation is tied to meaningful content changes. 
+Export: Notebook content can be exported through print/PDF, DOCX, and TXT flows. 
+API Endpoints: 
+PUT /api/notebooks/{uuid}/content, GET /api/notebooks/{notebookUuid}/versions, GET /api/notebooks/{notebookUuid}/versions/{versionId}, POST  /api/notebooks/{notebookUuid}/versions, POST /api/notebooks/{notebookUuid}/versions/{versionId}/restore. 
 Feature: AI Assistant
 Screens: AI panel (slide-in or docked panel within the editor).
-Context Scope: Full Notebook.
-Capabilities: Modify and expand document content, explain unclear sections, simplify complex paragraphs, generate short/medium/detailed summaries, suggest structural improvements, brainstorm related ideas.
-Conversation History: Each notebook maintains its own AI conversation thread stored per user.
-API Endpoints: POST /api/ai/chat, GET /api/ai/history/notebook/{id}, DELETE /api/ai/history/notebook/{id}.
+Context Scope: Full notebook plus optional selected text and selection metadata. 
+Capabilities: In editor mode, AI can expand, revise, summarize, or restructure notebook content. In review mode, AI remains read-only and is used for explanation, summarization, quiz generation, and flashcard generation. 
+Conversation History: Each notebook maintains its own AI conversation thread per user and mode. 
+Configuration: Users can create, update, select, and delete OpenAI compatible provider configurations with model, proxy URL, and API key settings. 
+API Endpoints: 
+POST /api/ai/query, 
+GET /api/ai/conversations, 
+POST /api/ai/conversations, 
+PUT /api/ai/conversations/{uuid}, 
+DELETE /api/ai/conversations/{uuid}, 
+GET /api/ai/config, 
+GET /api/ai/config/list, 
+PUT /api/ai/config, 
+PUT /api/ai/config/{id}/select, 
+DELETE /api/ai/config/{id}.
 Feature: Quiz
-Screens: Quiz builder, quiz-taking view, results view.
-Creation Modes: Manual (user writes questions and answer options) or AI-generated (scoped to the full notebook).
-Question Types: Multiple choice, true/false (initial version).
-Functions: Edit, reorder, delete individual questions. Save quiz to notebook. Take quiz and receive a score. Review correct and incorrect answers.
-API Endpoints: GET /api/quizzes/notebook/{id}, POST /api/quizzes, PUT /api/quizzes/{id}, DELETE /api/quizzes/{id}, POST /api/ai/generate-quiz, POST /api/quizzes/{id}/attempts.
-Feature: Study Playlists
-Screens: Playlists screen, Playlist builder, Application-wide (PlayerBar).
-Functions: Create, edit, and delete study playlists. Add notebooks to playlists for multi-notebook audio review sessions. Reorder items within a playlist. Global play/pause and skip controls that persist across navigation.
-API Endpoints: GET /api/playlists, POST /api/playlists, PUT /api/playlists/{id}, DELETE /api/playlists/{id}, POST /api/playlists/{id}/add-notebook.
-Feature: Review Mode
+Screens: Quiz builder, quiz-taking view, results view. 
+Creation Modes: Manual authoring or AI-assisted generation from notebook context. 
+Question Types: Multiple-choice questions with ordered options and a correct answer index. 
+Functions: Edit, reorder, delete individual questions. Link the quiz to a notebook. Take quiz attempts, receive a score, and review best performance over time. 
+API Endpoints: 
+GET /api/quizzes, 
+POST /api/quizzes, 
+GET /api/quizzes/{uuid}, 
+PUT /api/quizzes/{uuid}, 
+DELETE /api/quizzes/{uuid}, 
+POST /api/quizzes/{uuid}/attempts. 
+AI generation is triggered through POST /api/ai/query with action create_quiz. 
+Feature: Flashcards 
+Screens: Flashcard library, deck editor, and study view. 
+Creation Modes: Manual deck authoring or AI-assisted generation from notebook content. 
+Functions: Create decks with ordered front/back cards, edit descriptions, study cards in sequence, and record mastery attempts. 
+API Endpoints: 
+GET /api/flashcards, 
+POST /api/flashcards, 
+GET /api/flashcards/{uuid}, 
+PUT /api/flashcards/{uuid}, 
+DELETE /api/flashcards/{uuid}, 
+POST /api/flashcards/{uuid}/attempts. 
+AI generation is triggered through POST /api/ai/query with action create_flashcards
+Feature: Playlists & Queue Management 
+Screens: Playlists screen, Playlist detail view, Dashboard.
+Functions: Create and rename playlists, add notebooks to a queue, remove items, reorder study order, and preserve the current queue position for later listening sessions. 
+API Endpoints: 
+GET /api/playlists, POST /api/playlists, 
+GET /api/playlists/{uuid}, PUT /api/playlists/{uuid}, 
+DELETE /api/playlists/{uuid}, POST /api/playlists/{uuid}/notebooks, 
+DELETE /api/playlists/{uuid}/notebooks/{notebookUuid}, 
+PUT /api/playlists/{uuid}/reorder, 
+PATCH /api/playlists/{uuid}/current-index.
+Feature: Review Mode 
 Screens: Read-only review screen (full screen, no editor chrome).
-Functions: Focused read-only rendering of Notebook content. Dynamic outline navigation based on document headers. Text-to-speech playback of the full document. Play, pause, resume, adjust speed. Highlighted text follows audio during playback. Automatically saves the user's current playback position (timestamp/progress).
-API Endpoints: POST /api/notebooks/save-progress/{id}, PATCH /api/notebooks/update-review/{id} TTS is client-side using the Web Speech API (web) or Android TTS engine (mobile).
+Functions: Focused read-only rendering of notebook content, dynamic outline navigation, client-side text-to-speech playback, play/pause/resume, playback speed control, synced text highlighting, and preserved listening progress.
+API Endpoints: 
+PATCH /api/notebooks/{uuid}/update-review. 
+TTS is client side using the Web Speech API (web) or Android TTS engine (mobile).
+Feature: Profile & Settings 
+Screens: Profile page, settings controls, and mobile profile access.
+Functions: View account details, edit username and email, change password, and manage AI provider settings from the authenticated user context.
+API Endpoints: 
+GET /api/user/me, PUT /api/user/me, 
+POST /api/user/me/change-password, 
+GET /api/ai/config, 
+GET /api/ai/config/list, 
+PUT /api/ai/config, 
+PUT /api/ai/config/{id}/select, 
+DELETE /api/ai/config/{id}. 
 2.5 Acceptance Criteria
 AC-1: Notebook Creation and Versioning
 Given I am a logged-in user, 
@@ -245,60 +388,53 @@ Given I have multiple versions of a Notebook,
 When I select a previous version from the history,
 Then the editor should preview that version,
 And when I click Restore, the current content should be replaced by that version.
-AC-7: Study Playlists
-Given I have multiple notebooks in my library,
-When I create a new Study Playlist,
-And add multiple notebooks to it,
-Then I should be able to start continuous playback of the playlist items,
-And reorder the items to change the playback sequence.
 3.0 NON-FUNCTIONAL REQUIREMENTS
 3.1 Performance Requirements
 API response time must be at or under 2 seconds for 95% of requests. 
 Web page and view transitions must complete within 2 seconds. 
-AI response streaming should begin within 3 seconds of the request. 
+AI-assisted actions should return within a study-appropriate time budget and surface clear loading states while responses are being prepared. 
 Mobile app cold start must complete within 3 seconds. 
-The system must support 100 concurrent users. Database queries must complete within 500ms.
+The system must support 100 concurrent users. Database queries must complete within 500ms. 
 3.2 Security Requirements
 HTTPS for all client-server communication. 
 Stateless JWT authentication using short-lived access tokens and longer-lived refresh tokens. 
-Refresh token rotation on every use. 
+Refresh tokens must be validated and renewed through the dedicated authentication flow. 
 Passwords hashed using bcrypt with a minimum of 12 salt rounds. 
-SQL injection prevention through parameterized queries and JPA. 
-XSS protection via output encoding and Content Security Policy headers. R
-Rate limiting at 100 requests per minute per authenticated user and 30 requests per minute per IP for unauthenticated endpoints. 
-AI endpoints must validate that the requesting user owns the notebook being referenced.
+SQL injection prevention through parameterized queries and JPA. ● User input must be validated and safely rendered to reduce XSS and malformed-content risks. 
+Sensitive AI provider credentials must be stored and exposed in a masked form appropriate for authenticated settings management. 
+AI endpoints must validate that the requesting user owns the notebook being referenced. 
 3.3 Compatibility Requirements
-Web Browsers: Chrome, Firefox, Safari, Edge (latest 2 versions)
-Android: API Level 24+ (Android 7.0+)
-Screen Sizes: Mobile (360px+), Tablet (768px+), Desktop (1024px+)
+Web Browsers: Chrome, Firefox, Safari, Edge (latest 2 versions) 
+Android: API Level 24+ (Android 7.0+) 
+Screen Sizes: Mobile (360px+), Tablet (768px+), Desktop (1024px+) 
 Operating Systems: Windows 10+, macOS 10.15+, Linux Ubuntu 20.04+
-3.4 Usability Requirements
+3.4 Usability Requirements 
 A first-time user should be able to create a notebook, add content with headers, and see an auto-generated outline within 5 minutes. 
 WCAG 2.1 Level AA compliance for the web application. 
 Consistent navigation and information architecture across web and mobile.
 Clear, actionable error messages with recovery guidance. 
 Touch targets on mobile must be a minimum of 44×44px. 
-Review Mode must be fully keyboard-navigable on web.
+Review Mode must be fully keyboard-navigable on web. 
 4.0 SYSTEM ARCHITECTURE
 
 4.1 Component Diagram
 
 
 Technology Stack:
-Backend: Java 21, Spring Boot 4.x, Spring Security, Spring Data JPA
-Database: PostgreSQL
-Web Frontend: React 18, Custom CSS, Axios
-Mobile: Kotlin, Android Activities/XML, Retrofit
-AI Integration: External LLM API (e.g., OpenAI or equivalent), proxied through the Spring Boot backend. 
-Build Tools: Maven (Backend), npm/yarn (Web), Gradle (Android)
-Deployment: Railway/Heroku (Backend), Vercel/Netlify (Web), APK (Mobile)
+Backend: Java 21, Spring Boot 3.x, Spring Security, Spring Data JPA
+Database: PostgreSQL (Supabase)
+Web Frontend: React 19, JavaScript, TanStack React Query, Custom CSS
+Mobile: Kotlin, Jetpack Compose, Retrofit2
+AI Integration: Any OpenAI-compatible API endpoint, proxied through the Spring Boot backend using a per-user configurable API key.
+Build Tools: Maven (Backend), npm/Vite (Web), Gradle (Android)
+Deployment: Railway (Backend), Vercel (Web), APK sideload (Mobile)
 
 5.0 API CONTRACT & COMMUNICATION
 5.1 API Standards
 Base URL
 https://[server_hostname]:[port]/api
 Format
-JSON for all requests/responses
+JSON for API requests/responses, except redirect-based verification flows.
 Authentication
 Bearer token (JWT) in Authorization header
 Response Structure
@@ -329,25 +465,20 @@ Authentication
 None
 Request Payload
 { 
-    "username": <string>, 
-    "email": <string>, 
-    "password": <string> 
+    "username": string, 
+    "email": string, 
+    "password": string 
 }
 Response Structure
-{
-  "success": boolean,
-  "data":  {
-        user: {
-            “email”: <string>,
-            “username”:<string>
-        }
-  },
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+"accessToken": token> 
+"refreshToken": token 
+},"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
 
 User Login
@@ -363,22 +494,44 @@ Authentication
 None
 Request Payload
 {
-   “username”: <string>,
-   “password”: <string>,
+   “username”: string,
+   “password”: string,
 }
 Response Structure
-{
-  "success": boolean,
-  "data":  {
-        “accessToken”: <token>,
-        “refreshToken”: <token>,
-  },
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+“accessToken”: token, 
+“refreshToken”: token, 
+},"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
+}
+
+Google Authentication 
+Description
+Authenticate or link a user through a Google access token.
+API URL
+/api/auth/google
+HTTP Method
+POST
+Format
+JSON for all requests/responses
+Authentication
+None
+Request Payload
+{ "accessToken": string }
+Response Structure
+{"success": boolean, 
+"data": { 
+"accessToken": token, 
+"refreshToken": token 
+},"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
 
 Email Verification
@@ -389,22 +542,13 @@ API URL
 HTTP Method
 GET
 Format
-JSON for all requests/responses
+HTTP redirect flow
 Authentication
 None
 Query Parameter
-token=<string>
+token=string
 Response Structure
-{
-  "success": boolean,
-  "data": <null>,
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
-}
+Successful verification redirects the browser to the frontend login page with verified=true in the query string.
 
 Forgot Password
 Description
@@ -418,17 +562,15 @@ JSON for all requests/responses
 Authentication
 None
 Request Payload
-{ "email": <string> }
+{ "email": string }
 Response Structure
-{
-  "success": boolean,
-  "data": <null>,
-   "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
 
 Verify Reset Code
@@ -443,19 +585,16 @@ JSON for all requests/responses
 Authentication
 None
 Request Payload
-{ "email": <string>, "code": <string> }
+{ "email": string, "code": string }
 Response Structure
-{
-  "success": boolean,
-"data":  {
-        "token": <string>
-  },
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+"resetToken": string
+},"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
 
 Reset Password
@@ -470,17 +609,15 @@ JSON for all requests/responses
 Authentication
 None
 Request Payload
-{ "token": <string>, "newPassword": <string> }
+{ "token": string, "newPassword": string }
 Response Structure
-{
-  "success": boolean,
-   "data": <null>,
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
 
 User Logout
@@ -495,11 +632,11 @@ JSON for all requests/responses
 Authentication
 None
 Request Payload
-{ "refreshToken": <string> }
+{ "refreshToken": string }
 Response Structure
 {
   "success": boolean,
-  "data": <null>,
+  "data": null,
   "error": {
     "code": string,
     "message": string,
@@ -520,19 +657,18 @@ JSON for all requests/responses
 Authentication
 None
 Query Parameter
-refreshToken=<string>
+refreshToken=string
 Response Structure
-{
-  "success": boolean,
-  "data": <null>,
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+"accessToken": token, 
+"refreshToken": token 
+},"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
-
 
 User & Profile Endpoints
 Get Current User
@@ -549,20 +685,67 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": boolean,
-"data":  { 
-     "username": <string>, 
-      "email": <string> 
-   },
-  "error": {
-    "code": string,
-    "message": string,
-    "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+"username": string, 
+"email": string, 
+"createdAt": string
+},"error": { 
+"code": string, 
+"message": string, 
+"details": object|null 
+},"timestamp": string 
 }
 
+Update Current User
+Description
+Update the current user's username
+API URL
+/api/user/me
+HTTP Method
+PUT
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "username": string, "email": string }
+Response Structure
+{"success": boolean, 
+"data": { 
+"username": "string", 
+"email": "string", 
+"createdAt": "string" 
+},"error": { 
+"code": "string", 
+"message": "string", 
+"details": object|null 
+},"timestamp": "string" 
+}
+
+Change Password 
+Description
+Change the authenticated user's password.
+API URL
+/api/user/me/change-password
+HTTP Method
+POST
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "currentPassword": <string>, 
+"newPassword": <string> }
+Response Structure
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
 
 Notebook Management Endpoints
 Get Notebooks
@@ -579,20 +762,117 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": [
-    {
-      "id": <long>,
-      "title": <string>,
-      "category_id": <long>,
-      "created_at": <string>,
-      "last_reviewed_at": <string|null>,
-      "updated_at": <string|null>
-    }
-  ],
-  "error": <null>,
-  "timestamp": <string>
+{"success": boolean, 
+"data": [ 
+{"uuid": "<string>", 
+"title": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", "version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" }],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Get Recently Edited Notebooks
+Description
+Get the user's most recently edited notebooks.
+API URL
+/api/notebooks/recently-edited
+HTTP Method
+GET
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": [ 
+{"uuid": "<string>", 
+"title": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", 
+"version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+}],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Get Recently Reviewed Notebooks 
+Description
+Get the user's most recently reviewed notebooks.
+API URL
+/api/notebooks/recently-reviewed
+HTTP Method
+GET
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": [ 
+{"uuid": "<string>", 
+"title": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", 
+"version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+}],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Get Notebook By UUID 
+Description
+Retrieve the full notebook record for a specific notebook UUID.
+API URL
+/api/notebooks/{uuid}
+HTTP Method
+GET
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": [
+{"uuid": "<string>", 
+"title": "<string>", 
+"content": "<string>",
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", 
+"version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Create Notebook
@@ -607,34 +887,35 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{
-  "title": <string>,
-  "categoryId": <long>
+{"title": <string>, 
+"categoryId": <long|null>, 
+"content": <string> 
 }
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "user_id": <long>,
-    "category_id": <long>,
-    "title": <string>,
-    "created_at": <string>,
-    "updated_at": <string>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"content": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", 
+"version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Update Notebook
 Description
-Update notebook details or manually trigger a "Recently Reviewed" status update by touching the last_reviewed_at field.
+Update notebook title, category, or content using the notebook UUID.
 API URL
-/api/notebooks/{id}
+/api/notebooks/{uuid}
 HTTP Method
 PUT
 Format
@@ -642,34 +923,67 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{
-  "title": <string>,
-  "categoryId": <long>,
-  "markAsReviewed": <boolean>,
-  "content": <string>
-}
+{"title": <string>, 
+  "categoryId": <long|null>,
+  "content": <string> 
+} 
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "title": <string>,
-    "last_reviewed_at": <string>,
-    "updated_at": <string>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"content": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", 
+"version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Save Notebook Content 
+Description
+Save notebook content through the dedicated content endpoint.
+API URL
+/api/notebooks/{uuid}/content
+HTTP Method
+PUT
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "content": <string> }
+Response Structure
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"content": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", "version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Delete Notebook
 Description
-Update notebook details or manually trigger a "Recently Reviewed" status update by touching the last_reviewed_at field.
+Delete the specified notebook.
 API URL
-/api/notebooks/{id}
+/api/notebooks/{uuid}
 HTTP Method
 DELETE
 Format
@@ -694,7 +1008,7 @@ Update Recently Reviewed (Standalone)
 Description
 A dedicated endpoint to update only the last_reviewed_at timestamp when a user finishes reading a notebook.
 API URL
-/api/notebooks/update-review/{id}
+/api/notebooks/update-review/{uuid}
 HTTP Method
 PATCH
 Format
@@ -706,10 +1020,7 @@ None
 Response Structure
 {
   "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "last_reviewed_at": <string>
-  },
+  "data": <null>,
   "error": {
     "code": <string>,
     "message": <string>,
@@ -718,16 +1029,12 @@ Response Structure
   "timestamp": <string>
 }
 
-
-
-
-
 Version Control Endpoints
 Get Notebook Versions
 Description
 Retrieve all saved versions of a notebook.
 API URL
-/api/notebooks/{id}/versions
+/api/notebooks/{notebookUuid}/versions
 HTTP Method
 GET
 Format
@@ -737,24 +1044,49 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": [
-    {
-      "id": <long>,
-      "content": <string>,
-      "created_at": <string>
-    }
-  ],
-  "error": <null>,
-  "timestamp": <string>
+{"success": boolean, 
+"data": [ 
+{"id": <long>, 
+"content": "<string>", 
+"version": "<string>" 
+}],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Get Notebook Version
+Description
+Retrieve a single saved version for preview before restore.
+API URL
+/api/notebooks/{notebookUuid}/versions/{versionId}
+HTTP Method
+GET
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": { 
+"id": <long>, 
+"content": "<string>", 
+"version": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Create Notebook Version
 Description
 Manually save a new version of the notebook content.
 API URL
-/api/notebooks/{id}/versions
+/api/notebooks/{notebookUuid}/versions
 HTTP Method
 POST
 Format
@@ -764,21 +1096,23 @@ Required
 Request Payload
 { "content": <string> }
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "created_at": <string>
-  },
-  "error": <null>,
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"id": <long>, 
+"content": "<string>", 
+"version": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Restore Notebook Version
 Description
 Restore a notebook to a previous version.
 API URL
-/api/notebooks/{id}/versions/{versionId}/restore
+/api/notebooks/{notebookUuid}/versions/{versionId}/restore
 HTTP Method
 POST
 Format
@@ -788,15 +1122,23 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "content": <string>,
-    "updated_at": <string>
-  },
-  "error": <null>,
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"content": "<string>", 
+"wordCount": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"lastReviewedAt": "<string|null>", 
+"version": <integer>, 
+"categoryId": <long|null>, 
+"categoryName": "<string|null>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Category Endpoints
@@ -811,10 +1153,20 @@ Format
 JSON for all requests/responses
 Authentication
 Required
+Request Payload
+None
 Response Structure
-`{ "success": boolean, "data": [ { "id": long, "name": string, "createdAt": string, "updatedAt": string } ], "error": { "code": string, "message": string, "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": [ 
+{"id": <long>, 
+"name": "<string>", 
+"createdAt": "<string>", 
+"updatedAt": "<string>" 
+}],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Create Category
@@ -831,9 +1183,17 @@ Required
 Request Payload
 { "name": string }
 Response Structure
-{ "success": boolean, "data": { "id": long, "name": string, "createdAt": string, "updatedAt": string }, "error": { "code": string, "message": string, "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+"id": <long>, 
+"name": "<string>", 
+"createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Get Category by ID
@@ -850,9 +1210,17 @@ Required
 Request Payload
 None
 Response Structure
-{ "success": boolean, "data": { "id": long, "name": string, "createdAt": string, "updatedAt": string }, "error": { "code": string, "message": string, "details": object|null
-  },
-  "timestamp": string
+{"success": boolean, 
+"data": { 
+"id": <long>, 
+"name": "<string>", 
+"createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Delete Category
@@ -867,125 +1235,7 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-None
-Response Structure
-{ "success": boolean, "data": null, "error": { "code": string, "message": string, "details": object|null
-  },
-  "timestamp": string
-}
-
-Study Playlist Endpoints
-Get Playlists
-Description
-Get the current user's study playlists.
-API URL
-/api/playlists
-HTTP Method
-GET
-Format
-JSON for all requests/responses
-Authentication
-Required
-Response Structure
-{
-  "success": <boolean>,
-  "data": [
-    {
-      "id": <long>,
-      "user_id": <long>,
-      "name": <string>,
-      "items": [
-        {
-          "id": <long>,
-          "notebook_id": <long>,
-          "order_index": <int>,
-          "notebook": {
-            "id": <long>,
-            "title": <string>,
-            "category_id": <long>
-          }
-        }
-      ]
-    }
-  ],
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
-}
-
-Create Playlist
-Description
-Create a new study playlist.
-API URL
-/api/playlists
-HTTP Method
-POST
-Format
-JSON for all requests/responses
-Authentication
-Required
-Request Payload
-{ "name": <string> }
-Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "user_id": <long>,
-    "name": <string>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
-}
-
-Add to Playlist
-Description
-Add a notebook to a specific study playlist.
-API URL
-/api/playlists/{id}/add
-HTTP Method
-POST
-Format
-JSON for all requests/responses
-Authentication
-Required
-Request Payload
-{ "notebookId": <long> }
-Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "playlist_id": <long>,
-    "notebook_id": <long>,
-    "order_index": <int>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
-}
-
-Delete Playlist
-Description
-Removes a study playlist and all its items.
-API URL
-/api/playlists/{id}
-HTTP Method
-DELETE
-Format
-JSON for all requests/responses
-Authentication
-Required
+Optional body: { "deleteNotebooks": <boolean> }
 Response Structure
 {
   "success": <boolean>,
@@ -998,11 +1248,390 @@ Response Structure
   "timestamp": <string>
 }
 
-Update Playlist (Bulk Reorder)
+Playlist Endpoints
+List Playlists
 Description
-Updates the order indices for multiple items in a playlist.
+Retrieve all playlists belonging to the authenticated user.
 API URL
-/api/playlists/{id}/update
+/api/playlists
+HTTP Method
+GET
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": [ 
+{"uuid": "<string>", 
+"title": "<string>", 
+"currentIndex": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"queue": [] 
+}],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Create Playlist
+Description
+Create a new named playlist for the authenticated user.
+API URL
+/api/playlists
+HTTP Method
+POST
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "title": <string> }
+Response Structure
+{
+  "success": <boolean>,
+  "data": 
+    {
+      "uuid": <string>,
+      "title": <string>,
+      "currentIndex": <int>,
+      "createdAt": "<string>", 
+      "updatedAt": "<string>", 
+   "queue": []
+    }
+  ,
+   "error": {
+    "code": <string>,
+    "message": <string>,
+    "details": <object|null>
+  ,
+  "timestamp": <string>
+}
+
+
+
+
+Get Playlist
+Description
+Retrieve one playlist and its queued notebooks.
+API URL
+/api/playlists/{uuid}
+HTTP Method
+GET
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"currentIndex": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"queue": [ 
+<NotebookOverviewResponse>] 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+UpdatePlaylist 
+Description
+Rename the specified playlist. 
+API URL
+/api/playlists/{uuid}
+HTTP Method
+PUT 
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "title": <string> }
+Response Structure
+{
+  "success": <boolean>,
+  "data": 
+    {
+      "uuid": <string>,
+      "title": <string>,
+      "currentIndex": <int>,
+      "createdAt": <string>,
+      "updatedAt": <string>,
+   "queue": [<NotebookOverviewResponse>]
+    }
+  ,
+   "error": {
+    "code": <string>,
+    "message": <string>,
+    "details": <object|null>
+  },
+  "timestamp": <string>
+}
+
+DeletePlaylist 
+Description
+Delete the specified playlist.
+API URL
+/api/playlists/{uuid}
+HTTP Method
+DELETE
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Add Notebook to Playlist
+Description
+Append a notebook to the end of the playlist queue.
+API URL
+/api/playlists/{uuid}/notebooks
+HTTP Method
+POST
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "notebookUuid": <string> }
+Response Structure
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"currentIndex": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"queue": [ 
+<NotebookOverviewResponse> ] 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Remove Notebook from Playlist
+Description
+Remove a specific notebook from the playlist queue by its UUID.
+API URL
+/api/playlists/{uuid}/notebooks/{notebookUuid}
+HTTP Method
+DELETE
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Reorder Playlist Queue
+Description
+Submit a new ordered list of notebook UUIDs to reorder the playlist queue.
+API URL
+/api/playlists/{uuid}/reorder
+HTTP Method
+PUT
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{ "notebookUuids": [ <string>, ... ] }
+Response Structure
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"currentIndex": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"queue": [ 
+<NotebookOverviewResponse> ] 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Update Current Playlist Index 
+Description
+Persist the playlist's current queue position for resume behavior.
+API URL
+/api/playlists/{uuid}/current-index? index=<int>
+HTTP Method
+PATCH
+Format 
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None (index passed as query parameter)
+Response Structure
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"currentIndex": <integer>, 
+"createdAt": "<string>", 
+"updatedAt": "<string>", 
+"queue": [ 
+<NotebookOverviewResponse> ] 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+AI Assistant Endpoints
+AI Query
+Description
+Send a prompt to the AI assistant in the context of a notebook. Supports editor mode (content mutations allowed) and review mode (quiz/flashcard generation only).
+API URL
+/api/ai/query
+HTTP Method
+POST
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{"notebookUuid": <string>, 
+"mode": "editor" | "review", 
+"query": <string>, 
+"selectedText": <string|null>, 
+"selectionMode": "single_selection" | "document" | "ai_selection", 
+"aiSelections": [ { "id": <string>, "text": <string> } ], 
+"conversationHistory": [ { "role": 
+<string>, "content": <string> } ] 
+}
+Response Structure
+{
+  "success": <boolean>,
+  "data": {
+    "reply": <string>,
+    "action": "none" | "add_to_editor" | "replace_editor" | "replace_selection" | "replace_ai_selections" | "create_quiz" | "create_flashcard",
+    "editorContent": <string|null>,
+    "conversationTitle": <string>,
+    "selectionEdits": [ { "id": <string>, "content": <string> } ],
+    "quizData": <object|null>,
+    "flashcardData": <object|null>
+  },
+  "error": { "code": <string>, "message": <string>, "details": <object|null> }
+}
+
+AI Conversations
+Get AI Conversations
+Description
+Retrieve notebook-scoped AI conversations for the authenticated user.
+API URLS
+/api/ai/conversations?notebookUuid=<string>
+HTTP Method
+GET
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None. Uses the query parameter notebookUuid (string).
+Response Structure
+{"success": boolean, 
+"data": [{
+  "uuid": "<string>",
+  "notebookUuid": "<string>",
+  "mode": "<string>",
+  "title": "<string>",
+  "messages": <string>,
+  "createdAt": "<string>",
+  "updatedAt": "<string>"
+}]
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Create AI Conversation
+Description
+Create a new notebook-scoped AI conversation for the authenticated user.
+API URL
+/api/ai/conversations
+HTTP Method
+POST
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+{
+  "notebookUuid": <string>",
+  "mode": <string>,
+  "title": <string>,
+  "messages": [
+    {
+      "role": <string>,
+      "content": <string>
+    }
+  ]
+}
+
+
+Response Structure
+{"success": boolean, 
+"data": [{
+  "uuid": "<string>",
+  "notebookUuid": "<string>",
+  "mode": "<string>",
+  "title": "<string>",
+  "messages": <string>,
+  "createdAt": "<string>",
+  "updatedAt": "<string>"
+}]
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Update AI Conversation
+Description
+Update an existing notebook-scoped AI conversation.
+API URL
+/api/ai/conversations/{uuid}
 HTTP Method
 PUT
 Format
@@ -1010,153 +1639,210 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-[
-  {
-    "id": <long>,
-    "order_index": <int>
-  }
-]
-Response Structure
 {
-  "success": <boolean>,
-  "data": [
-    {
-      "id": <long>,
-      "playlist_id": <long>,
-      "notebook_id": <long>,
-      "order_index": <int>
-    }
-  ],
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+  "notebookUuid": <string>,
+  "mode": <string>,
+  "title": <string>,
+  "messages": [<AiMessage>],
 }
 
-AI Assistant Endpoints
-AI Chat
+
+Response Structure
+{"success": boolean, 
+"data": [{
+  "uuid": "<string>",
+  "notebookUuid": "<string>",
+  "mode": "<string>",
+  "title": "<string>",
+  "messages": <string>,
+  "createdAt": "<string>",
+  "updatedAt": "<string>"
+}]
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Delete AI Conversation
 Description
-Send a prompt to the AI scoped to the notebook.
+Delete an existing notebook-scoped AI conversation.
 API URL
-/api/ai/chat
+/api/ai/conversations/{uuid}
 HTTP Method
-POST
+DELETE
 Format
 JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{ 
-  "notebookId": <long>, 
-  "prompt": <string> 
-}
+None
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "prompt": <string>,
-    "response": <string>,
-    "created_at": <string>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": {
+  "message": <string>
+}
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-Generate Quiz
+AI Configuration Management
+Get Active AI Configuration
 Description
-Generates a quiz from the entire notebook content.
-API URL
-/api/ai/generate-quiz
+Retrieve the currently selected OpenAI-compatible provider configuration for the authenticated user.
+API URLS
+/api/ai/config
 HTTP Method
-POST
+GET
 Format
 JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{ "notebookId": <long>, "count": <int> }
+None.
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "notebook_id": <long>,
-    "user_id": <long>,
-    "title": <string>,
-    "created_at": <string>,
-    "questions": [
-      {
-        "id": <long>,
-        "question_text": <string>,        "options": [
-          {
-            "id": <long>,
-            "option_text": <string>,
-            "is_correct": <boolean>
-          }
-        ]
-      }
-    ]
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": {
+  "id": <long>,
+  "name": <string>,
+  "model": <string>,
+  "proxyUrl": <string>,
+  "apiKeyMasked": <boolean>,
+  "selected": <boolean>
+}
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-Generate Flashcards
+List AI Configurations
 Description
-Generates a flashcard deck from the entire notebook content.
+Retrieve all saved OpenAI-compatible provider configurations for the authenticated user.
 API URL
-/api/ai/generate-flashcards
+/api/ai/config/list
 HTTP Method
-POST
+GET
 Format
 JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{ "notebookId": <long>, "count": <int> }
+None
+
+
 Response Structure
+{"success": boolean, 
+"data": {
+  "selectedConfigId": <long>,
+  "configs": [AIConfigListResponse]
+}
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Create or Update AI Configuration
+Description
+Create a new provider configuration or update an existing one for the authenticated user.
+API URL
+/api/ai/config
+HTTP Method
+PUT
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
 {
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "title": <string>,
-    "user_id": <long>,
-    "created_at": <string>,
-    "flashcards": [
-      {
-        "id": <long>,
-        "deck_id": <long>,
-        "front_text": <string>,
-        "back_text": <string>,
-        "created_at": <string>
-      }
-    ]
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+  "id": <long>,
+  "name": <string>,
+  "model": <string>,
+  "proxyUrl": <string>,
+  "apiKey": <string>
+}
+
+
+
+
+Response Structure
+{"success": boolean, 
+"data": {
+  "id": <long>,
+  "name": <string>,
+  "model": <string>,
+  "proxyUrl": <string>,
+  "apiKeyMasked": <boolean>,
+  "selected": <boolean>
+}
+
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Select Active AI Configuration
+Description
+Set a specific provider configuration as the active configuration for the authenticated user.
+API URL
+/api/ai/config/{id}/select
+HTTP Method
+PUT
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": {
+  "message": <string>,
+ “selectedConfigid”: <long>
+}
+
+,"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
+}
+
+Delete AI Configuration
+Description
+Delete a saved provider configuration for the authenticated user.
+API URL
+/api/ai/config/{id}
+HTTP Method
+DELETE
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+None
+Response Structure
+{"success": boolean, 
+"data": null,
+"error": null,
+"timestamp": "<string>" 
 }
 
 Quiz Management & Attempts Endpoints
 Get Quiz Details
 Description
-Retrieve a quiz and its questions/options.
+Retrieve a single quiz with its questions and current attempt summary.
 API URL
-/api/quizzes/{id}
+/api/quizzes/{uuid}
 HTTP Method
 GET
 Format
@@ -1169,22 +1855,26 @@ Response Structure
 {
   "success": <boolean>,
   "data": {
-    "id": <long>,
+    "uuid": <string>,
     "title": <string>,
-    "notebook_id": <long>,
+    "description": <string>,
+    "difficulty": <string>,
+    "notebookUuid": <string>,
+    "notebookTitle": <string>,
+    "questionCount": <integer>,
+    "estimatedTime": <string>,
+    "bestScore": <integer|null>,
+    "attempts": <long>,
     "questions": [
       {
-        "id": <long>,
-        "question_text": <string>,
-        "options": [
-          {
-            "id": <long>,
-            "option_text": <string>,
-            "is_correct": <boolean>
-          }
-        ]
+        "type": <string>,
+        "text": <string>,
+        "options": [<string>],
+        "correctIndex": <integer>
       }
-    ]
+    ],
+    "createdAt": <string>,
+    "updatedAt": <string>
   },
   "error": {
     "code": <string>,
@@ -1194,11 +1884,50 @@ Response Structure
   "timestamp": <string>
 }
 
-Start Quiz Attempt
+RecordQuizAttempt
 Description
-Creates a new entry in quiz_attempts.
+Record the final score for a completed quiz attempt. Attemptcountsandbest- scoresummariesarethenreflected throughthequizresource. 
 API URL
-POST /api/quizzes/{id}/attempts.
+/api/quizzes/{uuid}/attempts
+HTTP Method
+POST
+Format
+JSON for all requests/responses
+Authentication
+Required
+Request Payload
+UsesQuizAttemptRequestwithscore. 
+Response Structure
+{
+  "success": <boolean>,
+  "data": {
+    "uuid": <string>,
+    "title": <string>,
+    "description": <string>,
+    "difficulty": <string>,
+    "notebookUuid": <string>,
+    "notebookTitle": <string>,
+    "questionCount": <integer>,
+    "estimatedTime": <string>,
+    "bestScore": <integer|null>,
+    "attempts": <long>,
+    "questions": [<QuizQuestionResponse>],
+    "createdAt": <string>,
+    "updatedAt": <string>
+  },
+  "error": <null | {
+    "code": <string>,
+    "message": <string>,
+    "details": <object|null>
+  }>,
+  "timestamp": <string>
+}
+
+ListQuizzes 
+Description
+Retrieve all quizzes owned by the authenticated user. 
+API URL
+/api/quizzes 
 HTTP Method
 POST
 Format
@@ -1208,61 +1937,36 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "quiz_id": <long>,
-    "user_id": <long>,
-    "score": <float|null>,
-    "started_at": <string>,
-    "completed_at": <string|null>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": [ 
+{"uuid": "<string>", 
+"title": "<string>", 
+"description": "<string>", 
+"difficulty": "<string>", 
+"notebookUuid": "<string>", 
+"notebookTitle": "<string>", 
+"questionCount": <integer>, 
+"estimatedTime": "<string>", 
+"bestScore": <integer|null>, 
+"attempts": <long>, 
+"questions": [ 
+<QuizQuestionResponse>], 
+"createdAt": "<string>", 
+"updatedAt": "<string>" 
+}],"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-Submit Quiz Answer
+CreateQuiz 
 Description
-Records a user's answer for a specific question during an attempt.
+Create a quiz for the authenticated user, optionally linked to a notebook. 
 API URL
-/api/quizzes/attempts/answers/{attemptId}
+/api/quizzes 
 HTTP Method
-POST
-Format
-JSON for all requests/responses
-Authentication
-Required
-Request Payload
-{ "questionId": <long>, "optionId": <long> }
-Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "attempt_id": <long>,
-    "option_id": <long>,
-    "is_correct": <boolean>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
-}
-
-Get All Quizzes by Notebook
-Description
-Fetches all quiz headers associated with a specific notebook for the current user.
-API URL
-/api/quizzes/notebook/{notebookId}
-HTTP Method
-GET
+POST 
 Format
 JSON for all requests/responses
 Authentication
@@ -1297,24 +2001,38 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{ "title": <string>, "notebookId": <long> }
+Uses QuizRequest with title, description, difficulty,notebookUuid,andordered questionscontainingtype,text,options,and correctIndex. 
 Response Structure
 {
   "success": <boolean>,
   "data": {
-    "id": <long>,
+    "uuid": <string>,
     "title": <string>,
-    "notebook_id": <long>
+    "description": <string>,
+    "difficulty": <string>,
+    "notebookUuid": <string>,
+    "notebookTitle": <string>,
+    "questionCount": <integer>,
+    "estimatedTime": <string>,
+    "bestScore": <integer|null>,
+    "attempts": <long>,
+    "questions": [<QuizQuestionResponse>],
+    "createdAt": <string>,
+    "updatedAt": <string>
   },
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
+  "error": <null | {
+    "code": <string>,
+    "message": <string>,
+    "details": <object|null>
+  }>,
   "timestamp": <string>
 }
 
-Update Quiz Question
+UpdateQuiz 
 Description
-Updates the text of a question, and syncs the list of options in the quiz_options table.
+Update quiz metadata and replace the ordered question set. 
 API URL
-/api/quizzes/questions/{id}
+/api/quizzes/{uuid} 
 HTTP Method
 PUT
 Format
@@ -1322,33 +2040,36 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{
-  "question_text": <string>,
-  "explanation": <string>,
-  "options": [
-    { "id": <long>, "option_text": <string>, "is_correct": <boolean> }
-  ]
-}
+UsesthesameQuizRequestshapeasquiz creation. 
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "question_text": <string>,
-    "explanation": <string>,
-    "options": [
-      { "id": <long>, "option_text": <string>, "is_correct": <boolean> }
-    ]
-  },
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
+{ "success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"description": "<string>", 
+"difficulty": "<string>", 
+"notebookUuid": "<string>", 
+"notebookTitle": "<string>", 
+"questionCount": <integer>, 
+"estimatedTime": "<string>", 
+"bestScore": <integer|null>, 
+"attempts": <long>, 
+"questions": [ 
+<QuizQuestionResponse>], 
+"createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Delete Quiz
 Description
-Per the ERD relationship, this deletes the quiz and cascades to remove questions, options, and attempt history.
+Removeaquizand itsassociated questionandattemptrecordsforthat user. 
 API URL
-/api/quizzes/{id}
+/api/quizzes/{uuid}
 HTTP Method
 DELETE
 Format
@@ -1358,45 +2079,20 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": <null>,
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
-}
-
-Get Quiz Attempt History
-Description
-Retrieves all previous attempts for a specific quiz, pulling data from the quiz_attempts table.
-API URL
-/api/quizzes/{id}/attempts
-HTTP Method
-GET
-Format
-JSON for all requests/responses
-Authentication
-Required
-Request Payload
-None
-Response Structure
-{
-  "success": <boolean>,
-  "data": [
-    {
-      "id": <long>,
-      "score": <float>,
-      "started_at": <string>,
-      "completed_at": <string>
-    }
-  ],
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
 Flashcard Deck & Flashcards Management
 Create Flashcard Deck
 Description
-Initializes a new container (flashcard_decks) for cards. This deck is linked to a specific user and notebook.
+Create a flashcard deck for the 
+authenticated user, optionally linked to a notebook.
 API URL
 /api/flashcards/decks
 HTTP Method
@@ -1406,51 +2102,72 @@ JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{ "title": <string>, "notebookId": <long> }
+{Uses FlashcardRequest with title, 
+description, notebookUuid, and ordered cards containing front and back values.}
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "title": <string>,
-    "user_id": <long>,
-    "created_at": <string>
-  },
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"description": "<string>", 
+"notebookUuid": "<string>", 
+"notebookTitle": "<string>", 
+"cardCount": <integer>, 
+"bestMastery": <integer|null>, 
+"attempts": <long>, 
+"cards": [ 
+{ "front": "<string>", "back": " 
+<string>" } 
+],"createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-Add Flashcard to Deck
+Update Flashcard Deck 
 Description
-Creates a new row in the flashcards table associated with a specific deck.
+Update an existing flashcard deck and its ordered cards.
 API URL
-/api/flashcards/decks/cards/{deckId}
+/api/flashcards/{uuid}
 HTTP Method
-POST
+PUT
 Format
 JSON for all requests/responses
 Authentication
 Required
 Request Payload
-{ "front_text": <string>, "back_text": <string> }
+Uses the same FlashcardRequest shape as deck creation.
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "deck_id": <long>,
-    "front_text": <string>,
-    "back_text": <string>
-  },
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"description": "<string>", 
+"notebookUuid": "<string>", 
+"notebookTitle": "<string>", 
+"cardCount": <integer>, 
+"bestMastery": <integer|null>, 
+"attempts": <long>, 
+"cards": [ 
+{ "front": "<string>", "back": " 
+<string>" } 
+],"createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-Get All Decks in a Notebook
+List Flashcard Decks 
 Description
-Retrieves a list of all flashcard decks associated with a specific notebook. Useful for the notebook dashboard view.
+Retrieve all flashcard decks owned by the authenticated user.
 API URL
-/api/flashcards/notebook/{notebookId}
+/api/flashcards
 HTTP Method
 GET
 Format
@@ -1464,26 +2181,32 @@ Response Structure
   "success": <boolean>,
   "data": [
     {
-      "id": <long>,
-      "user_id": <long>,
-      "notebook_id": <long>,
+      "uuid": <string>,
       "title": <string>,
-      "created_at": <string>
+      "description": <string>,
+      "notebookUuid": <string>,
+      "notebookTitle": <string>,
+      "cardCount": <integer>,
+      "bestMastery": <integer|null>,
+      "attempts": <long>,
+      "cards": [<FlashcardCardResponse>],
+      "createdAt": <string>,
+      "updatedAt": <string>
     }
   ],
-  "error": {
+  "error": <null | {
     "code": <string>,
     "message": <string>,
     "details": <object|null>
-  },
+  }>,
   "timestamp": <string>
 }
 
-Get Flashcard Deck with Cards
+Get Flashcard Deck 
 Description
 Retrieves a specific deck along with all its associated flashcards. This is the primary endpoint for starting a study session.
 API URL
-/api/flashcards/decks/{id}
+/api/flashcards/{uuid}
 HTTP Method
 GET
 Format
@@ -1493,94 +2216,67 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "title": <string>,
-    "user_id": <long>,
-    "notebook_id": <long>,
-    "created_at": <string>,
-    "flashcards": [
-      {
-        "id": <long>,
-        "deck_id": <long>,
-        "front_text": <string>,
-        "back_text": <string>,
-        "created_at": <string>
-      }
-    ]
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"description": "<string>", 
+"notebookUuid": "<string>", 
+"notebookTitle": "<string>", 
+"cardCount": <integer>, 
+"bestMastery": <integer|null>, 
+"attempts": <long>, 
+"cards": [ 
+{ "front": "<string>", "back": " 
+<string>" } 
+],"createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-Get Single Flashcard Details
+Record Flashcard Attempt
 Description
-Retrieves the details of a single flashcard by its unique ID.
+Record mastery for a completed flashcard study session. Attempt totals and best mastery summaries are then reflected through the flashcard resource.
 API URL
-/api/flashcards/{id}
+/api/flashcards/{uuid}/attempts
 HTTP Method
-GET
+POST
 Format
 JSON for all requests/responses
 Authentication
 Required
 Request Payload
-None
+Uses FlashcardAttemptRequest with mastery.
 Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "deck_id": <long>,
-    "front_text": <string>,
-    "back_text": <string>,
-    "created_at": <string>
-  },
-  "error": {
-    "code": <string>,
-    "message": <string>,
-    "details": <object|null>
-  },
-  "timestamp": <string>
+{"success": boolean, 
+"data": { 
+"uuid": "<string>", 
+"title": "<string>", 
+"description": "<string>", 
+"notebookUuid": "<string>", 
+"notebookTitle": "<string>", 
+"cardCount": <integer>, 
+"bestMastery": <integer|null>, 
+"attempts": <long>, 
+"cards": [ <FlashcardCardResponse> ], "createdAt": "<string>", 
+"updatedAt": "<string>" 
+},"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
 
-
-Update Flashcard
+Delete Flashcard Deck 
 Description
-Modifies the text content of an existing flashcard.
+Remove a flashcard deck and its 
+associated card and attempt records for that user.
 API URL
-/api/flashcards/{id}
-HTTP Method
-PUT
-Format
-JSON for all requests/responses
-Authentication
-Required
-Request Payload
-{ "front_text": <string>, "back_text": <string> }
-Response Structure
-{
-  "success": <boolean>,
-  "data": {
-    "id": <long>,
-    "front_text": <string>,
-    "back_text": <string>
-  },
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
-}
-
-Delete Flashcard Deck
-Description
-Removes the deck and all child flashcards from the database.
-API URL
-/api/flashcards/decks/{id}
+/api/flashcards/{uuid}
 HTTP Method
 DELETE
 Format
@@ -1590,13 +2286,14 @@ Required
 Request Payload
 None
 Response Structure
-{
-  "success": <boolean>,
-  "data": <null>,
-  "error": { "code": <string>, "message": <string>, "details": <object|null> },
-  "timestamp": <string>
+{"success": boolean, 
+"data": null, 
+"error": { 
+"code": "<string>", 
+"message": "<string>", 
+"details": <object|null> 
+},"timestamp": "<string>" 
 }
-
 
 
 5.3 Error Handling
@@ -1609,99 +2306,91 @@ HTTP Status Codes
 404 Not Found - Resource doesn't exist
 409 Conflict - Duplicate resource
 500 Internal Server Error - Server error
+
 Error Code Examples
 
 Example 1
-json
 {
   "success": false,
   "data": null,
   "error": {
-    "code": "AUTH-001",
+    "code": "BAD_REQUEST",
     "message": "Invalid credentials",
-    "details": "Email or password is incorrect"
+    "details": null
   },
   "timestamp": "2024-01-28T10:30:00Z"
 }
-
-
 Example 2
 {
   "success": false,
   "data": null,
   "error": {
-    "code": "VALID-001",
-    "message": "Validation failed",
-    "details": {
-      "email": "Email is required",
-      "password": "Must be at least 8 characters"
-    }
+    "code": "NOT_FOUND",
+    "message": "Resource not found", 
+    "details": null
   },
   "timestamp": "2024-01-28T10:30:00Z"
 }
 
 
 
-
 Common Error Codes
-AUTH-001: Invalid credentials
-AUTH-002: Token expired
-AUTH-003: Insufficient permissions
-VALID-001: Validation failed
-DB-001: Resource not found
-DB-002: Duplicate entry
-BUSINESS-001: Insufficient stock
-SYSTEM-001: Internal server error
-
+BAD_REQUEST: Returned for IllegalArgumentException and IllegalStateException (HTTP 400)
+NOT_FOUND: Returned for NoSuchElementException (HTTP 404)
+FORBIDDEN: Returned for ForbiddenException (HTTP 403)
+INTERNAL_SERVER_ERROR: Returned for unhandled RuntimeException and Exception (HTTP 500)
+401 Unauthorized: Missing or invalid access token; handled by the security layer (not via exception handler)
 
 6.0 DATABASE DESIGN
 6.1 Entity Relationship Diagram
 
 Detailed Relationships:
 One-to-Many: users → notebooks (a user owns multiple notebooks).
-One-to-Many: users → categories (a user organizes notebooks into multiple categories).
-One-to-Many: notebooks → versions (a notebook has history of content).
-One-to-Many: users → refresh_tokens (handles multi-device session management).
-One-to-Many: notebooks → quizzes (notebooks serve as the primary container for quizzes).
-One-to-Many: notebooks → flashcard_decks (notebooks serve as the primary container for decks).
-One-to-Many: quizzes → quiz_questions → quiz_options (structured quiz content).
-One-to-Many: users × quizzes → quiz_attempts (tracks user performance over time).
-One-to-Many: notebooks → flashcard_decks → flashcards (organized study cards for active recall).
-One-to-Many: notebooks → ai_history_entries (persists AI chat context per notebook).
-One-to-Many: users → study_playlists (users can create multiple saved playlists).
-One-to-Many: study_playlists → playlist_items (manages notebooks within a playlist).
+One-to-Many: users → categories (a user organizes notebooks into categories). 
+One-to-Many: notebooks → notebook_versions (snapshot history per notebook). 
+One-to-Many: users → refresh_tokens (multi-device session management). 
+One-to-One: users ↔ codes (password reset code per user). 
+One-to-Many: users → quizzes; notebooks → quizzes (optional notebook link). 
+One-to-Many: quizzes → quiz_questions (ordered questions with answer options stored as an element collection). 
+One-to-Many: users × quizzes → quiz_attempts (tracks user performance over time). 
+One-to-Many: users → flashcards; notebooks → flashcards (optional notebook link). Flashcards → flashcard_cards (ordered front/back pairs). 
+One-to-Many: users × flashcards → flashcard_attempts (mastery tracking per deck). 
+One-to-Many: users → playlists. Many-to-Many: playlists ↔ notebooks (via playlist_notebooks join table, ordered). 
+One-to-Many: users → ai_configs (multiple provider configs per user; one selected as active). 
+One-to-Many: users → ai_conversations (per-notebook, per-mode conversation history). 
 Key Tables:
-users: User accounts and authentication credentials.
-refresh_tokens: JWT refresh token storage with rotation support and device tracking.
-categories: User-defined notebook categories for library organization.
-notebooks: Core notebook records owned by users. Includes last_reviewed_at timestamp.
-notebook_versions: Saved versions of notebook content.
-study_playlists: Collections of notebooks saved for continuous audio review.
-playlist_items: Ordered list of notebooks within a specific study playlist.
-quizzes: Quiz sets linked to a notebook.
-quiz_questions: Individual questions belonging to a quiz.
-quiz_options: Answer options for each question, with correct answer flag.
-quiz_attempts: Records of a user taking a quiz, including score.
-quiz_answers: Per-question answer selections within a quiz attempt.
-flashcard_decks: Collections of study cards linked to a notebook.
-flashcards: Individual study cards with front and back text for active recall.
-ai_history_entries: Per-notebook AI conversation history scoped to a user and mode.
+users: User accounts, authentication credentials, and active AI config reference. 
+refresh_tokens: JWT refresh token storage with expiry and device tracking. 
+codes: Hashed 6-digit password reset codes with 5-minute expiry. 
+categories: User-defined notebook categories for library organization. 
+notebooks: Core content records. Tracks version counter, last reviewed timestamp, and UUID for stable external references. 
+notebook_versions: Immutable content snapshots keyed by timestamp. 
+flashcards: Flashcard decks with ordered cards. Optional link to a notebook. 
+flashcard_attempts: Mastery score (0–100) recorded per user per deck. 
+quizzes: Quiz sets with difficulty level. Optional link to a notebook. 
+quiz_questions: Multiple-choice questions with options stored as an ordered element collection and a correctIndex field. 
+quiz_attempts: Score records per user per quiz. 
+playlists: Named queues of notebooks. Stores currentIndex to track review progress. 
+ai_configs: Per-user AI provider configurations (model, proxyUrl, AES encrypted apiKey). 
+ai_conversations: Per-notebook, per-mode conversation history stored as a serialized JSON message array. 
 Table Structure Summary:
-users: id (PK), username, email, password, role, banned, verified, last_login, last_logout, created_at.
-refresh_tokens: id (PK), user_id (FK), token, expiry_date, user_agent, ip_address, created_at.
-categories: id (PK), user_id (FK), name, created_at, updated_at.
-notebooks: id (PK), user_id (FK), category_id (FK, nullable), title, content (TEXT), created_at, updated_at, last_reviewed_at.
-notebook_versions: id (PK), notebook_id (FK), content (TEXT), created_at.
-study_playlists: id (PK), user_id (FK), name, created_at, updated_at.
-playlist_items: id (PK), playlist_id (FK), notebook_id (FK), order_index, created_at.
-quizzes: id (PK), notebook_id (FK), title, created_by_ai (boolean), created_at.
-quiz_questions: id (PK), quiz_id (FK), question_text, question_type (multiple_choice, true_false), order_index.
-quiz_options: id (PK), question_id (FK), option_text, is_correct (boolean).
-quiz_attempts: id (PK), quiz_id (FK), user_id (FK), score, total, attempted_at.
-quiz_answers: id (PK), attempt_id (FK), question_id (FK), selected_option_id (FK), is_correct (boolean).
-flashcard_decks: id (PK), notebook_id (FK), title, created_at.
-flashcards: id (PK), deck_id (FK), front_text, back_text, difficulty_score, last_reviewed_at, created_at.
-ai_history_entries: id (PK), notebook_id (FK), user_id (FK), role (user/assistant), content (TEXT), mode (summarize/explain/brainstorm), created_at.
+users: id (PK), uuid, username, email, password (BCrypt), auth_provider, google_id, role, banned, verified, last_login, last_logout, created_at, selected_ai_config_id (FK, nullable). 
+refresh_tokens: id (PK), user_id (FK), token (unique), expiry_date, user_agent, ip_address, created_at. 
+codes: id (PK), user_id (FK, unique), code (hashed), expiry_date, created_at. 
+categories: id (PK), user_id (FK), name, created_at, updated_at. 
+notebooks: id (PK), uuid (unique), user_id (FK), category_id (FK, nullable), title, content (TEXT), version, created_at, updated_at, last_reviewed_at.
+notebook_versions: id (PK), notebook_id (FK), content (TEXT), version (timestamp). 
+flashcards: id (PK), uuid (unique), user_id (FK), notebook_id (FK, nullable), title, description, created_at, updated_at. 
+flashcard_cards: id (PK), flashcard_id (FK), front (TEXT), back (TEXT), position. 
+flashcard_attempts: id (PK), flashcard_id (FK), user_id (FK), mastery (int 0– 100), created_at. 
+quizzes: id (PK), uuid (unique), user_id (FK), notebook_id (FK, nullable), title, description, difficulty, created_at, updated_at. 
+quiz_questions: id (PK), quiz_id (FK), type, text (TEXT), options (element collection, ordered), correct_index. 
+quiz_attempts: id (PK), quiz_id (FK), user_id (FK), score, created_at. 
+playlists: id (PK), uuid (unique), user_id (FK), title, current_index, created_at, updated_at. 
+playlist_notebooks: playlist_id (FK), notebook_id (FK), position (order column). 
+ai_configs: id (PK), user_id (FK), name, model, proxy_url, api_key (TEXT, AES encrypted), created_at, updated_at. 
+ai_conversations: id (PK), uuid (unique), user_id (FK), notebook_uuid, mode, title, messages (TEXT, JSON array), created_at, updated_at. 
+
 
 
 7.0 UI/UX DESIGN
@@ -1709,27 +2398,30 @@ ai_history_entries: id (PK), notebook_id (FK), user_id (FK), role (user/assistan
 
 
 Dashboard (Home Screen) 
-Top bar (Navbar): BrainBox logo, Help button, Notification button, and User menu (ProfileDropdown). 
-Left sidebar: Navigation links for Dashboard, Library, Quizzes, and Flashcards. 
-Main content: Welcome greeting, "Continue learning" area showing the two recently reviewed notebooks, and "Your library" grid featuring a "New notebook" card and all existing notebook cards showing title, category, and last edited date.
+Primary layout combines a persistent sidebar, top-level workspace navigation, and study-focused dashboard cards. The main content highlights welcome messaging, study stats, continue-learning entry points, quiz and flashcard surfaces, and recent notebook activity. 
+Sidebar navigation is organized around Dashboard, Library, Quizzes, Flashcards, Playlists, recent activity, and authenticated account actions. 
 Library 
-Similar top bar and sidebar. Main content displays a grid of all notebook cards for organization and browsing. Includes filters for categories and sorting options (A-Z, Last Edited).
-Notebook Editor
+The library is an organization workspace with category navigation, search, sorting, batch selection, notebook reassignment, and quick study entry points rather than a simple notebook gallery. 
+
+Notebook Editor 
 Top bar (EditorNavbar): "Back" button to dashboard, Editable Notebook Title, "Versions" history button, and "Review Mode" button.
-Format toolbar: Fixed below the navbar, providing formatting tools (Bold, italic, lists, quotes, code, and text alignment).
-Left sidebar (Outline): Collapsible sidebar containing the Header-based Outline for navigation.
-Center: Content area with resizable width (using drag handles). Renders the full notebook content in a focused editor.
-AI integration: Floating action button (AiFab) to toggle the Slide-in right panel (AiSidebar) for chat-based assistance (Summarize, Explain, Quiz generation).
+
+Format toolbar: Fixed below the navbar, providing rich formatting tools including headings, lists, tables, links, highlights, alignment, task items, and extended document controls. 
+Left sidebar (Outline): Collapsible sidebar containing the Header-based Outline for navigation. 
+Center: Content area with resizable width (using drag handles). Renders the full notebook content in a focused editor. 
+AI integration: Floating action button (AiFab) to toggle the Slide-in right panel (AiSidebar) for chat-based assistance, notebook rewrites, explanations, and study asset generation. 
 Review Mode 
-Full-screen, distraction-free layout. Rendered read-only content. Left sidebar with Header-based Outline for navigation. Bottom fixed bar: Play/Pause button, playback speed selector, current position indicator. Text highlights in sync with TTS playback.
-Quiz Interface
-Quiz Dashboard: List of all quizzes associated with the notebook. Shows score of the latest attempt.
-Quiz Builder:  Manual entry for questions or AI-generation trigger. Supports multiple choice and true/false questions.
-Quiz View:  Single-question-at-a-time focus. Navigation buttons for Next/Previous and a Submit button.
-Results View: Final score, detailed breakdown of correct/incorrect answers with explanations, and "Retake" option.
-Flashcards
-Flashcard Deck: Overview of cards associated with the notebook.
-Study Mode: Double-sided card layout (Question/Answer).
+Full-screen, distraction-free layout. Rendered read-only content. Left sidebar with outline navigation, right-side read-only AI tools, and a bottom player bar for play/pause, playback speed, and listening progression. Text highlights remain in sync with device TTS playback. 
+
+Quiz Interface 
+Quiz pages present saved study sets with notebook linkage, best-score history, builder controls, attempt submission, and results review. 
+Flashcards 
+Flashcard pages provide deck management, notebook-linked card sets, study mode, and mastery tracking across attempts. 
+Playlists 
+Playlist screens manage named listening queues of notebooks, including add/remove controls, ordering, and current-item continuation. 
+Profile & Settings 
+Authenticated settings support profile edits, password change, and AI configuration management. 
+
 7.2 Mobile Application Wireframes
 
 
@@ -1741,46 +2433,32 @@ Study Mode: Double-sided card layout (Question/Answer).
 
 
 Dashboard (Home Screen)
-Top bar: Sidebar menu toggle (hamburger icon) and "Dashboard" title.
-Left Sidebar (Drawer): BrainBox logo and branding at the top. Navigation items: Dashboard, Library, Playlists, Quizzes, Flashcards. Profile area at the bottom (shows username/avatar, launches Profile view or Logout on click).
-Main content: Welcome message ("Welcome back!") and "Pick up where you left off" horizontal scroll of recent notebooks. Floating Action Button (FAB) for "New Notebook".
+Mobile dashboard is the continuation hub for recent study activity. It prioritizes returning to recent notebooks, playlist sessions, and study tools from the authenticated account. 
+Navigation can be presented through a drawer or other mobile-friendly shell while preserving access to Dashboard, Library, Playlists, Quizzes, Flashcards, and Profile. 
+Library
+Mobile library supports category browsing, notebook search, and quick actions for opening, organizing, and sending notebooks into study flows. 
+Notebook Editor
+The mobile blueprint keeps notebook viewing, title management, review entry, and lightweight editing support aligned with the notebook-centered web experience. 
+Outline access and AI assistance are expected to remain notebook-scoped even
 
-Library (Mobile)
-Toolbar: Back navigation and "Library" title. Search icon and Category filter chips at the top.
-Notebook List: Vertical scroll of notebook cards showing title, category, and last edited date.
-Long-press actions: Quick menu for Rename, Delete, or Add to Playlist.
+when the mobile surface exposes a simplified interaction model. 
+Review Mode 
+Review Mode on mobile is optimized for continuation and listening: read-only notebook rendering, simple playback controls, preserved position, and quick jumps back into notebook sections. 
+Study Playlists 
+Mobile playlists continue the same named queue model used on web, allowing users to resume a listening order and move between notebooks as a planned study sequence. 
+Quizzes & Flashcards 
+Quiz and flashcard access on mobile follows the same notebook-linked study model, with concise interaction patterns for attempts, scoring, and continued review. 
+Profile Screen 
+Profile access includes account information, sign-out, and settings continuity for password and AI-related preferences as the mobile surface expands. 
 
-Notebook Editor (Mobile)
-Toolbar: Back button, Notebook Title, and "Review" icon.
-Floating Toolbar (Above keyboard): Rich text formatting (Bold, Italic, Lists) and Outline toggle.
-Outline: Bottom sheet overlay containing the Header-based Outline for quick navigation.
-AI Assistant: "Ask AI" button in the toolbar opens a simplified chat interface for Summarize/Explain/Brainstorm.
 
-Review Mode (Mobile)
-Optimized for one-handed use.
-Content Area: Read-only text with auto-scrolling during TTS.
-Bottom Bar: Large Play/Pause button and simple Speed control.
-Navigation: Simple scroll-based navigation.
-
-Study Playlists (Mobile)
-Playlists Screen: List of saved playlists. Create new playlist button.
-Playlist View: List of notebooks in the playlist. Swipe to remove item, drag-and-drop to reorder.
-Playback: Integration with the persistent bottom PlayerBar.
-
-Quizzes & Flashcards (Mobile)
-Quiz View: Single-question focus with clear "Next" and "Previous" buttons. Progress indicator at the top.
-Flashcards: Gesture-based review. Tap to flip, swipe left for "Hard", swipe right for "Easy".
-Results Screen: Visual score with "Review Mistakes" and "Try Again" buttons.
-
-Profile Screen
-Toolbar with back navigation. Main content displays Profile image (editable), Username, Email Address, and a "Logout" button at the bottom of the list.
 
 Mobile-Specific Features:
-Touch-optimized buttons (min 44x44px)
-Gesture support (swipe, pull-to-refresh)
-Offline caching for notebook content
-Bottom navigation for main actions
-Simplified forms for mobile input
+Touch-optimized buttons (min 44x44px) 
+Gesture support (swipe, pull-to-refresh) 
+Session-aware continuation into recent notebooks and playlists 
+Navigation patterns appropriate to the mobile shell in use 
+Simplified forms for mobile input 
 Design System:
 Colors:
 Primary (Accent): #B85336 (Terracotta)
@@ -1791,7 +2469,7 @@ Surface: #FFFFFF
 Text Primary: #1A1714 (Ink)
 Error: #EF4444
 Success: #22C55E
-Typography: IBM Plex Sans, Lora (Serif), system-ui, sans-serif
+Typography:  IBM Plex Sans, Lora (Serif), system-ui, sans-serif
 Spacing: 8px grid system
 Components: Consistent buttons, inputs, cards, modals
 Responsive: Mobile-first approach, breakpoints at 640px, 768px, 1024px
@@ -1799,46 +2477,46 @@ Responsive: Mobile-first approach, breakpoints at 640px, 768px, 1024px
 8.0 PLAN
 8.1 Project Timeline
 Phase 1: Planning & Design (Week 1-2)
-Week 1: Requirements & Architecture
- Day 1-2: Project setup and documentation
- Day 3-4: Complete FRS and NFR
- Day 5-7: System architecture design
+Week 1: Requirements & Architecture 
+Day 1-2: Project setup and documentation 
+Day 3-4: Complete FRS and NFR 
+Day 5-7: System architecture design 
 
-Week 2: Detailed Design
- Day 1-2: API specification
- Day 3-4: Database design
- Day 5-6: UI/UX wireframes
- Day 7: Implementation plan finalization
+Week 2: Detailed Design 
+Day 1-2: API specification 
+Day 3-4: Database design 
+Day 5-6: UI/UX wireframes 
+Day 7: Implementation plan finalization 
 
 Phase 2: Backend Development (Week 3-4)
-Week 3: Foundation
- Day 1: Spring Boot setup with dependencies
- Day 2: Database configuration and entities (User, Notebook, Category)
- Day 3: JWT authentication implementation
- Day 4: User management and Profile endpoints
- Day 5: Notebook CRUD operations and Versioning
+Week 3: Foundation 
+Day 1: Spring Boot setup with dependencies 
+Day 2: Database configuration and entities (User, Notebook, Category) 
+Day 3: JWT authentication implementation 
+Day 4: User management and Profile endpoints 
+Day 5: Notebook CRUD operations and Versioning 
 
-Week 4: Core Features
- Day 1: Category management
- Day 2: AI Assistant integration (OpenAI/External LLM)
- Day 3: Quiz and Flashcard generation logic
- Day 4: Study Playlists and Playback Queue persistence
- Day 5: API documentation and performance testing
+Week 4: Core Features 
+Day 1: Category management 
+Day 2: AI Assistant integration (OpenAI/External LLM) 
+Day 3: Quiz and Flashcard generation logic 
+Day 4: Study Playlists and Playback Queue persistence 
+Day 5: API documentation and performance testing 
 
 Phase 3: Web Application (Week 5-6)
-Week 5: Frontend Foundation
- Day 1: React setup with core routing
- Day 2: Authentication pages (login, register)
- Day 3: Dashboard and Library views
- Day 4: Rich text editor implementation
- Day 5: Outline navigation and Version history
+Week 5: Frontend Foundation 
+Day 1: React setup with core routing
+Day 2: Authentication pages (login, register) 
+Day 3: Dashboard and Library views 
+Day 4: Rich text editor implementation Day 5: Outline navigation and Version history 
 
-Week 6: Complete Web Features
- Day 1: Review Mode with TTS playback
- Day 2: AI Assistant sidebar integration
- Day 3: Quiz and Flashcard study interfaces
- Day 4: Study Playlists management
- Day 5: UI/UX polish and cross-browser testing
+Week 6: Complete Web Features 
+Day 1: Review Mode with TTS playback 
+Day 2: AI Assistant sidebar integration 
+Day 3: Quiz and Flashcard study interfaces 
+Day 4: Study Playlists management 
+Day 5: UI/UX polish and cross-browser testing 
+
 
 Phase 4: Mobile Application (Week 7-8)
 Week 7: Android Foundation

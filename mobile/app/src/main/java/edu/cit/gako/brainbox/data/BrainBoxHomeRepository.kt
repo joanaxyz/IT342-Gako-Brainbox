@@ -42,6 +42,9 @@ internal class BrainBoxHomeRepository(
         val playlistsDeferred = async {
             loadSection("We couldn't load playlists.") { getPlaylistsEnvelope() }
         }
+        val queueDeferred = async {
+            loadSection("We couldn't load the playback queue.") { getQueueEnvelope() }
+        }
 
         val profileResult = profileDeferred.await()
         val notebooksResult = notebooksDeferred.await()
@@ -50,6 +53,7 @@ internal class BrainBoxHomeRepository(
         val quizzesResult = quizzesDeferred.await()
         val flashcardsResult = flashcardsDeferred.await()
         val playlistsResult = playlistsDeferred.await()
+        val queueResult = queueDeferred.await()
 
         val allFailed = listOf(
             profileResult,
@@ -94,6 +98,7 @@ internal class BrainBoxHomeRepository(
             issues += "playlists"
             emptyList()
         }
+        val playbackQueue = queueResult.getOrNull()?.items ?: emptyList()
 
         val user = profileResult.getOrElse { fallbackUser() }
         val notice = when (issues.size) {
@@ -111,6 +116,7 @@ internal class BrainBoxHomeRepository(
                 quizzes = quizzes,
                 flashcards = flashcards,
                 playlists = playlists,
+                playbackQueue = playbackQueue,
                 syncNotice = notice,
                 syncedAtLabel = "Updated ${timestampLabel()}"
             )

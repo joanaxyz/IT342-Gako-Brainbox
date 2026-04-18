@@ -446,6 +446,21 @@ internal fun NotebookReviewPlaybackDock(
                     }
                 }
             }
+
+            playbackState.errorMessage?.takeIf { it.isNotBlank() }?.let { errorMessage ->
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = White,
+                    border = BorderStroke(1.dp, Border)
+                ) {
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink2,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                    )
+                }
+            }
         }
     }
 }

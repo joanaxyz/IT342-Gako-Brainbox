@@ -12,6 +12,17 @@
   padding: 18px 12px 28px;
 }
 
+.note-editor-content.is-embedded-host {
+  background:
+    radial-gradient(circle at top center, rgba(194, 65, 12, 0.08), transparent 34%),
+    linear-gradient(180deg, #f7f3ec 0%, #f1ece4 100%);
+}
+
+.note-editor-content.is-embedded-host .note-editor-canvas-viewport {
+  padding: 16px 12px 28px;
+  background: transparent;
+}
+
 .note-editor-canvas-stage {
   position: relative;
   margin: 0 auto;
@@ -37,6 +48,16 @@
     0 28px 48px -36px rgba(25, 20, 16, 0.5),
     0 14px 26px -22px rgba(25, 20, 16, 0.22),
     0 0 0 1px rgba(255, 255, 255, 0.94) inset;
+}
+
+.note-editor-content.is-embedded-host .note-editor-paper {
+  border-radius: 24px 24px 18px 18px;
+  border-color: rgba(30, 25, 21, 0.1);
+  box-shadow:
+    0 26px 44px -34px rgba(25, 20, 16, 0.46),
+    0 16px 28px -24px rgba(25, 20, 16, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.94) inset;
+  overflow: hidden;
 }
 
 .note-editor-flow {
@@ -129,11 +150,19 @@
   .note-editor-canvas-viewport {
     padding: 12px 8px 18px;
   }
+
+  .note-editor-content.is-embedded-host .note-editor-canvas-viewport {
+    padding: 12px 8px 22px;
+  }
 }
 
 @media (max-width: 480px) {
   .note-editor-canvas-viewport {
     padding: 8px 4px 12px;
+  }
+
+  .note-editor-content.is-embedded-host .note-editor-paper {
+    border-radius: 20px 20px 16px 16px;
   }
 }
 
@@ -464,10 +493,8 @@
 }
 
 .brainbox-math-node--block {
-  display: block;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0.25rem auto 0.25rem 0;
+  display: inline-flex;
+  margin: 0.25rem 0;
   padding: 0.05rem 0.18rem;
 }
 
@@ -480,7 +507,6 @@
 }
 
 .brainbox-math-node--block .brainbox-math-node-preview {
-  justify-content: flex-start;
   min-height: 1.3rem;
 }
 
@@ -509,7 +535,6 @@
   align-items: center;
   min-height: 1.2rem;
   min-width: 4rem;
-  max-width: 100%;
   cursor: text;
 }
 
@@ -517,7 +542,6 @@
   display: inline-block;
   min-width: 4rem;
   min-height: 1.2rem;
-  max-width: 100%;
   padding: 0;
   margin: 0;
   border: none;
@@ -549,13 +573,13 @@
 }
 
 .brainbox-math-node--block.is-editing .brainbox-math-node-editor {
-  display: inline-flex;
-  width: auto;
+  display: flex;
+  width: 100%;
 }
 
 .brainbox-math-node--block.is-editing .brainbox-mathfield {
-  width: auto;
-  min-width: 4rem;
+  width: 100%;
+  min-width: 12rem;
 }
 
 /* Equation toolbar (below format toolbar rail) */
@@ -665,12 +689,6 @@
 
 .brainbox-math-node--block .brainbox-math-node-preview .katex-display {
   margin: 0;
-  display: inline-block;
-  text-align: left;
-}
-
-.brainbox-math-node--block .brainbox-math-node-preview .katex-display > .katex {
-  text-align: left;
 }
 
 .note-editor-content.is-ai-selection-mode .note-editor-paper {

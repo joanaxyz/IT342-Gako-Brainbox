@@ -129,6 +129,10 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
 
   const displayProgress = isDragging ? (dragFraction * 100) : progress;
   const displayTime = isDragging ? (dragFraction * durationSec) : currentTimeSec;
+  const minimizedTitle = currentNotebook ? currentNotebook.title : 'No audio playing';
+  const minimizedSubtitle = currentNotebook
+    ? `${formatTime(displayTime)} / ${formatTime(durationSec)}`
+    : 'Select a notebook to play';
 
   // ── Review variant ─────────────────────────────────────────────────────────
   if (variant === 'review') {
@@ -210,7 +214,12 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
   // ── Minimized variant ──────────────────────────────────────────────────────
   if (isMinimized) {
     return (
-      <div className="minimized-player" onClick={() => setIsMinimized(false)} style={{ cursor: 'pointer' }}>
+      <div
+        className="minimized-player"
+        data-active={Boolean(currentNotebook)}
+        onClick={() => setIsMinimized(false)}
+        style={{ cursor: 'pointer' }}
+      >
         <div className="minimized-art">
           {currentNotebook ? currentNotebook.title.charAt(0) : (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -224,8 +233,8 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
           )}
         </div>
         <div className="minimized-info">
-          <div className="minimized-title">{currentNotebook ? currentNotebook.title : 'BrainBox Player'}</div>
-          <div className="minimized-subtitle">{currentNotebook ? 'Click to expand' : 'No audio playing'}</div>
+          <div className="minimized-title">{minimizedTitle}</div>
+          <div className="minimized-subtitle">{minimizedSubtitle}</div>
         </div>
         <button
           className="mini-play-btn"

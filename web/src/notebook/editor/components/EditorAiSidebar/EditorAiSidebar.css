@@ -1,5 +1,5 @@
 .editor-ai-shell {
-  --editor-ai-rail-width: 72px;
+  --editor-ai-rail-width: 56px;
   --editor-ai-panel-width: min(360px, 28vw);
   width: 0;
   min-width: 0;
@@ -124,7 +124,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 14px 12px;
+  padding: 12px 8px;
   background: rgba(255, 255, 255, 0.72);
   border: 0 !important;
   border-radius: 0 !important;
@@ -147,18 +147,18 @@
 }
 
 .editor-ai-shell .editor-ai-rail-divider {
-  width: 24px;
+  width: 20px;
   height: 1px;
   background: rgba(28, 25, 23, 0.1);
 }
 
 .editor-ai-shell .editor-ai-rail-btn {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid rgba(28, 25, 23, 0.08);
   background: rgba(255, 255, 255, 0.82);
   color: var(--ink-3);

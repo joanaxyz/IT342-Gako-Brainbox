@@ -1,10 +1,12 @@
 package edu.cit.gako.brainbox.data.local.database
 
 import android.content.Context
+import androidx.room.migration.Migration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
 import edu.cit.gako.brainbox.data.local.BrainBoxConverters
 import edu.cit.gako.brainbox.data.local.dao.ConflictDraftDao
 import edu.cit.gako.brainbox.data.local.dao.NotebookDao
@@ -22,7 +24,7 @@ import edu.cit.gako.brainbox.data.local.entity.PendingMutationEntity
         PendingMutationEntity::class,
         ConflictDraftEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(BrainBoxConverters::class)
@@ -42,11 +44,22 @@ abstract class BrainBoxLocalDatabase : RoomDatabase() {
                     context.applicationContext,
                     BrainBoxLocalDatabase::class.java,
                     DATABASE_NAME
-                ).build().also { instance = it }
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .build()
+                    .also { instance = it }
             }
         }
 
         private const val DATABASE_NAME = "brainbox-offline.db"
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE offline_packs ADD COLUMN quizPayloadJson TEXT")
+                db.execSQL("ALTER TABLE offline_packs ADD COLUMN flashcardPayloadJson TEXT")
+                db.execSQL("ALTER TABLE offline_packs ADD COLUMN playlistPayloadJson TEXT")
+            }
+        }
     }
 }
 

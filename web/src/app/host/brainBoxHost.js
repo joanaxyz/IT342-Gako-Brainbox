@@ -148,3 +148,25 @@ export const requestHostPdfExport = () => {
   bridge.requestPdfExport();
   return true;
 };
+
+export const openHostQuiz = (uuid) => {
+  const bridge = getBridge();
+
+  if (!bridge?.openQuiz) {
+    return false;
+  }
+
+  bridge.openQuiz(String(uuid || ''));
+  return true;
+};
+
+export const openHostFlashcardDeck = (uuid) => {
+  const bridge = getBridge();
+
+  if (!bridge?.openFlashcardDeck) {
+    return false;
+  }
+
+  bridge.openFlashcardDeck(String(uuid || ''));
+  return true;
+};

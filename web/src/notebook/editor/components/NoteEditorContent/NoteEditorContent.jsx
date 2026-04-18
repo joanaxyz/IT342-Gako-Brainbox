@@ -24,6 +24,7 @@ import {
   ttsWordHighlightKey,
 } from '../../tiptap/createEditorExtensions';
 import { findRangeIndexForOffset } from '../../../../common/audio/playbackModel';
+import { isAndroidHost } from '../../../../app/host/brainBoxHost';
 import TableBubbleMenu from '../TableBubbleMenu/TableBubbleMenu';
 import './NoteEditorContent.css';
 
@@ -119,8 +120,21 @@ const NoteEditorContent = forwardRef(({
   const lastKnownContentRef = useRef(content || '');
   const lastAppliedContentSyncTokenRef = useRef(contentSyncToken);
   const suppressExternalUpdateRef = useRef(false);
+  const isEmbeddedAndroidHost = useMemo(() => isAndroidHost(), []);
   const isEditable = !readOnly;
-  const bodyWidth = Math.max(160, paperWidth - (DEFAULT_PAPER_PADDING_X * 2));
+  const horizontalPadding = Math.min(
+    DEFAULT_PAPER_PADDING_X,
+    Math.max(24, Math.round(paperWidth * 0.085)),
+  );
+  const topPadding = Math.min(
+    DEFAULT_PAPER_PADDING_TOP,
+    Math.max(48, Math.round(paperWidth * 0.11)),
+  );
+  const bottomPadding = Math.min(
+    DEFAULT_PAPER_PADDING_BOTTOM,
+    Math.max(56, Math.round(paperWidth * 0.12)),
+  );
+  const bodyWidth = Math.max(160, paperWidth - (horizontalPadding * 2));
 
   const [surfaceHeight, setSurfaceHeight] = useState(paperHeight);
 
@@ -889,16 +903,16 @@ const NoteEditorContent = forwardRef(({
   const paperStyles = {
     '--document-paper-width': `${paperWidth}px`,
     '--document-paper-height': `${paperHeight}px`,
-    '--document-padding-x': `${DEFAULT_PAPER_PADDING_X}px`,
-    '--document-padding-top': `${DEFAULT_PAPER_PADDING_TOP}px`,
-    '--document-padding-bottom': `${DEFAULT_PAPER_PADDING_BOTTOM}px`,
+    '--document-padding-x': `${horizontalPadding}px`,
+    '--document-padding-top': `${topPadding}px`,
+    '--document-padding-bottom': `${bottomPadding}px`,
     '--document-body-width': `${bodyWidth}px`,
     fontFamily,
   };
 
   return (
     <div
-      className={`note-editor-content${showLines ? ' show-lines' : ''}${aiSelectionMode ? ' is-ai-selection-mode' : ''}`}
+      className={`note-editor-content${showLines ? ' show-lines' : ''}${aiSelectionMode ? ' is-ai-selection-mode' : ''}${isEmbeddedAndroidHost ? ' is-embedded-host' : ''}`}
       style={paperStyles}
     >
       <div className="note-editor-canvas-viewport" ref={viewportRef}>

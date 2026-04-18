@@ -13,6 +13,7 @@ import edu.cit.gako.brainbox.network.SessionManager
 
 class BrainBoxAppGraph private constructor(context: Context) {
     private val appContext = context.applicationContext
+    val context: Context get() = appContext
 
     val sessionManager: SessionManager by lazy { SessionManager(appContext) }
     val apiService: ApiService by lazy { RetrofitClient.getOrCreate(sessionManager) }

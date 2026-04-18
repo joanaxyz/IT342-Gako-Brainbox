@@ -283,7 +283,7 @@ export const NotebookProvider = ({ children }) => {
     showSpinner
   ), [queryClient, withLoading]);
 
-  const fetchNotebook = useCallback((uuid, showSpinner = true, forceRefresh = false) => withLoading(
+  const fetchNotebook = useCallback((uuid, showSpinner = true, forceRefresh = false, requestOptions = {}) => withLoading(
     async () => {
       setCurrentNotebookUuid(uuid);
       const detailKey = queryKeys.notebooks.detail(uuid);
@@ -311,7 +311,7 @@ export const NotebookProvider = ({ children }) => {
 
       const response = await toApiResponse(() => queryClient.fetchQuery({
         queryKey: detailKey,
-        queryFn: () => unwrapApiResponse(() => notebookAPI.getNotebook(uuid)),
+        queryFn: () => unwrapApiResponse(() => notebookAPI.getNotebook(uuid, requestOptions)),
       }));
 
       if (response.success) {

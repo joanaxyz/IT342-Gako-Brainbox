@@ -3,12 +3,20 @@
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,27 +39,47 @@ import edu.cit.gako.brainbox.ui.theme.White
 import java.util.Locale
 
 @Composable
-internal fun ContinueLearningCard(notebook: NotebookSummary, onClick: () -> Unit) {
+internal fun ContinueLearningCard(
+    notebook: NotebookSummary,
+    isPlaying: Boolean = false,
+    isActive: Boolean = false,
+    onPlay: (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier.widthIn(min = 280.dp, max = 320.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
         color = White,
-        border = BorderStroke(1.dp, Border),
+        border = BorderStroke(1.dp, if (isActive) Accent.copy(alpha = 0.4f) else Border),
         shadowElevation = 8.dp,
         onClick = onClick
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 TokenBadge("CL")
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         notebook.title,
                         style = MaterialTheme.typography.titleMedium,
-                        color = Ink,
+                        color = if (isActive) Accent else Ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(notebook.categoryName ?: "Notebook", style = MaterialTheme.typography.bodySmall, color = Ink3)
+                }
+                if (onPlay != null) {
+                    IconButton(onClick = onPlay, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = when {
+                                isPlaying -> Icons.Filled.Pause
+                                isActive -> Icons.Filled.GraphicEq
+                                else -> Icons.Filled.PlayArrow
+                            },
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = if (isActive) Accent else Ink2,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
             Text(
@@ -81,6 +109,7 @@ internal fun StudyCard(
     meta: List<String>,
     progress: Int?,
     action: String,
+    footer: (@Composable ColumnScope.() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     Surface(
@@ -123,17 +152,26 @@ internal fun StudyCard(
             }
             HorizontalDivider(color = Border)
             Text(action, style = MaterialTheme.typography.labelLarge, color = Accent)
+            footer?.invoke(this)
         }
     }
 }
 
 @Composable
-internal fun NotebookCard(notebook: NotebookSummary, action: String, onClick: () -> Unit) {
+internal fun NotebookCard(
+    notebook: NotebookSummary,
+    action: String,
+    isPlaying: Boolean = false,
+    isActive: Boolean = false,
+    onPlay: (() -> Unit)? = null,
+    footer: (@Composable ColumnScope.() -> Unit)? = null,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
         color = White,
-        border = BorderStroke(1.dp, Border),
+        border = BorderStroke(1.dp, if (isActive) Accent.copy(alpha = 0.4f) else Border),
         shadowElevation = 6.dp,
         onClick = onClick
     ) {
@@ -143,10 +181,26 @@ internal fun NotebookCard(notebook: NotebookSummary, action: String, onClick: ()
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TokenBadge("NB")
-                Text(notebook.categoryName ?: "Notebook", style = MaterialTheme.typography.bodySmall, color = Ink3)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TokenBadge("NB")
+                    Text(notebook.categoryName ?: "Notebook", style = MaterialTheme.typography.bodySmall, color = Ink3)
+                }
+                if (onPlay != null) {
+                    IconButton(onClick = onPlay, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = when {
+                                isPlaying -> Icons.Filled.Pause
+                                isActive -> Icons.Filled.GraphicEq
+                                else -> Icons.Filled.PlayArrow
+                            },
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = if (isActive) Accent else Ink2,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
-            Text(notebook.title, style = MaterialTheme.typography.titleLarge, color = Ink)
+            Text(notebook.title, style = MaterialTheme.typography.titleLarge, color = if (isActive) Accent else Ink)
             Text(
                 text = joinMeta(
                     "${notebook.wordCount ?: 0} words",
@@ -157,6 +211,7 @@ internal fun NotebookCard(notebook: NotebookSummary, action: String, onClick: ()
             )
             HorizontalDivider(color = Border)
             Text(action, style = MaterialTheme.typography.labelLarge, color = Accent)
+            footer?.invoke(this)
         }
     }
 }

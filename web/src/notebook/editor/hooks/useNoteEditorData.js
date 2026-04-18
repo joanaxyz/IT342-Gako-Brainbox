@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../common/hooks/hooks';
-import { isAndroidHost, reportHostError, reportHostReady } from '../../../app/host/brainBoxHost';
+import { isAndroidHost, reportHostError } from '../../../app/host/brainBoxHost';
+
+const EMBEDDED_NOTEBOOK_TIMEOUT_MS = 15000;
 
 export const useNoteEditorData = ({
   notebookUuid,
@@ -20,9 +22,12 @@ export const useNoteEditorData = ({
 
     loadedNotebookRef.current = notebookUuid;
 
-    fetchNotebook(notebookUuid, true).then((response) => {
+    const requestOptions = isAndroidHost()
+      ? { timeoutMs: EMBEDDED_NOTEBOOK_TIMEOUT_MS }
+      : {};
+
+    fetchNotebook(notebookUuid, true, false, requestOptions).then((response) => {
       if (response.success) {
-        reportHostReady();
         return;
       }
 

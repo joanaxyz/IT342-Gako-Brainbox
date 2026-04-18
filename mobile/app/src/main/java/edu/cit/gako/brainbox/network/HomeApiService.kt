@@ -2,10 +2,15 @@
 
 import edu.cit.gako.brainbox.network.models.ApiEnvelope
 import edu.cit.gako.brainbox.network.models.NotebookSummary
+import edu.cit.gako.brainbox.network.models.PlaylistAddNotebookBody
+import edu.cit.gako.brainbox.network.models.PlaylistCreateRequest
 import edu.cit.gako.brainbox.network.models.PlaylistSummary
 import edu.cit.gako.brainbox.network.models.UserProfile
+import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface HomeApiService {
@@ -26,6 +31,24 @@ interface HomeApiService {
 
     @GET("api/playlists")
     suspend fun getPlaylistsEnvelope(): ApiEnvelope<List<PlaylistSummary>>
+
+    @POST("api/playlists")
+    suspend fun createPlaylistEnvelope(@Body request: PlaylistCreateRequest): ApiEnvelope<PlaylistSummary>
+
+    @DELETE("api/playlists/{uuid}")
+    suspend fun deletePlaylistEnvelope(@Path("uuid") uuid: String): ApiEnvelope<Unit?>
+
+    @POST("api/playlists/{uuid}/notebooks")
+    suspend fun addNotebookToPlaylistEnvelope(
+        @Path("uuid") uuid: String,
+        @Body body: PlaylistAddNotebookBody
+    ): ApiEnvelope<PlaylistSummary>
+
+    @DELETE("api/playlists/{uuid}/notebooks/{notebookUuid}")
+    suspend fun removeNotebookFromPlaylistEnvelope(
+        @Path("uuid") uuid: String,
+        @Path("notebookUuid") notebookUuid: String
+    ): ApiEnvelope<PlaylistSummary>
 
     @PATCH("api/notebooks/update-review/{uuid}")
     suspend fun updateReviewEnvelope(@Path("uuid") uuid: String): ApiEnvelope<Any?>

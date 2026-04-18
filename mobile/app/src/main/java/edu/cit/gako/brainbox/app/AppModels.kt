@@ -9,6 +9,7 @@ import edu.cit.gako.brainbox.network.models.QuizDetail
 import edu.cit.gako.brainbox.network.models.QuizSummary
 import edu.cit.gako.brainbox.network.models.UserProfile
 
+
 enum class AuthStage {
     LOGIN,
     REGISTER,
@@ -33,6 +34,7 @@ data class HomeData(
     val quizzes: List<QuizSummary> = emptyList(),
     val flashcards: List<FlashcardDeckSummary> = emptyList(),
     val playlists: List<PlaylistSummary> = emptyList(),
+    val playbackQueue: List<NotebookSummary> = emptyList(),
     val syncNotice: String? = null,
     val syncedAtLabel: String? = null
 )
@@ -58,5 +60,6 @@ data class AppState(
     val activeNotebookOriginTab: HomeTab? = null,
     val studyReturnNotebookUuid: String? = null,
     val playbackState: PlaybackUiState = PlaybackUiState(),
+    val playbackQueue: List<NotebookSummary> = emptyList(),
     val offlineSyncState: OfflineSyncState = OfflineSyncState()
 )

@@ -28,7 +28,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOriginPatterns(
                         "http://localhost:*",
                         "http://127.0.0.1:*",
-                        "http://appassets.androidplatform.net"
+                        "http://appassets.androidplatform.net",
+                        "https://appassets.androidplatform.net"
                 )
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
