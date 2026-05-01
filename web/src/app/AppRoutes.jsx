@@ -1,12 +1,12 @@
-import { lazy, Suspense } from 'react';
-import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from 'react-router-dom';
+import { lazy } from 'react';
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route } from 'react-router-dom';
 import App from '../App';
 import AuthLayout from '../auth/shared/layouts/AuthLayout';
 import Logout from '../auth/shared/components/Logout';
 import ProtectedRoute from '../auth/shared/components/ProtectedRoute';
 import HomeLayout from '../home/shared/layouts/HomeLayout';
 import EditorLayout from '../notebook/editor/layouts/EditorLayout';
-import RouteFallback from './RouteFallback';
+import SuspenseLayout from './SuspenseLayout';
 
 const RegisterPage = lazy(() => import('../auth/register/Register'));
 const LoginPage = lazy(() => import('../auth/login/Login'));
@@ -18,12 +18,6 @@ const FlashcardsPage = lazy(() => import('../home/flashcards/Flashcards'));
 const ProfilePage = lazy(() => import('../home/profile/Profile'));
 const PlaylistsPage = lazy(() => import('../home/playlists/Playlists'));
 const NoteEditorPage = lazy(() => import('../notebook/editor/NoteEditor'));
-
-const SuspenseLayout = () => (
-  <Suspense fallback={<RouteFallback />}>
-    <Outlet />
-  </Suspense>
-);
 
 export const appRouter = createBrowserRouter(
   createRoutesFromElements(

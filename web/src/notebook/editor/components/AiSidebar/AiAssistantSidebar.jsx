@@ -21,7 +21,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { aiAPI } from '../../../../common/utils/api.jsx';
+import { aiAPI } from '../../../../ai/api/aiService';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { useFlashcard, useQuiz } from '../../../shared/hooks/hooks';
 import { isAndroidHost, openHostQuiz, openHostFlashcardDeck } from '../../../../app/host/brainBoxHost';
@@ -397,7 +397,7 @@ const AiAssistantSidebar = ({
         return DOMPurify.sanitize(raw);
       }
       return raw;
-    } catch (e) {
+    } catch {
       return String(value);
     }
   }, [md]);

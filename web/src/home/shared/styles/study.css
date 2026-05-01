@@ -432,6 +432,44 @@
 }
 
 /* Notebook filter */
+.study-filter-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 12px;
+  flex-wrap: wrap;
+}
+
+.study-filter-mode-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-right: 2px;
+}
+
+.study-filter-mode-btn {
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.study-filter-mode-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.study-filter-mode-btn.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--cream);
+}
+
 .study-notebook-filter {
   display: flex;
   align-items: center;

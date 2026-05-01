@@ -1041,3 +1041,10 @@
       display: none !important;
     }
 }
+
+@media (max-width: 720px) {
+  .editor-navbar-relocates-mobile,
+  .editor-navbar-ai-divider {
+      display: none !important;
+    }
+}

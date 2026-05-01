@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -19,17 +19,20 @@ const MOBILE_PAGE_LABELS = {
 
 const HomeLayout = () => {
     const { fetchNotebooks } = useNotebook();
-    const { showQueue } = useAudioPlayer();
+    const { showQueue, isMinimized } = useAudioPlayer();
     const { pathname } = useLocation();
-    const [isNavOpen, setIsNavOpen] = useState(false);
+    const [navState, setNavState] = useState({ isOpen: false, pathname });
+    const isNavOpen = navState.pathname === pathname && navState.isOpen;
+    const openNav = useCallback(() => {
+        setNavState({ isOpen: true, pathname });
+    }, [pathname]);
+    const closeNav = useCallback(() => {
+        setNavState({ isOpen: false, pathname });
+    }, [pathname]);
 
     useEffect(() => {
         fetchNotebooks();
     }, [fetchNotebooks]);
-
-    useEffect(() => {
-        setIsNavOpen(false);
-    }, [pathname]);
 
     useEffect(() => {
         if (!isNavOpen) {
@@ -38,13 +41,13 @@ const HomeLayout = () => {
 
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
-                setIsNavOpen(false);
+                closeNav();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isNavOpen]);
+    }, [closeNav, isNavOpen]);
 
     useEffect(() => {
         if (typeof window === 'undefined' || !isNavOpen || window.innerWidth > 1024) {
@@ -66,24 +69,25 @@ const HomeLayout = () => {
 
         return MOBILE_PAGE_LABELS[pathname] || 'Workspace';
     }, [pathname]);
+    const isPlaylistsPage = pathname === '/playlists';
 
     return (
-        <div className={`home-layout${showQueue ? ' queue-open' : ''}${isNavOpen ? ' nav-open' : ''}`}>
+        <div className={`home-layout${showQueue ? ' queue-open' : ''}${isNavOpen ? ' nav-open' : ''}${isMinimized ? ' player-minimized' : ' player-expanded'}`}>
             {isNavOpen && (
                 <button
                     type="button"
                     className="home-sidebar-backdrop"
-                    onClick={() => setIsNavOpen(false)}
+                    onClick={closeNav}
                     aria-label="Close navigation"
                 />
             )}
-            <Sidebar isOpen={isNavOpen} onClose={() => setIsNavOpen(false)} />
+            <Sidebar isOpen={isNavOpen} onClose={closeNav} />
             <div className="home-main">
                 <div className="home-mobile-topbar">
                     <button
                         type="button"
                         className="home-mobile-nav-trigger"
-                        onClick={() => setIsNavOpen(true)}
+                        onClick={openNav}
                         aria-label="Open navigation"
                     >
                         <Menu size={18} />
@@ -93,7 +97,7 @@ const HomeLayout = () => {
                         <span className="home-mobile-topbar-label">{currentPageLabel}</span>
                     </div>
                 </div>
-                <div className="home-content page-enter">
+                <div className={`home-content page-enter${isPlaylistsPage ? ' home-content-playlists' : ''}`}>
                     <Outlet />
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { notebookAPI } from '../../../common/utils/api.jsx';
+import { notebookAPI } from '../../shared/api/notebookService';
 import { broadcastResourceInvalidation } from '../../../common/query/resourceInvalidation';
 
 const getSaveErrorMessage = (response) => {
@@ -20,6 +20,23 @@ const getSaveErrorMessage = (response) => {
   }
 
   return response?.message || 'Save failed';
+};
+
+const schedulePersistenceStateSync = (syncState) => {
+  let cancelled = false;
+  const schedule = typeof queueMicrotask === 'function'
+    ? queueMicrotask
+    : (callback) => Promise.resolve().then(callback);
+
+  schedule(() => {
+    if (!cancelled) {
+      syncState();
+    }
+  });
+
+  return () => {
+    cancelled = true;
+  };
 };
 
 export const useNoteEditorPersistence = ({
@@ -45,6 +62,7 @@ export const useNoteEditorPersistence = ({
   const inFlightPromiseRef = useRef(null);
   const pendingSaveRef = useRef(null);
   const saveErrorRef = useRef(false);
+  const runSaveRef = useRef(null);
 
   const syncSaveStatus = useCallback(() => {
     const inFlightSave = inFlightSaveRef.current;
@@ -166,7 +184,7 @@ export const useNoteEditorPersistence = ({
           && pendingContent !== lastSavedContentRef.current
         ) {
           pendingSaveRef.current = null;
-          void runSave(pendingContent);
+          void runSaveRef.current?.(pendingContent);
           return;
         }
 
@@ -178,6 +196,10 @@ export const useNoteEditorPersistence = ({
     inFlightPromiseRef.current = savePromise;
     return savePromise;
   }, [applySavedNotebook, editorRef, isPreviewMode, syncSaveStatus]);
+
+  useEffect(() => {
+    runSaveRef.current = runSave;
+  }, [runSave]);
 
   const saveDocument = useCallback((contentOverride) => {
     const notebookId = activeNotebookUuidRef.current;
@@ -241,12 +263,13 @@ export const useNoteEditorPersistence = ({
       inFlightPromiseRef.current = null;
       pendingSaveRef.current = null;
       saveErrorRef.current = false;
-      setSaveErrorMessage('');
-      setDocumentContent('');
-      setSaveStatus('saved');
-      setContentSyncToken((token) => token + 1);
-      setHydratedNotebookUuid(null);
-      return;
+      return schedulePersistenceStateSync(() => {
+        setSaveErrorMessage('');
+        setDocumentContent('');
+        setSaveStatus('saved');
+        setContentSyncToken((token) => token + 1);
+        setHydratedNotebookUuid(null);
+      });
     }
 
     const currentNotebookId = currentNotebook.uuid;
@@ -260,14 +283,15 @@ export const useNoteEditorPersistence = ({
       inFlightPromiseRef.current = null;
       pendingSaveRef.current = null;
       saveErrorRef.current = false;
-      setSaveErrorMessage('');
       lastSavedContentRef.current = serverContent;
       liveContentRef.current = serverContent;
-      setDocumentContent(serverContent);
-      setSaveStatus('saved');
-      setContentSyncToken((token) => token + 1);
-      setHydratedNotebookUuid(currentNotebookId);
-      return;
+      return schedulePersistenceStateSync(() => {
+        setSaveErrorMessage('');
+        setDocumentContent(serverContent);
+        setSaveStatus('saved');
+        setContentSyncToken((token) => token + 1);
+        setHydratedNotebookUuid(currentNotebookId);
+      });
     }
 
     if (serverContent === lastSavedContentRef.current) {
@@ -287,11 +311,13 @@ export const useNoteEditorPersistence = ({
     lastSavedContentRef.current = serverContent;
     liveContentRef.current = serverContent;
     saveErrorRef.current = false;
-    setSaveErrorMessage('');
-    setDocumentContent(serverContent);
-    setSaveStatus('saved');
-    setContentSyncToken((token) => token + 1);
-    setHydratedNotebookUuid(currentNotebookId);
+    return schedulePersistenceStateSync(() => {
+      setSaveErrorMessage('');
+      setDocumentContent(serverContent);
+      setSaveStatus('saved');
+      setContentSyncToken((token) => token + 1);
+      setHydratedNotebookUuid(currentNotebookId);
+    });
   }, [currentNotebook]);
 
   return {

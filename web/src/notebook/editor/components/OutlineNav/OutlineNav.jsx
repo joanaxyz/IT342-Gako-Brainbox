@@ -1,5 +1,6 @@
-import { ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { buildOutlineTree, getExpandableOutlineKeys } from './outlineTree';
 
 const OUTLINE_NAV_COLLAPSED_STORAGE_KEY = 'noteEditorOutlineNavCollapsed';
 const MOBILE_BREAKPOINT_QUERY = '(max-width: 1180px)';
@@ -9,7 +10,8 @@ const OutlineNav = ({
   onSelect,
   title = 'Navigator',
   emptyMessage = 'No headings yet. Use # to create one.',
-  renderItem,
+  isItemActive,
+  onSelectItem,
   mobileOverlayOpen,
   onMobileOverlayOpenChange,
 }) => {
@@ -20,8 +22,13 @@ const OutlineNav = ({
     typeof window !== 'undefined' && window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
   ));
   const [internalMobileOverlayOpen, setInternalMobileOverlayOpen] = useState(false);
+  const [expandedItemKeys, setExpandedItemKeys] = useState(() => new Set());
+  const knownExpandableKeysRef = useRef(new Set());
   const isMobileOverlayControlled = typeof mobileOverlayOpen === 'boolean' && typeof onMobileOverlayOpenChange === 'function';
   const resolvedMobileOverlayOpen = isMobileOverlayControlled ? mobileOverlayOpen : internalMobileOverlayOpen;
+  const outlineTree = useMemo(() => buildOutlineTree(outline), [outline]);
+  const expandableKeys = useMemo(() => getExpandableOutlineKeys(outlineTree), [outlineTree]);
+  const expandableKeySignature = expandableKeys.join('\n');
 
   const setMobileOverlayOpen = useCallback((nextValue) => {
     if (isMobileOverlayControlled) {
@@ -47,17 +54,56 @@ const OutlineNav = ({
     setIsCollapsed((value) => !value);
   }, [isMobile, resolvedMobileOverlayOpen, setMobileOverlayOpen]);
 
-  const handleSelect = useCallback((pos) => {
-    onSelect?.(pos);
+  const handleSelect = useCallback((item) => {
+    if (onSelectItem) {
+      onSelectItem(item);
+    } else {
+      onSelect?.(item.pos);
+    }
 
     if (isMobile) {
       closeMobileOverlay();
     }
-  }, [closeMobileOverlay, isMobile, onSelect]);
+  }, [closeMobileOverlay, isMobile, onSelect, onSelectItem]);
+
+  const handleToggleItem = useCallback((key) => {
+    setExpandedItemKeys((currentKeys) => {
+      const nextKeys = new Set(currentKeys);
+
+      if (nextKeys.has(key)) {
+        nextKeys.delete(key);
+      } else {
+        nextKeys.add(key);
+      }
+
+      return nextKeys;
+    });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(OUTLINE_NAV_COLLAPSED_STORAGE_KEY, String(isCollapsed));
   }, [isCollapsed]);
+
+  useEffect(() => {
+    const previousExpandableKeys = knownExpandableKeysRef.current;
+    const nextExpandableKeys = new Set(expandableKeys);
+
+    setExpandedItemKeys((currentKeys) => {
+      const nextKeys = new Set(
+        Array.from(currentKeys).filter((key) => nextExpandableKeys.has(key))
+      );
+
+      expandableKeys.forEach((key) => {
+        if (!previousExpandableKeys.has(key)) {
+          nextKeys.add(key);
+        }
+      });
+
+      return nextKeys;
+    });
+
+    knownExpandableKeysRef.current = nextExpandableKeys;
+  }, [expandableKeySignature, expandableKeys]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -69,7 +115,6 @@ const OutlineNav = ({
       setIsMobile(event.matches);
     };
 
-    setIsMobile(mediaQuery.matches);
     mediaQuery.addEventListener('change', handleMediaQueryChange);
 
     return () => {
@@ -79,7 +124,9 @@ const OutlineNav = ({
 
   useEffect(() => {
     if (!isMobile) {
-      setMobileOverlayOpen(false);
+      window.queueMicrotask(() => {
+        setMobileOverlayOpen(false);
+      });
     }
   }, [isMobile, setMobileOverlayOpen]);
 
@@ -100,6 +147,59 @@ const OutlineNav = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [closeMobileOverlay, isExpanded, isMobile]);
+
+  function renderOutlineNode(item, depth = 0) {
+    const hasChildren = item.children.length > 0;
+    const isItemExpanded = hasChildren && expandedItemKeys.has(item.key);
+    const itemActive = isItemActive?.(item, item.originalIndex) ?? false;
+
+    return (
+      <div
+        key={item.key}
+        className={[
+          'outline-item',
+          `level-${item.level}`,
+          hasChildren ? 'has-children' : 'has-no-children',
+          isItemExpanded ? 'is-item-expanded' : 'is-item-collapsed',
+          itemActive ? 'is-active' : '',
+        ].filter(Boolean).join(' ')}
+        style={{ '--outline-depth': depth }}
+      >
+        <div className="outline-item-row">
+          {hasChildren ? (
+            <button
+              type="button"
+              className="outline-item-toggle"
+              onClick={() => handleToggleItem(item.key)}
+              aria-label={isItemExpanded ? `Retract ${item.text}` : `Expand ${item.text}`}
+              title={isItemExpanded ? 'Retract section' : 'Expand section'}
+              aria-expanded={isItemExpanded}
+            >
+              {isItemExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          ) : (
+            <span className="outline-item-toggle-spacer" aria-hidden="true" />
+          )}
+
+          <button
+            type="button"
+            className="outline-item-button"
+            onClick={() => handleSelect(item)}
+            title={item.text}
+            aria-current={itemActive ? 'true' : undefined}
+          >
+            <span className="outline-item-text">{item.text}</span>
+          </button>
+        </div>
+
+        {hasChildren && isItemExpanded && (
+          <div className="outline-children">
+            {item.children.map((child) => renderOutlineNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -139,21 +239,9 @@ const OutlineNav = ({
           {outline.length === 0 ? (
             <div className="outline-empty">{isExpanded ? emptyMessage : '0'}</div>
           ) : (
-            outline.map((item, index) => (
-              renderItem ? renderItem(item, index, isExpanded) : (
-                <button
-                  key={index}
-                  className={`outline-item level-${item.level}`}
-                  onClick={() => handleSelect(item.pos)}
-                  title={item.text}
-                >
-                  <span className="outline-item-marker">
-                    <ChevronRight size={12} />
-                  </span>
-                  <span className="outline-item-text">{item.text}</span>
-                </button>
-              )
-            ))
+            <div className="outline-list">
+              {outlineTree.map((item) => renderOutlineNode(item))}
+            </div>
           )}
         </nav>
       </aside>

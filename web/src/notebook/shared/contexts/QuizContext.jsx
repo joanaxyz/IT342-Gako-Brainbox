@@ -1,12 +1,18 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { quizAPI } from '../../../common/utils/api';
+import { quizAPI } from '../../../home/quizzes/api/quizService';
 import { QuizContext } from './QuizContextValue';
 import { useLoading } from '../../../common/hooks/hooks';
 import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { unwrapApiResponse, toApiResponse } from '../../../common/query/apiQuery';
 import { queryKeys } from '../../../common/query/queryKeys';
 import { broadcastResourceInvalidation } from '../../../common/query/resourceInvalidation';
+import {
+  applyQuizAttemptToList,
+  captureQuerySnapshot,
+  deleteResourceFromList,
+  restoreQuerySnapshot,
+} from '../../../common/query/optimisticUpdates';
 
 const getQuizzesData = () => unwrapApiResponse(() => quizAPI.getQuizzes());
 const EMPTY_QUIZZES = [];
@@ -37,6 +43,10 @@ export const QuizProvider = ({ children }) => {
   });
 
   const quizzes = quizzesQuery.data ?? EMPTY_QUIZZES;
+
+  const getQuizSnapshot = useCallback(() => (
+    captureQuerySnapshot(queryClient, [queryKeys.quizzes.all])
+  ), [queryClient]);
 
   const fetchQuizzes = useCallback((showSpinner = true, forceRefresh = false) => withLoading(
     async () => {
@@ -89,24 +99,33 @@ export const QuizProvider = ({ children }) => {
 
   const deleteQuiz = useCallback((uuid, showSpinner = true) => withLoading(
     async () => {
+      const snapshot = getQuizSnapshot();
+      queryClient.setQueryData(queryKeys.quizzes.all, (currentQuizzes = []) => (
+        deleteResourceFromList(currentQuizzes, uuid)
+      ));
+
       const response = await quizAPI.deleteQuiz(uuid);
       if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
         return response;
       }
 
-      queryClient.setQueryData(queryKeys.quizzes.all, (currentQuizzes = []) => (
-        currentQuizzes.filter((quiz) => quiz.uuid !== uuid)
-      ));
       broadcastResourceInvalidation(['quizzes']);
       return response;
     },
     showSpinner
-  ), [queryClient, withLoading]);
+  ), [getQuizSnapshot, queryClient, withLoading]);
 
   const recordAttempt = useCallback((uuid, score, showSpinner = false) => withLoading(
     async () => {
+      const snapshot = getQuizSnapshot();
+      queryClient.setQueryData(queryKeys.quizzes.all, (currentQuizzes = []) => (
+        applyQuizAttemptToList(currentQuizzes, uuid, score)
+      ));
+
       const response = await quizAPI.recordAttempt(uuid, score);
       if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
         return response;
       }
 
@@ -115,7 +134,7 @@ export const QuizProvider = ({ children }) => {
       return response;
     },
     showSpinner
-  ), [upsertQuiz, withLoading]);
+  ), [getQuizSnapshot, queryClient, upsertQuiz, withLoading]);
 
   const value = useMemo(() => ({
     quizzes,

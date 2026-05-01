@@ -309,8 +309,6 @@ const normalizeTableNode = (tr, tableNode, previousTableNode, tablePos, containe
   const availableWidth = Math.max(minimumWidth, containerWidth || minimumWidth);
   const currentWidths = getStoredColumnWidths(tableNode, cellMinWidth);
   const previousWidths = previousTableNode ? getStoredColumnWidths(previousTableNode, cellMinWidth) : [];
-  const currentTotalWidth = currentWidths.reduce((sum, value) => sum + value, 0);
-  const storedWidth = isFiniteNumber(tableNode.attrs.tableWidth) ? Math.round(tableNode.attrs.tableWidth) : null;
   const hasExplicit = hasExplicitColumnWidths(tableNode);
   const lockedResize = hasExplicit
     ? getPairLockedColumnWidths(

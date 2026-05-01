@@ -1,72 +1,33 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNotebook, useCategory, usePlaylist } from '../../notebook/shared/hooks/hooks';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  GripVertical,
+  ListMusic,
+  NotebookText,
+  Pause,
+  Play,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import ConfirmModal from '../../common/components/ConfirmModal';
+import Modal from '../../common/components/Modal';
+import PaginationControls from '../../common/components/PaginationControls';
+import { PlaylistSidebarSkeleton } from '../../common/components/Skeleton';
 import { useAudioPlayer } from '../../common/hooks/hooks';
-import { TrackRowSkeleton, PlaylistSidebarSkeleton } from '../../common/components/Skeleton';
-import SortSelect from '../../common/components/SortSelect';
+import usePagination from '../../common/hooks/usePagination';
 import SortDirectionToggle from '../../common/components/SortDirectionToggle';
+import SortSelect from '../../common/components/SortSelect';
+import { useCategory, useNotebook, usePlaylist } from '../../notebook/shared/hooks/hooks';
 import { countWordsFromHtml } from '../../notebook/shared/utils/notebookPages';
 import '../dashboard/styles/dashboard.css';
+import './playlists.css';
 
-const PlayIcon = ({ size = 16 }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size}>
-    <polygon points="5 3 19 12 5 21 5 3" />
-  </svg>
-);
-
-const PauseIcon = ({ size = 16 }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size}>
-    <rect x="6" y="4" width="4" height="16" />
-    <rect x="14" y="4" width="4" height="16" />
-  </svg>
-);
-
-const QueueIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-    <line x1="3" y1="6" x2="21" y2="6" />
-    <line x1="3" y1="12" x2="15" y2="12" />
-    <line x1="3" y1="18" x2="9" y2="18" />
-  </svg>
-);
-
-const PlusIcon = ({ size = 14 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width={size} height={size}>
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6M14 11v6" />
-  </svg>
-);
-
-const MusicNote = ({ size = 22 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width={size} height={size}>
-    <path d="M9 18V5l12-2v13" />
-    <circle cx="6" cy="18" r="3" />
-    <circle cx="18" cy="16" r="3" />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-const GRADIENTS = [
-  'linear-gradient(135deg, #1C1917 0%, #57534E 100%)',
-  'linear-gradient(135deg, #9A3412 0%, #C2410C 100%)',
+const PLAYLIST_GRADIENTS = [
+  'linear-gradient(135deg, #1c1917 0%, #57534e 100%)',
+  'linear-gradient(135deg, #9a3412 0%, #c2410c 100%)',
   'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
   'linear-gradient(135deg, #14532d 0%, #16a34a 100%)',
   'linear-gradient(135deg, #4a1d96 0%, #7c3aed 100%)',
@@ -75,8 +36,10 @@ const GRADIENTS = [
   'linear-gradient(135deg, #164e63 0%, #0891b2 100%)',
 ];
 
-const ALL_GRADIENT = 'linear-gradient(135deg, #1C1917 0%, #3D3530 100%)';
-const getGradient = (id) => GRADIENTS[id % GRADIENTS.length];
+const EMPTY_STATE_GRADIENT = 'linear-gradient(135deg, #1c1917 0%, #3d3530 100%)';
+const PLAYLIST_PAGE_SIZE = 8;
+const PLAYLIST_LIBRARY_PAGE_SIZE = 8;
+const getPlaylistGradient = (index) => PLAYLIST_GRADIENTS[index % PLAYLIST_GRADIENTS.length];
 const getNotebookWordCount = (notebook) =>
   notebook.wordCount ?? countWordsFromHtml(notebook.content || '');
 
@@ -92,447 +55,663 @@ const DEFAULT_SORT_DIRECTIONS = {
   wordCount: 'desc',
 };
 
-const CreatePlaylistModal = ({ onClose, onSave }) => {
+const CreatePlaylistModal = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
 
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onSave(name.trim());
+  const handleClose = () => {
+    setName('');
     onClose();
   };
 
+  const handleSave = async () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      return;
+    }
+    const wasSaved = await onSave(trimmedName);
+    if (wasSaved) {
+      setName('');
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="modal-title">Create playlist</h3>
-          <button className="modal-close" onClick={onClose}><CloseIcon /></button>
-        </div>
-        <div className="modal-body">
-          <div className="field-group">
-            <label className="field-label">Name</label>
-            <input
-              className="field-input"
-              placeholder="My study playlist"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              autoFocus
-            />
-          </div>
-        </div>
-        <div className="modal-actions">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>
-            Create
-          </button>
-        </div>
+    <Modal isOpen={isOpen} onClose={handleClose} title="New playlist">
+      <div className="field-group">
+        <label className="field-label" htmlFor="playlist-name">
+          Name
+        </label>
+        <input
+          id="playlist-name"
+          className="field-input"
+          placeholder="My study playlist"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              handleSave();
+            }
+          }}
+          autoFocus
+        />
       </div>
-    </div>
+      <div className="modal-actions">
+        <button type="button" className="btn btn-ghost" onClick={handleClose}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>
+          Create
+        </button>
+      </div>
+    </Modal>
   );
 };
 
-const AddToPlaylistModal = ({ notebook, playlists, onAdd, onClose }) => {
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content pl-add-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div>
-            <h3 className="modal-title">Add to playlist</h3>
-            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--ink-3)' }}>
-              {notebook.title}
-            </p>
-          </div>
-          <button className="modal-close" onClick={onClose}><CloseIcon /></button>
-        </div>
-        <div className="modal-body">
-          {playlists.length === 0 ? (
-            <div className="pl-add-empty">
-              <MusicNote size={32} />
-              <p>No playlists yet.</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--ink-3)' }}>Create a playlist first using the sidebar.</p>
-            </div>
-          ) : (
-            <div className="pl-add-list">
-              {playlists.map((pl, i) => {
-                const already = pl.queue?.some((n) => n.uuid === notebook.uuid);
-                return (
-                  <button
-                    key={pl.uuid}
-                    className={`pl-add-item${already ? ' pl-add-item-added' : ''}`}
-                    onClick={() => !already && onAdd(pl.uuid, notebook.uuid)}
-                  >
-                    <div className="pl-add-cover" style={{ background: getGradient(i) }}>
-                      <MusicNote size={16} />
-                    </div>
-                    <div className="pl-add-info">
-                      <span className="pl-add-name">{pl.title}</span>
-                      <span className="pl-add-count">{pl.queue?.length || 0} notebooks</span>
-                    </div>
-                    {already && (
-                      <span className="pl-add-check"><CheckIcon /></span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+const PlaylistSidebarItem = ({ playlist, isActive, gradient, onSelect, onDelete }) => (
+  <div className={`pl-sidebar-item${isActive ? ' is-active' : ''}`}>
+    <button
+      type="button"
+      className="pl-sidebar-select"
+      onClick={() => onSelect(playlist.uuid)}
+    >
+      <div className="pl-sidebar-cover" style={{ background: gradient }}>
+        <ListMusic size={17} />
+      </div>
+      <div className="pl-sidebar-item-copy">
+        <span className="pl-sidebar-item-title">{playlist.title}</span>
+        <span className="pl-sidebar-item-meta">
+          {playlist.queue?.length || 0} notebook{playlist.queue?.length === 1 ? '' : 's'}
+        </span>
+      </div>
+    </button>
+
+    <button
+      type="button"
+      className="pl-sidebar-delete"
+      title={`Delete ${playlist.title}`}
+      aria-label={`Delete ${playlist.title}`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onDelete(playlist);
+      }}
+    >
+      <Trash2 size={15} />
+    </button>
+  </div>
+);
+
+const LibraryNotebookRow = ({
+  notebook,
+  isInPlaylist,
+  hasSelectedPlaylist,
+  onAdd,
+}) => (
+  <div className="pl-row pl-library-row">
+    <div className="pl-row-main">
+      <div className="pl-row-icon">
+        <NotebookText size={16} />
+      </div>
+      <div className="pl-row-copy">
+        <span className="pl-row-title">{notebook.title}</span>
+        <div className="pl-row-meta">
+          <span className="pl-meta-pill">
+            {notebook.categoryName || 'Uncategorized'}
+          </span>
+          <span className="pl-row-meta-text">
+            {getNotebookWordCount(notebook).toLocaleString()} words
+          </span>
         </div>
       </div>
     </div>
-  );
-};
+
+    {isInPlaylist ? (
+      <span className="pl-status-pill">
+        <Check size={14} />
+        Added
+      </span>
+    ) : (
+      <button
+        type="button"
+        className="pl-inline-action"
+        onClick={() => onAdd(notebook.uuid)}
+        disabled={!hasSelectedPlaylist}
+        title={hasSelectedPlaylist ? 'Add to selected playlist' : 'Create a playlist first'}
+      >
+        <Plus size={14} />
+        Add
+      </button>
+    )}
+  </div>
+);
+
+const QueueNotebookRow = ({
+  notebook,
+  index,
+  total,
+  isActive,
+  isPlaying,
+  onPlay,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}) => (
+  <div className={`pl-row pl-queue-row${isActive ? ' is-active' : ''}`}>
+    <div className="pl-queue-order">
+      <GripVertical size={14} />
+      <span>{index + 1}</span>
+    </div>
+
+    <div className="pl-row-copy">
+      <span className="pl-row-title">{notebook.title}</span>
+      <div className="pl-row-meta">
+        <span className="pl-meta-pill">
+          {notebook.categoryName || 'Uncategorized'}
+        </span>
+        <span className="pl-row-meta-text">
+          {getNotebookWordCount(notebook).toLocaleString()} words
+        </span>
+      </div>
+    </div>
+
+    <div className="pl-queue-actions">
+      <button
+        type="button"
+        className="pl-icon-btn"
+        title={isPlaying ? 'Pause current notebook' : 'Play from this spot'}
+        onClick={onPlay}
+      >
+        {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+      </button>
+      <button
+        type="button"
+        className="pl-icon-btn"
+        title="Move up"
+        onClick={onMoveUp}
+        disabled={index === 0}
+      >
+        <ArrowUp size={15} />
+      </button>
+      <button
+        type="button"
+        className="pl-icon-btn"
+        title="Move down"
+        onClick={onMoveDown}
+        disabled={index === total - 1}
+      >
+        <ArrowDown size={15} />
+      </button>
+      <button
+        type="button"
+        className="pl-icon-btn pl-icon-btn-danger"
+        title="Remove from playlist"
+        onClick={onRemove}
+      >
+        <Trash2 size={15} />
+      </button>
+    </div>
+  </div>
+);
 
 const Playlists = () => {
   const { notebooks } = useNotebook();
   const { fetchCategories } = useCategory();
-  const { playlists, playlistsLoading, fetchPlaylists, createPlaylist, deletePlaylist, addNotebook, removeNotebook } = usePlaylist();
-  const { play, addToQueue, currentNotebook, isPlaying, isPreparing, togglePlay } = useAudioPlayer();
+  const {
+    playlists,
+    playlistsLoading,
+    fetchPlaylists,
+    createPlaylist,
+    deletePlaylist,
+    addNotebook,
+    removeNotebook,
+    reorderQueue,
+  } = usePlaylist();
+  const { currentNotebook, isPlaying, isPreparing, playPlaylist, togglePlay } = useAudioPlayer();
 
-  const [search, setSearch] = useState('');
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [playlistSearch, setPlaylistSearch] = useState('');
   const [sortBy, setSortBy] = useState('updatedAt');
   const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTIONS.updatedAt);
-  const [selectedUuid, setSelectedUuid] = useState('all');
+  const [selectedPlaylistUuid, setSelectedPlaylistUuid] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [addToModal, setAddToModal] = useState(null);
+  const [playlistToDelete, setPlaylistToDelete] = useState(null);
 
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
-  useEffect(() => { fetchPlaylists(); }, [fetchPlaylists]);
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
-  const handleCreate = async (title) => {
-    const response = await createPlaylist(title);
-    if (response.success) {
-      setSelectedUuid(response.data.uuid);
+  useEffect(() => {
+    fetchPlaylists();
+  }, [fetchPlaylists]);
+
+  const selectedPlaylist = useMemo(
+    () => playlists.find((playlist) => playlist.uuid === selectedPlaylistUuid) ?? playlists[0] ?? null,
+    [playlists, selectedPlaylistUuid]
+  );
+
+  const filteredPlaylists = useMemo(() => {
+    const query = playlistSearch.trim().toLowerCase();
+    if (!query) {
+      return playlists;
     }
-  };
 
-  const handleAddToPlaylist = async (playlistUuid, notebookUuid) => {
-    await addNotebook(playlistUuid, notebookUuid);
-  };
+    return playlists.filter((playlist) =>
+      playlist.title.toLowerCase().includes(query)
+    );
+  }, [playlistSearch, playlists]);
+  const playlistPagination = usePagination(filteredPlaylists, {
+    pageSize: PLAYLIST_PAGE_SIZE,
+    resetKey: playlistSearch.trim().toLowerCase(),
+  });
+  const visiblePlaylists = playlistPagination.pageItems;
 
-  const handleRemoveFromPlaylist = async (playlistUuid, notebookUuid) => {
-    await removeNotebook(playlistUuid, notebookUuid);
-  };
+  const notebooksById = useMemo(
+    () => new Map(notebooks.map((notebook) => [notebook.uuid, notebook])),
+    [notebooks]
+  );
 
-  const handleDeletePlaylist = async (playlistUuid) => {
-    await deletePlaylist(playlistUuid);
-    if (selectedUuid === playlistUuid) setSelectedUuid('all');
-  };
+  const playlistQueue = useMemo(
+    () => (selectedPlaylist?.queue || [])
+      .map((queuedNotebook) => notebooksById.get(queuedNotebook.uuid) || queuedNotebook)
+      .filter(Boolean),
+    [notebooksById, selectedPlaylist]
+  );
+
+  const selectedNotebookIds = useMemo(
+    () => new Set(playlistQueue.map((notebook) => notebook.uuid)),
+    [playlistQueue]
+  );
+
+  const libraryNotebooks = useMemo(() => {
+    let results = [...notebooks];
+
+    if (librarySearch.trim()) {
+      const query = librarySearch.trim().toLowerCase();
+      results = results.filter((notebook) =>
+        notebook.title.toLowerCase().includes(query) ||
+        (notebook.categoryName && notebook.categoryName.toLowerCase().includes(query))
+      );
+    }
+
+    if (sortBy === 'updatedAt') {
+      results.sort((a, b) => {
+        const comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    } else if (sortBy === 'title') {
+      results.sort((a, b) => (
+        sortDirection === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title)
+      ));
+    } else if (sortBy === 'wordCount') {
+      results.sort((a, b) => {
+        const comparison = getNotebookWordCount(a) - getNotebookWordCount(b);
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
+    return results;
+  }, [librarySearch, notebooks, sortBy, sortDirection]);
+  const libraryPagination = usePagination(libraryNotebooks, {
+    pageSize: PLAYLIST_LIBRARY_PAGE_SIZE,
+    resetKey: [
+      librarySearch.trim().toLowerCase(),
+      sortBy,
+      sortDirection,
+    ].join('|'),
+  });
+  const visibleLibraryNotebooks = libraryPagination.pageItems;
+
+  const selectedPlaylistIndex = selectedPlaylist
+    ? playlists.findIndex((playlist) => playlist.uuid === selectedPlaylist.uuid)
+    : -1;
+  const heroGradient = selectedPlaylist
+    ? getPlaylistGradient(Math.max(selectedPlaylistIndex, 0))
+    : EMPTY_STATE_GRADIENT;
 
   const handleSortChange = (nextSortBy) => {
     setSortBy(nextSortBy);
     setSortDirection(DEFAULT_SORT_DIRECTIONS[nextSortBy]);
   };
 
-  const selectedPlaylist = selectedUuid !== 'all' ? playlists.find((pl) => pl.uuid === selectedUuid) : null;
-  const notebooksById = useMemo(
-    () => new Map(notebooks.map((notebook) => [notebook.uuid, notebook])),
-    [notebooks]
-  );
-
-  const displayedNotebooks = useMemo(() => {
-    let result;
-    if (selectedPlaylist) {
-      result = (selectedPlaylist.queue || [])
-        .map((queuedNotebook) => notebooksById.get(queuedNotebook.uuid) || queuedNotebook)
-        .filter(Boolean);
-    } else {
-      result = [...notebooks];
+  const handleCreatePlaylist = async (title) => {
+    setShowCreateModal(false);
+    const response = await createPlaylist(title, false);
+    if (response.success) {
+      setSelectedPlaylistUuid(response.data.uuid);
     }
+    return response.success;
+  };
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (n) =>
-          n.title.toLowerCase().includes(q) ||
-          (n.categoryName && n.categoryName.toLowerCase().includes(q))
-      );
-    }
-
+  const handleAddNotebook = async (notebookUuid) => {
     if (!selectedPlaylist) {
-      if (sortBy === 'updatedAt') {
-        result.sort((a, b) => {
-          const comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-          return sortDirection === 'asc' ? comparison : -comparison;
-        });
-      } else if (sortBy === 'title') {
-        result.sort((a, b) => (
-          sortDirection === 'asc'
-            ? a.title.localeCompare(b.title)
-            : b.title.localeCompare(a.title)
-        ));
-      } else if (sortBy === 'wordCount') {
-        result.sort((a, b) => {
-          const comparison = getNotebookWordCount(a) - getNotebookWordCount(b);
-          return sortDirection === 'asc' ? comparison : -comparison;
-        });
-      }
+      setShowCreateModal(true);
+      return;
     }
 
-    return result;
-  }, [notebooks, notebooksById, search, sortBy, sortDirection, selectedPlaylist]);
-
-  const handlePlay = (nb) => {
-    if (currentNotebook?.uuid === nb.uuid) togglePlay(nb);
-    else play(nb);
+    await addNotebook(selectedPlaylist.uuid, notebookUuid);
   };
 
-  const handlePlayAll = () => {
-    if (displayedNotebooks.length === 0) return;
-    play(displayedNotebooks[0]);
-    displayedNotebooks.slice(1).forEach((nb) => addToQueue(nb));
+  const handleRemoveNotebook = async (notebookUuid) => {
+    if (!selectedPlaylist) {
+      return;
+    }
+
+    await removeNotebook(selectedPlaylist.uuid, notebookUuid);
   };
 
-  const heroGradient = selectedPlaylist
-    ? getGradient(playlists.findIndex((p) => p.uuid === selectedPlaylist.uuid))
-    : ALL_GRADIENT;
+  const handleMoveNotebook = async (fromIndex, toIndex) => {
+    if (!selectedPlaylist || toIndex < 0 || toIndex >= playlistQueue.length) {
+      return;
+    }
+
+    const nextOrder = [...playlistQueue.map((notebook) => notebook.uuid)];
+    const [movedNotebookUuid] = nextOrder.splice(fromIndex, 1);
+    nextOrder.splice(toIndex, 0, movedNotebookUuid);
+
+    await reorderQueue(selectedPlaylist.uuid, nextOrder);
+  };
+
+  const handleDeletePlaylist = async () => {
+    if (!playlistToDelete) {
+      return;
+    }
+
+    const currentIndex = playlists.findIndex((playlist) => playlist.uuid === playlistToDelete.uuid);
+    const fallbackPlaylist = playlists[currentIndex + 1] || playlists[currentIndex - 1] || null;
+
+    const targetPlaylistUuid = playlistToDelete.uuid;
+    setPlaylistToDelete(null);
+    setSelectedPlaylistUuid(fallbackPlaylist?.uuid ?? null);
+
+    const response = await deletePlaylist(targetPlaylistUuid, false);
+    if (response.success) {
+      return;
+    }
+
+    setSelectedPlaylistUuid(targetPlaylistUuid);
+  };
+
+  const handlePlayFromQueue = (index) => {
+    const notebook = playlistQueue[index];
+    if (!selectedPlaylist || !notebook) {
+      return;
+    }
+
+    if (currentNotebook?.uuid === notebook.uuid) {
+      togglePlay(notebook);
+      return;
+    }
+
+    playPlaylist(selectedPlaylist, playlistQueue, index);
+  };
+
+  const queueHeading = selectedPlaylist ? `${selectedPlaylist.title} queue` : 'Queue';
+  const queueDescription = selectedPlaylist
+    ? 'Add from the library, then use the arrows to change the listening order.'
+    : 'Create or choose a playlist to start arranging notebooks.';
 
   return (
     <div className="pl-page-layout">
-
-      <main className="pl-main-panel">
-        <div className="pl-hero" style={{ background: heroGradient }}>
-          <div className="pl-hero-art">
-            <MusicNote size={52} />
+      <aside className="pl-sidebar">
+        <div className="pl-sidebar-header">
+          <div>
+            <p className="pl-sidebar-eyebrow">Playlist management</p>
+            <h2 className="pl-sidebar-title">Playlists</h2>
           </div>
-          <div className="pl-hero-info">
-            <span className="pl-hero-type">{selectedPlaylist ? 'Playlist' : 'Collection'}</span>
-            <h1 className="pl-hero-title">
-              {selectedPlaylist ? selectedPlaylist.title : 'All Notebooks'}
-            </h1>
-            <span className="pl-hero-meta">
-              {displayedNotebooks.length} notebook{displayedNotebooks.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        </div>
-
-        <div className="pl-toolbar">
           <button
-            className="pl-play-all-btn"
-            onClick={handlePlayAll}
-            disabled={displayedNotebooks.length === 0}
+            type="button"
+            className="pl-sidebar-create-icon"
+            onClick={() => setShowCreateModal(true)}
+            title="Create playlist"
           >
-            <PlayIcon size={18} /> Play all
-          </button>
-
-          {selectedPlaylist && (
-            <button
-              className="pl-toolbar-btn pl-toolbar-btn-danger"
-              title="Delete playlist"
-              onClick={() => handleDeletePlaylist(selectedPlaylist.uuid)}
-            >
-              <TrashIcon /> Delete
-            </button>
-          )}
-
-          <div className="pl-toolbar-spacer" />
-
-          {!selectedPlaylist && (
-            <>
-              <SortSelect
-                ariaLabel="Sort notebooks by"
-                options={SORT_OPTIONS}
-                value={sortBy}
-                onChange={handleSortChange}
-              />
-              <SortDirectionToggle
-                direction={sortDirection}
-                label="Playlist notebook sort direction"
-                onToggle={() => setSortDirection((currentDirection) => (
-                  currentDirection === 'asc' ? 'desc' : 'asc'
-                ))}
-              />
-            </>
-          )}
-
-          <div className="input-wrap pl-toolbar-search">
-            <span className="input-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </span>
-            <input
-              type="search"
-              className="search-input-field"
-              placeholder="Search…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {playlistsLoading ? (
-          <div className="pl-tracklist">
-            <div className="pl-track-header">
-              <span className="pl-th-num">#</span>
-              <span className="pl-th-title">Title</span>
-              <span className="pl-th-cat">Category</span>
-              <span className="pl-th-secs">Words</span>
-              <span className="pl-th-acts" />
-            </div>
-            {[...Array(5)].map((_, i) => <TrackRowSkeleton key={i} />)}
-          </div>
-        ) : displayedNotebooks.length === 0 ? (
-          <div className="study-empty-state">
-            <div className="study-empty-icon"><MusicNote size={40} /></div>
-            <p className="study-empty-title">
-              {selectedPlaylist
-                ? 'This playlist is empty'
-                : search
-                  ? 'No notebooks found'
-                  : 'No notebooks yet'}
-            </p>
-            <p className="study-empty-desc">
-              {selectedPlaylist
-                ? 'Add notebooks using the + button on any track in All Notebooks.'
-                : search
-                  ? `No results for "${search}"`
-                  : 'Create notebooks in your library to play them here.'}
-            </p>
-          </div>
-        ) : (
-          <div className="pl-tracklist">
-            <div className="pl-track-header">
-              <span className="pl-th-num">#</span>
-              <span className="pl-th-title">Title</span>
-              <span className="pl-th-cat">Category</span>
-              <span className="pl-th-secs">Words</span>
-              <span className="pl-th-acts" />
-            </div>
-
-            {displayedNotebooks.map((nb, i) => {
-              const isActive = currentNotebook?.uuid === nb.uuid;
-              const isPlaybackActive = isActive && (isPlaying || isPreparing);
-              return (
-                <div
-                  key={nb.uuid}
-                  className={`pl-track-row${isActive ? ' pl-track-active' : ''}`}
-                  onDoubleClick={() => handlePlay(nb)}
-                >
-                  <span className="pl-track-num">
-                    {isPlaybackActive ? (
-                      <span className="pl-bars">
-                        <span /><span /><span />
-                      </span>
-                    ) : (
-                      <span className="pl-track-idx">{i + 1}</span>
-                    )}
-                    <button className="pl-track-play-btn" onClick={() => handlePlay(nb)}>
-                      {isPlaybackActive ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
-                    </button>
-                  </span>
-
-                  <div className="pl-track-info">
-                    <div className={`pl-track-name${isActive ? ' pl-track-name-active' : ''}`}>
-                      {nb.title}
-                    </div>
-                  </div>
-
-                  <span className="pl-track-cat">
-                    {nb.categoryName
-                      ? <span className="chip chip-accent">{nb.categoryName}</span>
-                      : <span className="chip chip-neutral">Uncategorized</span>}
-                  </span>
-
-                  <span className="pl-track-secs muted text-xs">
-                    {getNotebookWordCount(nb).toLocaleString()}
-                  </span>
-
-                  <div className="pl-track-acts">
-                    <button
-                      className="pl-track-icon-btn"
-                      title="Add to queue"
-                      onClick={() => addToQueue(nb)}
-                    >
-                      <QueueIcon />
-                    </button>
-                    <button
-                      className="pl-track-icon-btn"
-                      title="Add to playlist"
-                      onClick={() => setAddToModal(nb)}
-                    >
-                      <PlusIcon size={13} />
-                    </button>
-                    {selectedPlaylist && (
-                      <button
-                        className="pl-track-icon-btn pl-track-icon-danger"
-                        title="Remove from playlist"
-                        onClick={() => handleRemoveFromPlaylist(selectedPlaylist.uuid, nb.uuid)}
-                      >
-                        <TrashIcon />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-
-      <aside className="pl-lib">
-        <div className="pl-lib-header">
-          <span className="pl-lib-label">Your Library</span>
-          <button className="pl-lib-add-btn" title="New playlist" onClick={() => setShowCreateModal(true)}>
-            <PlusIcon size={16} />
+            <Plus size={16} />
           </button>
         </div>
 
-        <nav className="pl-lib-nav">
-          <button
-            className={`pl-lib-item${selectedUuid === 'all' ? ' active' : ''}`}
-            onClick={() => setSelectedUuid('all')}
-          >
-            <div className="pl-lib-cover pl-lib-cover-all">
-              <MusicNote size={16} />
-            </div>
-            <div className="pl-lib-info">
-              <span className="pl-lib-name">All Notebooks</span>
-              <span className="pl-lib-sub">{notebooks.length} notebooks</span>
-            </div>
-          </button>
+        <p className="pl-sidebar-description">
+          Pick a playlist, add notebooks from your library, then reorder or remove them here.
+        </p>
 
-          {playlistsLoading
-            ? [...Array(3)].map((_, i) => <PlaylistSidebarSkeleton key={i} />)
-            : playlists.map((pl, i) => (
+        <label className="pl-search-field pl-playlist-search" aria-label="Search playlists">
+          <Search size={16} />
+          <input
+            type="search"
+            value={playlistSearch}
+            onChange={(event) => setPlaylistSearch(event.target.value)}
+            placeholder="Search playlists"
+          />
+        </label>
+
+        <div className="pl-sidebar-list">
+          {playlistsLoading ? (
+            [...Array(4)].map((_, index) => <PlaylistSidebarSkeleton key={index} />)
+          ) : playlists.length === 0 ? (
+            <div className="pl-sidebar-empty">
+              <ListMusic size={22} />
+              <p>No playlists yet.</p>
+              <span>Create one to start organizing notebooks.</span>
               <button
-                key={pl.uuid}
-                className={`pl-lib-item${selectedUuid === pl.uuid ? ' active' : ''}`}
-                onClick={() => setSelectedUuid(pl.uuid)}
+                type="button"
+                className="pl-sidebar-empty-action"
+                onClick={() => setShowCreateModal(true)}
               >
-                <div className="pl-lib-cover" style={{ background: getGradient(i) }}>
-                  <MusicNote size={16} />
-                </div>
-                <div className="pl-lib-info">
-                  <span className="pl-lib-name">{pl.title}</span>
-                  <span className="pl-lib-sub">{pl.queue?.length || 0} notebooks</span>
-                </div>
+                <Plus size={14} />
+                Create playlist
               </button>
+            </div>
+          ) : filteredPlaylists.length === 0 ? (
+            <div className="pl-sidebar-empty">
+              <Search size={22} />
+              <p>No matches found.</p>
+              <span>Try a different playlist name.</span>
+            </div>
+          ) : (
+            visiblePlaylists.map((playlist) => (
+              <PlaylistSidebarItem
+                key={playlist.uuid}
+                playlist={playlist}
+                gradient={getPlaylistGradient(
+                  Math.max(playlists.findIndex((item) => item.uuid === playlist.uuid), 0)
+                )}
+                isActive={playlist.uuid === selectedPlaylist?.uuid}
+                onSelect={setSelectedPlaylistUuid}
+                onDelete={setPlaylistToDelete}
+              />
             ))
-          }
-        </nav>
+          )}
+        </div>
 
-        <button className="pl-create-btn" onClick={() => setShowCreateModal(true)}>
-          <PlusIcon size={13} /> New Playlist
-        </button>
+        {!playlistsLoading && filteredPlaylists.length > 0 && (
+          <PaginationControls
+            className="pl-sidebar-pagination"
+            compact
+            currentPage={playlistPagination.currentPage}
+            endItem={playlistPagination.endItem}
+            label="Playlist pagination"
+            onPageChange={playlistPagination.setPage}
+            pageSize={playlistPagination.pageSize}
+            startItem={playlistPagination.startItem}
+            totalItems={playlistPagination.totalItems}
+            totalPages={playlistPagination.totalPages}
+          />
+        )}
       </aside>
 
-      {showCreateModal && (
-        <CreatePlaylistModal
-          onClose={() => setShowCreateModal(false)}
-          onSave={handleCreate}
-        />
-      )}
+      <main className="pl-main-panel">
+        <section className="pl-hero" style={{ background: heroGradient }}>
+          <div className="pl-hero-copy">
+            <span className="pl-hero-label">
+              {selectedPlaylist ? 'Selected playlist' : 'Playlist management'}
+            </span>
+            <h1 className="pl-hero-title">
+              {selectedPlaylist ? selectedPlaylist.title : 'Create your first playlist'}
+            </h1>
+            <p className="pl-hero-text">
+              {selectedPlaylist
+                ? `${playlistQueue.length} notebook${playlistQueue.length === 1 ? '' : 's'} ready for playback and reordering.`
+                : 'Your notebooks stay on the left. The playlist queue on the right becomes the focused place to manage order and cleanup.'}
+            </p>
+          </div>
 
-      {addToModal && (
-        <AddToPlaylistModal
-          notebook={addToModal}
-          playlists={playlists}
-          onAdd={handleAddToPlaylist}
-          onClose={() => setAddToModal(null)}
-        />
-      )}
+          <div className="pl-hero-art">
+            <ListMusic size={28} />
+          </div>
+        </section>
+
+        <section className="pl-workspace">
+          <section className="pl-panel">
+            <div className="pl-panel-header">
+              <div>
+                <p className="pl-panel-label">Library</p>
+                <h2 className="pl-panel-title">Add notebooks</h2>
+                <p className="pl-panel-text">
+                  {selectedPlaylist
+                    ? `Every add goes straight into ${selectedPlaylist.title}.`
+                    : 'Create a playlist first, then add notebooks from here.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="pl-library-controls">
+              <label className="pl-search-field" aria-label="Search notebooks">
+                <Search size={16} />
+                <input
+                  type="search"
+                  value={librarySearch}
+                  onChange={(event) => setLibrarySearch(event.target.value)}
+                  placeholder="Search notebooks"
+                />
+              </label>
+
+              <div className="pl-library-sort">
+                <SortSelect
+                  ariaLabel="Sort notebooks by"
+                  options={SORT_OPTIONS}
+                  value={sortBy}
+                  onChange={handleSortChange}
+                />
+                <SortDirectionToggle
+                  direction={sortDirection}
+                  label="Notebook sort direction"
+                  onToggle={() => setSortDirection((direction) => (direction === 'asc' ? 'desc' : 'asc'))}
+                />
+              </div>
+            </div>
+
+            <div className="pl-panel-body">
+              {libraryNotebooks.length === 0 ? (
+                <div className="pl-empty-panel">
+                  <NotebookText size={22} />
+                  <p>
+                    {librarySearch
+                      ? `No notebooks matched "${librarySearch}".`
+                      : 'No notebooks available yet.'}
+                  </p>
+                  <span>
+                    {librarySearch
+                      ? 'Try a different title or category.'
+                      : 'Create notebooks in your library and they will show up here.'}
+                  </span>
+                </div>
+              ) : (
+                <div className="pl-list">
+                  {visibleLibraryNotebooks.map((notebook) => (
+                    <LibraryNotebookRow
+                      key={notebook.uuid}
+                      notebook={notebook}
+                      isInPlaylist={selectedNotebookIds.has(notebook.uuid)}
+                      hasSelectedPlaylist={Boolean(selectedPlaylist)}
+                      onAdd={handleAddNotebook}
+                    />
+                  ))}
+                </div>
+              )}
+              {libraryNotebooks.length > 0 && (
+                <PaginationControls
+                  className="pl-panel-pagination"
+                  compact
+                  currentPage={libraryPagination.currentPage}
+                  endItem={libraryPagination.endItem}
+                  label="Playlist library notebook pagination"
+                  onPageChange={libraryPagination.setPage}
+                  pageSize={libraryPagination.pageSize}
+                  startItem={libraryPagination.startItem}
+                  totalItems={libraryPagination.totalItems}
+                  totalPages={libraryPagination.totalPages}
+                />
+              )}
+            </div>
+          </section>
+
+          <section className="pl-panel">
+            <div className="pl-panel-header pl-panel-header-queue">
+              <div>
+                <p className="pl-panel-label">Queue</p>
+                <h2 className="pl-panel-title">{queueHeading}</h2>
+                <p className="pl-panel-text">{queueDescription}</p>
+              </div>
+            </div>
+
+            <div className="pl-panel-body">
+              {!selectedPlaylist ? (
+                <div className="pl-empty-panel">
+                  <ListMusic size={22} />
+                  <p>No playlist selected.</p>
+                  <span>Create a playlist or choose one from the sidebar to start arranging its queue.</span>
+                </div>
+              ) : playlistQueue.length === 0 ? (
+                <div className="pl-empty-panel">
+                  <Plus size={22} />
+                  <p>This playlist is empty.</p>
+                  <span>Add notebooks from the library panel, then reorder them here.</span>
+                </div>
+              ) : (
+                <div className="pl-list">
+                  {playlistQueue.map((notebook, index) => {
+                    const isCurrentNotebook = currentNotebook?.uuid === notebook.uuid;
+                    const isCurrentPlayback = isCurrentNotebook && (isPlaying || isPreparing);
+
+                    return (
+                      <QueueNotebookRow
+                        key={notebook.uuid}
+                        notebook={notebook}
+                        index={index}
+                        total={playlistQueue.length}
+                        isActive={isCurrentNotebook}
+                        isPlaying={isCurrentPlayback}
+                        onPlay={() => handlePlayFromQueue(index)}
+                        onMoveUp={() => handleMoveNotebook(index, index - 1)}
+                        onMoveDown={() => handleMoveNotebook(index, index + 1)}
+                        onRemove={() => handleRemoveNotebook(notebook.uuid)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <CreatePlaylistModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleCreatePlaylist}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(playlistToDelete)}
+        onClose={() => setPlaylistToDelete(null)}
+        onConfirm={handleDeletePlaylist}
+        title="Delete playlist"
+        message={
+          playlistToDelete
+            ? `Delete "${playlistToDelete.title}"? Its notebook queue will be removed from this playlist, but the notebooks themselves will stay in your library.`
+            : ''
+        }
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 };

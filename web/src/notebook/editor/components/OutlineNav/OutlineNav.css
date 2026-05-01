@@ -638,3 +638,173 @@
       border-radius: 9px;
     }
 }
+
+.outline-list,
+.outline-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.outline-item {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  border-radius: 0;
+  cursor: default;
+  overflow: visible;
+  white-space: normal;
+}
+
+.outline-item.level-1,
+.outline-item.level-2,
+.outline-item.level-3,
+.outline-item.level-4,
+.outline-item.level-5,
+.outline-item.level-6 {
+  padding-left: 0;
+}
+
+.outline-item:hover {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.outline-item-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  min-height: 36px;
+  padding-left: calc(2px + (var(--outline-depth, 0) * 6px));
+  padding-right: 6px;
+  border-radius: var(--border-radius);
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.outline-item-row:hover {
+  background-color: var(--background-subtle);
+  color: var(--text-primary);
+}
+
+.outline-item-toggle,
+.outline-item-toggle-spacer {
+  width: 20px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.outline-item-toggle {
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.outline-item-toggle:hover {
+  background: rgba(28, 25, 23, 0.06);
+  color: var(--accent-dark);
+}
+
+.outline-item-button {
+  min-width: 0;
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 5px 6px 5px 2px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.outline-item-button:hover {
+  color: var(--text-primary);
+}
+
+.outline-item.is-active > .outline-item-row {
+  background-color: var(--primary-muted);
+  color: var(--primary-color);
+}
+
+.outline-item.is-active > .outline-item-row .outline-item-button {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.outline-item.level-1 > .outline-item-row .outline-item-button {
+  font-weight: 600;
+}
+
+.outline-item.level-2 > .outline-item-row .outline-item-button {
+  font-weight: 500;
+}
+
+.outline-sidebar.is-collapsed .outline-item:not(.has-children) {
+  display: none;
+}
+
+.outline-sidebar.is-collapsed .outline-item-row {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+}
+
+.outline-sidebar.is-collapsed .outline-item-button,
+.outline-sidebar.is-collapsed .outline-item-toggle-spacer,
+.outline-sidebar.is-collapsed .outline-children {
+  display: none;
+}
+
+.outline-sidebar.is-collapsed .outline-item-toggle {
+  width: 32px;
+  height: 32px;
+}
+
+.outline-sidebar.is-mobile-overlay .outline-item:not(.has-children),
+.outline-sidebar.is-mobile-overlay .outline-item-button,
+.outline-sidebar.is-mobile-overlay .outline-item-toggle-spacer,
+.outline-sidebar.is-mobile-overlay .outline-children {
+  display: revert;
+}
+
+.outline-sidebar.is-mobile-overlay .outline-list,
+.outline-sidebar.is-mobile-overlay .outline-children {
+  display: flex;
+}
+
+.outline-sidebar.is-mobile-overlay .outline-item-row,
+.editor-body .outline-sidebar.is-mobile-overlay .outline-item-row {
+  display: grid !important;
+  grid-template-columns: 20px minmax(0, 1fr) !important;
+  justify-items: stretch !important;
+  min-height: 36px !important;
+  padding-left: calc(2px + (var(--outline-depth, 0) * 5px)) !important;
+  padding-right: 6px !important;
+}
+
+.outline-sidebar.is-mobile-overlay .outline-item,
+.editor-body .outline-sidebar.is-mobile-overlay .outline-item {
+  display: block !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+.outline-sidebar.is-mobile-overlay .outline-item-button,
+.editor-body .outline-sidebar.is-mobile-overlay .outline-item-button {
+  display: flex !important;
+  justify-content: flex-start !important;
+  min-height: 32px !important;
+  padding: 5px 6px 5px 2px !important;
+}

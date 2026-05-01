@@ -1,20 +1,19 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useState,
 } from 'react';
 import SettingsModal from '../../home/shared/components/SettingsModal';
-
-const SettingsModalContext = createContext(null);
+import { SettingsModalContext } from './SettingsModalContextValue';
 
 export const SettingsModalProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [initialTab, setInitialTab] = useState(undefined);
+  const [modalInstance, setModalInstance] = useState(0);
 
   const openSettings = useCallback((tab) => {
     setInitialTab(tab);
+    setModalInstance((instance) => instance + 1);
     setIsOpen(true);
   }, []);
 
@@ -30,15 +29,12 @@ export const SettingsModalProvider = ({ children }) => {
   return (
     <SettingsModalContext.Provider value={value}>
       {children}
-      <SettingsModal isOpen={isOpen} onClose={closeSettings} initialTab={initialTab} />
+      <SettingsModal
+        key={modalInstance}
+        isOpen={isOpen}
+        onClose={closeSettings}
+        initialTab={initialTab}
+      />
     </SettingsModalContext.Provider>
   );
-};
-
-export const useSettingsModal = () => {
-  const ctx = useContext(SettingsModalContext);
-  if (!ctx) {
-    throw new Error('useSettingsModal must be used within SettingsModalProvider');
-  }
-  return ctx;
 };

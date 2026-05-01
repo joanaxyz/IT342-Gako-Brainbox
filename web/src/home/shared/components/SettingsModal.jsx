@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { useNotification } from '../../../common/hooks/hooks';
-import AiConfigPanel from '../../../common/components/AiConfigPanel';
+import AiConfigPanel from '../../../ai/components/AiConfigPanel';
 import './SettingsModal.css';
 
 const TAB_PROFILE = 'profile';
@@ -40,10 +40,6 @@ const SettingsModal = ({ isOpen, onClose, initialTab }) => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
-
-  useEffect(() => {
-    if (initialTab) setActiveTab(initialTab);
-  }, [initialTab]);
 
   if (!isOpen) return null;
 

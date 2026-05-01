@@ -1,32 +1,64 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import usePagination from '../../../common/hooks/usePagination';
+
+const EMPTY_ITEMS = [];
+const STUDY_LIST_PAGE_SIZE = 12;
+const FILTER_MODE_NOTEBOOKS = 'notebooks';
+const FILTER_MODE_CATEGORIES = 'categories';
+const FILTER_ALL = 'all';
+const FILTER_STANDALONE = 'standalone';
+const FILTER_UNCATEGORIZED = 'uncategorized';
+
+const getItemCategoryId = (item, notebookLookup) => {
+  if (!item?.notebookUuid) {
+    return null;
+  }
+
+  if (item.categoryId !== undefined && item.categoryId !== null && item.categoryId !== '') {
+    return String(item.categoryId);
+  }
+
+  const notebook = notebookLookup.get(item.notebookUuid);
+  return notebook?.categoryId !== undefined && notebook?.categoryId !== null
+    ? String(notebook.categoryId)
+    : null;
+};
+
+const getItemCategoryName = (item, notebookLookup) => {
+  if (!item?.notebookUuid) {
+    return null;
+  }
+
+  if (item.categoryName) {
+    return item.categoryName;
+  }
+
+  return notebookLookup.get(item.notebookUuid)?.categoryName ?? null;
+};
 
 /**
  * Shared hook for study-resource list pages (Flashcards, Quizzes).
  *
  * @param {object} opts
  * @param {Array}    opts.items           - Raw list from context (decks or quizzes)
- * @param {boolean}  opts.loading         - Loading flag from context
  * @param {Function} opts.fetchItems      - Function to trigger initial load
  * @param {Function} opts.deleteItem      - (uuid, notify) => Promise<{ success }>
  * @param {Array}    opts.notebooks       - All notebooks (for grouping pills)
- * @param {Array}    opts.sortOptions     - [{ value, label }] for the sort dropdown
  * @param {string}   opts.countKey        - Field name for the numeric count sort ('cardCount' | 'questionCount')
  * @param {Function} opts.addNotification - Notification helper
- * @param {string}   opts.itemLabel       - Singular label, e.g. 'deck' or 'quiz'
  * @param {Function} opts.pluralize       - (count, word) => string, e.g. (n) => n === 1 ? 'deck' : 'decks'
  */
 const useStudyList = ({
   items,
-  loading,
   fetchItems,
   deleteItem,
   notebooks,
-  sortOptions,
   countKey,
   addNotification,
-  itemLabel,
   pluralize,
 }) => {
+  const safeItems = items ?? EMPTY_ITEMS;
+  const safeNotebooks = notebooks ?? EMPTY_ITEMS;
   const DEFAULT_SORT_DIRECTIONS = useMemo(() => {
     const map = { updatedAt: 'desc', title: 'asc' };
     if (countKey) map[countKey] = 'desc';
@@ -36,7 +68,9 @@ const useStudyList = ({
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('updatedAt');
   const [sortDirection, setSortDirection] = useState('desc');
-  const [selectedNotebookId, setSelectedNotebookId] = useState('all');
+  const [filterMode, setFilterMode] = useState(FILTER_MODE_NOTEBOOKS);
+  const [selectedNotebookId, setSelectedNotebookId] = useState(FILTER_ALL);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(FILTER_ALL);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedUuids, setSelectedUuids] = useState(() => new Set());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -55,27 +89,73 @@ const useStudyList = ({
     setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
   }, []);
 
+  const notebookLookup = useMemo(
+    () => new Map(safeNotebooks.map((notebook) => [notebook.uuid, notebook])),
+    [safeNotebooks]
+  );
+
   // Notebook filter pills
   const notebookPills = useMemo(() => {
-    const ids = new Set(items.filter((i) => i.notebookUuid).map((i) => i.notebookUuid));
+    const ids = new Set(safeItems.filter((i) => i.notebookUuid).map((i) => i.notebookUuid));
     return {
-      linkedNotebooks: notebooks.filter((n) => ids.has(n.uuid)),
-      hasStandalone: items.some((i) => !i.notebookUuid),
+      linkedNotebooks: safeNotebooks.filter((n) => ids.has(n.uuid)),
+      hasStandalone: safeItems.some((i) => !i.notebookUuid),
     };
-  }, [items, notebooks]);
+  }, [safeItems, safeNotebooks]);
+
+  const categoryPills = useMemo(() => {
+    const categoryMap = new Map();
+    let hasUncategorized = false;
+    let hasStandalone = false;
+
+    safeItems.forEach((item) => {
+      if (!item.notebookUuid) {
+        hasStandalone = true;
+        return;
+      }
+
+      const categoryId = getItemCategoryId(item, notebookLookup);
+      if (categoryId) {
+        categoryMap.set(categoryId, {
+          id: categoryId,
+          name: getItemCategoryName(item, notebookLookup) || 'Category',
+        });
+      } else {
+        hasUncategorized = true;
+      }
+    });
+
+    return {
+      linkedCategories: [...categoryMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
+      hasUncategorized,
+      hasStandalone,
+    };
+  }, [safeItems, notebookLookup]);
 
   // Filter + sort
   const filtered = useMemo(() => {
-    let result = [...items];
+    let result = [...safeItems];
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.filter((i) => i.title.toLowerCase().includes(q));
+      result = result.filter((i) => (
+        (i.title || '').toLowerCase().includes(q)
+        || (i.notebookTitle || '').toLowerCase().includes(q)
+        || (getItemCategoryName(i, notebookLookup) || '').toLowerCase().includes(q)
+      ));
     }
 
-    if (selectedNotebookId === 'standalone') {
+    if (filterMode === FILTER_MODE_CATEGORIES) {
+      if (selectedCategoryId === FILTER_STANDALONE) {
+        result = result.filter((i) => !i.notebookUuid);
+      } else if (selectedCategoryId === FILTER_UNCATEGORIZED) {
+        result = result.filter((i) => i.notebookUuid && !getItemCategoryId(i, notebookLookup));
+      } else if (selectedCategoryId !== FILTER_ALL) {
+        result = result.filter((i) => getItemCategoryId(i, notebookLookup) === selectedCategoryId);
+      }
+    } else if (selectedNotebookId === FILTER_STANDALONE) {
       result = result.filter((i) => !i.notebookUuid);
-    } else if (selectedNotebookId !== 'all') {
+    } else if (selectedNotebookId !== FILTER_ALL) {
       result = result.filter((i) => i.notebookUuid === selectedNotebookId);
     }
 
@@ -92,18 +172,99 @@ const useStudyList = ({
     });
 
     return result;
-  }, [items, search, sortBy, sortDirection, selectedNotebookId, countKey]);
+  }, [
+    safeItems,
+    search,
+    sortBy,
+    sortDirection,
+    filterMode,
+    selectedNotebookId,
+    selectedCategoryId,
+    countKey,
+    notebookLookup,
+  ]);
 
-  // Group by notebook when "all" is selected
+  const paginationResetKey = [
+    search,
+    sortBy,
+    sortDirection,
+    filterMode,
+    selectedNotebookId,
+    selectedCategoryId,
+  ].join('|');
+
+  const pagination = usePagination(filtered, {
+    pageSize: STUDY_LIST_PAGE_SIZE,
+    resetKey: paginationResetKey,
+  });
+  const visibleItems = pagination.pageItems;
+
+  // Group by the active filter scope when "all" is selected
   const grouped = useMemo(() => {
-    if (selectedNotebookId !== 'all') return null;
+    if (filterMode === FILTER_MODE_CATEGORIES) {
+      if (selectedCategoryId !== FILTER_ALL) return null;
+
+      const categoryMap = new Map();
+      const uncategorized = [];
+      const standalone = [];
+
+      visibleItems.forEach((item) => {
+        if (!item.notebookUuid) {
+          standalone.push(item);
+          return;
+        }
+
+        const categoryId = getItemCategoryId(item, notebookLookup);
+        if (!categoryId) {
+          uncategorized.push(item);
+          return;
+        }
+
+        if (!categoryMap.has(categoryId)) {
+          categoryMap.set(categoryId, {
+            key: categoryId,
+            kind: 'category',
+            title: getItemCategoryName(item, notebookLookup) || 'Category',
+            items: [],
+          });
+        }
+        categoryMap.get(categoryId).items.push(item);
+      });
+
+      const groups = [...categoryMap.values()].sort((a, b) => a.title.localeCompare(b.title));
+      if (uncategorized.length > 0) {
+        groups.push({
+          key: FILTER_UNCATEGORIZED,
+          kind: 'category',
+          title: 'Uncategorized',
+          badge: 'No category',
+          items: uncategorized,
+        });
+      }
+      if (standalone.length > 0) {
+        groups.push({
+          key: FILTER_STANDALONE,
+          kind: 'standalone',
+          title: 'Standalone',
+          badge: 'No notebook',
+          items: standalone,
+        });
+      }
+
+      return { groups, standalone: [] };
+    }
+
+    if (selectedNotebookId !== FILTER_ALL) return null;
+
     const notebookMap = new Map();
     const standalone = [];
-    filtered.forEach((item) => {
+    visibleItems.forEach((item) => {
       if (item.notebookUuid) {
         if (!notebookMap.has(item.notebookUuid)) {
-          const nb = notebooks.find((n) => n.uuid === item.notebookUuid);
+          const nb = notebookLookup.get(item.notebookUuid);
           notebookMap.set(item.notebookUuid, {
+            key: item.notebookUuid,
+            kind: 'notebook',
             notebook: nb || { uuid: item.notebookUuid, title: item.notebookTitle || 'Notebook' },
             items: [],
           });
@@ -114,7 +275,11 @@ const useStudyList = ({
       }
     });
     return { groups: [...notebookMap.values()], standalone };
-  }, [filtered, notebooks, selectedNotebookId]);
+  }, [filterMode, notebookLookup, selectedCategoryId, selectedNotebookId, visibleItems]);
+
+  const hasActiveFilter = filterMode === FILTER_MODE_CATEGORIES
+    ? selectedCategoryId !== FILTER_ALL
+    : selectedNotebookId !== FILTER_ALL;
 
   // Selection helpers
   const selectedCount = selectedUuids.size;
@@ -137,19 +302,26 @@ const useStudyList = ({
   }, []);
 
   const selectAllVisible = useCallback(() => {
-    setSelectedUuids(new Set(filtered.map((i) => i.uuid)));
-  }, [filtered]);
+    setSelectedUuids((currentSelection) => {
+      const nextSelection = new Set(currentSelection);
+      visibleItems.forEach((item) => nextSelection.add(item.uuid));
+      return nextSelection;
+    });
+  }, [visibleItems]);
 
   const handleDeleteSelection = useCallback(async () => {
     const uuids = [...selectedUuids];
     if (uuids.length === 0 || deletePending) return;
 
     setDeletePending(true);
+    setShowDeleteModal(false);
+    setSelectionMode(false);
+    setSelectedUuids(new Set());
+
     const results = await Promise.all(
       uuids.map(async (uuid) => ({ uuid, response: await deleteItem(uuid, false) }))
     );
     setDeletePending(false);
-    setShowDeleteModal(false);
 
     const failedUuids = results.filter(({ response }) => !response.success).map(({ uuid }) => uuid);
     const deletedCount = results.length - failedUuids.length;
@@ -159,19 +331,22 @@ const useStudyList = ({
     }
 
     if (failedUuids.length > 0) {
+      setSelectionMode(true);
       setSelectedUuids(new Set(failedUuids));
       addNotification(`${failedUuids.length} ${pluralize(failedUuids.length)} couldn't be deleted.`, 'error');
       return;
     }
 
-    clearSelectionState();
-  }, [selectedUuids, deletePending, deleteItem, addNotification, pluralize, clearSelectionState]);
+    setShowDeleteModal(false);
+  }, [selectedUuids, deletePending, deleteItem, addNotification, pluralize]);
 
   return {
     // State
     search, setSearch,
     sortBy, sortDirection,
+    filterMode, setFilterMode,
     selectedNotebookId, setSelectedNotebookId,
+    selectedCategoryId, setSelectedCategoryId,
     selectionMode, setSelectionMode,
     selectedUuids,
     showDeleteModal, setShowDeleteModal,
@@ -179,9 +354,14 @@ const useStudyList = ({
     // Computed
     filtered,
     grouped,
+    pagination,
     notebookPills,
+    categoryPills,
     selectedCount,
     hasSelection,
+    hasActiveFilter,
+    visibleCount: visibleItems.length,
+    visibleItems,
     // Actions
     handleSortChange,
     toggleSortDirection,

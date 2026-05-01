@@ -13,6 +13,7 @@ const EditorCanvasToolbar = ({
   showLeadingDivider = true,
   layout = 'canvas',
   className = '',
+  mobileDockActions = null,
 }) => {
   const rootClassName = [
     'editor-canvas-toolbar',
@@ -91,6 +92,15 @@ const EditorCanvasToolbar = ({
               <Trash2 size={15} />
               <span>Clear</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {mobileDockActions && (
+        <div className="editor-mobile-dock-actions" aria-label="Mobile editor actions">
+          <span className="editor-mobile-dock-divider" aria-hidden="true" />
+          <div className="editor-mobile-dock-actions-row">
+            {mobileDockActions}
           </div>
         </div>
       )}

@@ -6,7 +6,6 @@ import { useCategory } from "../../../notebook/shared/hooks/hooks";
 
 const NewCategoryForm = ({ onClose, onCreated }) => {
     const [categoryName, setCategoryName] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const { addNotification } = useNotification();
     const { createCategory } = useCategory();
 
@@ -14,28 +13,25 @@ const NewCategoryForm = ({ onClose, onCreated }) => {
         e?.preventDefault();
         const name = categoryName.trim();
 
-        if (!name || isSubmitting) {
+        if (!name) {
             return;
         }
 
-        setIsSubmitting(true);
-        const response = await createCategory(name);
-        setIsSubmitting(false);
+        setCategoryName('');
+        onClose();
+
+        const response = await createCategory(name, false);
 
         if (!response.success) {
             addNotification(response.message || 'Failed to create category.', 'error');
             return;
         }
 
-        setCategoryName('');
-
         if (onCreated) {
             onCreated(response.data);
-            onClose();
             return;
         }
 
-        onClose();
         addNotification(`Category "${response.data.name}" created.`, 'success', 2500);
     };
 
@@ -50,11 +46,11 @@ const NewCategoryForm = ({ onClose, onCreated }) => {
                 required
             />
             <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>
                     Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={!categoryName.trim() || isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create'}
+                <button type="submit" className="btn btn-primary" disabled={!categoryName.trim()}>
+                    Create
                 </button>
             </div>
         </form>

@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import AiConfigPanel from '../../../../common/components/AiConfigPanel';
+import AiConfigPanel from '../../../../ai/components/AiConfigPanel';
 
 const AiSettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

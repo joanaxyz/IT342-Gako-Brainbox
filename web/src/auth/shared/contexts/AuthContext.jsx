@@ -1,8 +1,40 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { authAPI, getCookie, getAuthHeaders, setCookie, deleteCookie } from '../../../common/utils/api';
+import { getCookie, getAuthHeaders, setCookie, deleteCookie } from '../../../common/api/cookies';
+import { authAPI } from '../api/authService';
 import { useLoading } from '../../../common/hooks/hooks';
 import { AuthContext } from './AuthContextValue';
+
+const decodeJwtPayload = (token) => {
+    if (!token || typeof window === 'undefined' || typeof window.atob !== 'function') {
+        return null;
+    }
+
+    const [, payload] = token.split('.');
+    if (!payload) {
+        return null;
+    }
+
+    try {
+        const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedPayload = window.atob(normalizedPayload);
+        return JSON.parse(decodedPayload);
+    } catch {
+        return null;
+    }
+};
+
+const resolveUserIdFromAccessToken = () => {
+    const payload = decodeJwtPayload(getCookie('accessToken'));
+    const subject = payload?.sub;
+
+    if (subject === null || subject === undefined || subject === '') {
+        return null;
+    }
+
+    const numericSubject = Number(subject);
+    return Number.isFinite(numericSubject) ? numericSubject : subject;
+};
 
 export const AuthProvider = ({ children }) => {
     const queryClient = useQueryClient();
@@ -36,10 +68,23 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     }, [queryClient]);
 
+    const normalizeUser = useCallback((rawUser) => {
+        if (!rawUser) {
+            return rawUser;
+        }
+
+        if (rawUser.id !== undefined && rawUser.id !== null) {
+            return rawUser;
+        }
+
+        const resolvedUserId = resolveUserIdFromAccessToken();
+        return resolvedUserId === null ? rawUser : { ...rawUser, id: resolvedUserId };
+    }, []);
+
     const fetchUser = useCallback(async ({ logoutOnFailure = true } = {}) => {
         const response = await authAPI.getMe();
         if (response.success) {
-            setUser(response.data);
+            setUser(normalizeUser(response.data));
             setIsAuthenticated(true);
             return response;
         }
@@ -49,7 +94,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         return response;
-    }, [clearSession]);
+    }, [clearSession, normalizeUser]);
 
     const login = useCallback(async (username, password, showSpinner = true) => {
         const response = await withLoading(() => authAPI.login(username, password), showSpinner);

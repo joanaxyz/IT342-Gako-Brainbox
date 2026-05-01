@@ -173,9 +173,10 @@ const TableBubbleMenu = ({ editor, zoom = 1 }) => {
     editor.on('selectionUpdate', handleEditorUpdate);
     editor.on('update', handleEditorUpdate);
 
-    syncAnchorFromSelection();
+    const frameId = window.requestAnimationFrame(syncAnchorFromSelection);
 
     return () => {
+      window.cancelAnimationFrame(frameId);
       dom.removeEventListener('contextmenu', handleContextMenu);
       editor.off('selectionUpdate', handleEditorUpdate);
       editor.off('update', handleEditorUpdate);
@@ -184,7 +185,6 @@ const TableBubbleMenu = ({ editor, zoom = 1 }) => {
 
   useEffect(() => {
     if (!anchor?.wrapper) {
-      setButtonPosition(null);
       return undefined;
     }
 
@@ -202,11 +202,12 @@ const TableBubbleMenu = ({ editor, zoom = 1 }) => {
       });
     };
 
-    syncButtonPosition();
+    const frameId = window.requestAnimationFrame(syncButtonPosition);
     window.addEventListener('scroll', syncButtonPosition, true);
     window.addEventListener('resize', syncButtonPosition);
 
     return () => {
+      window.cancelAnimationFrame(frameId);
       window.removeEventListener('scroll', syncButtonPosition, true);
       window.removeEventListener('resize', syncButtonPosition);
     };
@@ -321,13 +322,15 @@ const TableBubbleMenu = ({ editor, zoom = 1 }) => {
     return null;
   }
 
+  const effectiveButtonPosition = anchor?.wrapper ? buttonPosition : null;
+
   return createPortal(
     <>
-      {buttonPosition && tableContext && (
+      {effectiveButtonPosition && tableContext && (
         <button
           type="button"
           className={`table-dropdown-trigger${menuPosition ? ' is-open' : ''}`}
-          style={{ top: buttonPosition.top, left: buttonPosition.left, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
+          style={{ top: effectiveButtonPosition.top, left: effectiveButtonPosition.left, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
           aria-label="Open table options"
           title="Table options"
           onMouseDown={(event) => {

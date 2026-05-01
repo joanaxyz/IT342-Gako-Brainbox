@@ -1,12 +1,18 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { flashcardAPI } from '../../../common/utils/api';
+import { flashcardAPI } from '../../../home/flashcards/api/flashcardService';
 import { FlashcardContext } from './FlashcardContextValue';
 import { useLoading } from '../../../common/hooks/hooks';
 import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { unwrapApiResponse, toApiResponse } from '../../../common/query/apiQuery';
 import { queryKeys } from '../../../common/query/queryKeys';
 import { broadcastResourceInvalidation } from '../../../common/query/resourceInvalidation';
+import {
+  applyFlashcardAttemptToList,
+  captureQuerySnapshot,
+  deleteResourceFromList,
+  restoreQuerySnapshot,
+} from '../../../common/query/optimisticUpdates';
 
 const getFlashcardsData = () => unwrapApiResponse(() => flashcardAPI.getFlashcards());
 const EMPTY_FLASHCARDS = [];
@@ -37,6 +43,10 @@ export const FlashcardProvider = ({ children }) => {
   });
 
   const flashcards = flashcardsQuery.data ?? EMPTY_FLASHCARDS;
+
+  const getFlashcardSnapshot = useCallback(() => (
+    captureQuerySnapshot(queryClient, [queryKeys.flashcards.all])
+  ), [queryClient]);
 
   const fetchFlashcards = useCallback((showSpinner = true, forceRefresh = false) => withLoading(
     async () => {
@@ -89,24 +99,33 @@ export const FlashcardProvider = ({ children }) => {
 
   const deleteFlashcard = useCallback((uuid, showSpinner = true) => withLoading(
     async () => {
+      const snapshot = getFlashcardSnapshot();
+      queryClient.setQueryData(queryKeys.flashcards.all, (currentFlashcards = []) => (
+        deleteResourceFromList(currentFlashcards, uuid)
+      ));
+
       const response = await flashcardAPI.deleteFlashcard(uuid);
       if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
         return response;
       }
 
-      queryClient.setQueryData(queryKeys.flashcards.all, (currentFlashcards = []) => (
-        currentFlashcards.filter((flashcard) => flashcard.uuid !== uuid)
-      ));
       broadcastResourceInvalidation(['flashcards']);
       return response;
     },
     showSpinner
-  ), [queryClient, withLoading]);
+  ), [getFlashcardSnapshot, queryClient, withLoading]);
 
   const recordAttempt = useCallback((uuid, mastery, showSpinner = false) => withLoading(
     async () => {
+      const snapshot = getFlashcardSnapshot();
+      queryClient.setQueryData(queryKeys.flashcards.all, (currentFlashcards = []) => (
+        applyFlashcardAttemptToList(currentFlashcards, uuid, mastery)
+      ));
+
       const response = await flashcardAPI.recordAttempt(uuid, mastery);
       if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
         return response;
       }
 
@@ -115,7 +134,7 @@ export const FlashcardProvider = ({ children }) => {
       return response;
     },
     showSpinner
-  ), [upsertFlashcard, withLoading]);
+  ), [getFlashcardSnapshot, queryClient, upsertFlashcard, withLoading]);
 
   const value = useMemo(() => ({
     flashcards,

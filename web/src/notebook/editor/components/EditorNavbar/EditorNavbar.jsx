@@ -131,6 +131,7 @@ const IconActionButton = ({
   onClick,
   disabled = false,
   variant = 'default',
+  className = '',
 }) => {
   const IconComponent = icon;
   const variantClassName = variant === 'primary'
@@ -144,7 +145,7 @@ const IconActionButton = ({
   return (
     <button
       type="button"
-      className={`editor-navbar-icon-btn ${variantClassName}`.trim()}
+      className={`editor-navbar-icon-btn ${variantClassName} ${className}`.trim()}
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
@@ -275,11 +276,17 @@ const EditorNavbar = ({
                 label="Import document"
                 icon={Upload}
                 onClick={() => fileInputRef.current?.click()}
+                className="editor-navbar-relocates-mobile"
               />
             </>
           )}
           {showExportAction && getExportContent && (
-            <ExportMenu getContent={getExportContent} getLayout={getExportLayout} title={notebookTitle} />
+            <ExportMenu
+              getContent={getExportContent}
+              getLayout={getExportLayout}
+              title={notebookTitle}
+              wrapClassName="editor-navbar-relocates-mobile"
+            />
           )}
           {showSaveAction && onSave && (
             <IconActionButton
@@ -303,10 +310,11 @@ const EditorNavbar = ({
               icon={Sparkles}
               onClick={() => onAiSidebarToggle(!isAiSidebarOpen)}
               variant="accent"
+              className="editor-navbar-relocates-mobile"
             />
           )}
           {showAiToggle && onAiSidebarToggle && onReviewModeToggle && (
-            <span className="editor-navbar-divider" aria-hidden="true" />
+            <span className="editor-navbar-divider editor-navbar-ai-divider" aria-hidden="true" />
           )}
           <ReviewToggle checked={isReviewModeOpen} onChange={onReviewModeToggle} />
         </div>

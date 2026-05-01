@@ -1,5 +1,6 @@
 const ANDROID_HOST = 'android';
 const PDF_EXPORT_KEY = '__BRAINBOX_PENDING_PDF_EXPORT__';
+const HOST_AUDIO_STATE_EVENT = 'brainbox-host-audio-state';
 
 const getWindow = () => (typeof window === 'undefined' ? null : window);
 
@@ -168,5 +169,104 @@ export const openHostFlashcardDeck = (uuid) => {
   }
 
   bridge.openFlashcardDeck(String(uuid || ''));
+  return true;
+};
+
+export const canUseHostAudio = () => {
+  const bridge = getBridge();
+  return Boolean(
+    bridge?.playNotebookAudio
+    && bridge?.pauseAudio
+    && bridge?.resumeAudio
+    && bridge?.stopAudio
+    && bridge?.setAudioSpeechRate
+  );
+};
+
+export const subscribeHostAudioState = (callback) => {
+  const currentWindow = getWindow();
+
+  if (!currentWindow || typeof callback !== 'function') {
+    return () => {};
+  }
+
+  const handleHostAudioState = (event) => {
+    callback(event?.detail || null);
+  };
+
+  currentWindow.addEventListener(HOST_AUDIO_STATE_EVENT, handleHostAudioState);
+  return () => {
+    currentWindow.removeEventListener(HOST_AUDIO_STATE_EVENT, handleHostAudioState);
+  };
+};
+
+export const playHostNotebookAudio = ({
+  notebookUuid,
+  notebookTitle,
+  content,
+  fullText,
+  chunks,
+  speechRate = 1,
+  startCharOffset = 0,
+} = {}) => {
+  const bridge = getBridge();
+
+  if (!bridge?.playNotebookAudio) {
+    return false;
+  }
+
+  bridge.playNotebookAudio(JSON.stringify({
+    notebookUuid,
+    notebookTitle,
+    content,
+    fullText,
+    chunks,
+    speechRate,
+    startCharOffset,
+  }));
+  return true;
+};
+
+export const pauseHostAudio = () => {
+  const bridge = getBridge();
+
+  if (!bridge?.pauseAudio) {
+    return false;
+  }
+
+  bridge.pauseAudio();
+  return true;
+};
+
+export const resumeHostAudio = () => {
+  const bridge = getBridge();
+
+  if (!bridge?.resumeAudio) {
+    return false;
+  }
+
+  bridge.resumeAudio();
+  return true;
+};
+
+export const stopHostAudio = () => {
+  const bridge = getBridge();
+
+  if (!bridge?.stopAudio) {
+    return false;
+  }
+
+  bridge.stopAudio();
+  return true;
+};
+
+export const setHostAudioSpeechRate = (speechRate = 1) => {
+  const bridge = getBridge();
+
+  if (!bridge?.setAudioSpeechRate) {
+    return false;
+  }
+
+  bridge.setAudioSpeechRate(String(speechRate));
   return true;
 };

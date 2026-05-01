@@ -1,4 +1,4 @@
-import { apiCall } from './httpClient';
+import { apiCall } from '../../../common/api/httpClient';
 
 export const authAPI = {
   register: (username, email, password) =>
@@ -20,16 +20,16 @@ export const authAPI = {
     apiCall('/auth/logout', 'POST', { refreshToken }),
 
   refreshToken: (refreshToken) =>
-    apiCall(`/auth/refresh-token?refreshToken=${refreshToken}`, 'POST'),
+    apiCall('/auth/tokens/refresh', 'POST', { refreshToken }),
 
   getMe: () =>
-    apiCall('/user/me', 'GET'),
+    apiCall('/users/me', 'GET'),
 
   updateProfile: (data) =>
-    apiCall('/user/me', 'PUT', data),
+    apiCall('/users/me', 'PUT', data),
 
   changePassword: (data) =>
-    apiCall('/user/me/change-password', 'POST', data),
+    apiCall('/users/me/password', 'POST', data),
 
   googleLogin: (accessToken) =>
     apiCall('/auth/google', 'POST', { accessToken }),

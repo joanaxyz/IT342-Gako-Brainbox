@@ -15,6 +15,13 @@
   min-width: 170px;
 }
 
+.export-menu-dropdown--portal {
+  top: auto;
+  right: auto;
+  z-index: 2200;
+  min-width: 220px;
+}
+
 .export-menu-dropdown button {
   display: flex;
   align-items: center;

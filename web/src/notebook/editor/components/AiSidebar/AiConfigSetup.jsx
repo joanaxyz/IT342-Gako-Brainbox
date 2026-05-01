@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useNotification } from '../../../../common/hooks/hooks';
-import { useAiConfig } from '../../../../common/hooks/useAiConfig';
+import { useAiConfig } from '../../../../ai/hooks/useAiConfig';
 
 const EyeIcon = ({ open }) => open ? (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

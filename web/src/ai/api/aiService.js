@@ -1,4 +1,4 @@
-import { apiCall } from './httpClient';
+import { apiCall } from '../../common/api/httpClient';
 
 export const aiAPI = {
   query: (
@@ -34,11 +34,11 @@ export const aiAPI = {
 
   deleteConversation: (uuid) => apiCall(`/ai/conversations/${uuid}`, 'DELETE'),
 
-  getAiConfig: () => apiCall('/ai/config', 'GET'),
+  getAiConfig: () => apiCall('/ai/configs/selected', 'GET'),
 
-  listAiConfigs: () => apiCall('/ai/config/list', 'GET'),
+  listAiConfigs: () => apiCall('/ai/configs', 'GET'),
 
-  saveAiConfig: ({ id, name, model, proxyUrl, apiKey }) => apiCall('/ai/config', 'PUT', {
+  saveAiConfig: ({ id, name, model, proxyUrl, apiKey }) => apiCall('/ai/configs', 'PUT', {
     id: id ?? null,
     name,
     model,
@@ -46,7 +46,7 @@ export const aiAPI = {
     apiKey: apiKey || null,
   }),
 
-  selectAiConfig: (configId) => apiCall(`/ai/config/${configId}/select`, 'PUT'),
+  selectAiConfig: (configId) => apiCall(`/ai/configs/${configId}/selected`, 'PUT'),
 
-  deleteAiConfig: (configId) => apiCall(`/ai/config/${configId}`, 'DELETE'),
+  deleteAiConfig: (configId) => apiCall(`/ai/configs/${configId}`, 'DELETE'),
 };

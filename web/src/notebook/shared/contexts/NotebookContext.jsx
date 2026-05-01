@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { notebookAPI } from '../../../common/utils/api';
+import { notebookAPI } from '../api/notebookService';
 import { countWordsFromHtml } from '../utils/notebookPages';
 import { NotebookContext } from './NotebookContextValue';
 import { useLoading } from '../../../common/hooks/hooks';
@@ -8,6 +8,12 @@ import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { unwrapApiResponse, toApiResponse } from '../../../common/query/apiQuery';
 import { queryKeys } from '../../../common/query/queryKeys';
 import { broadcastResourceInvalidation } from '../../../common/query/resourceInvalidation';
+import {
+  applyNotebookPatch,
+  applyNotebookTitleToStudyLists,
+  captureQuerySnapshot,
+  restoreQuerySnapshot,
+} from '../../../common/query/optimisticUpdates';
 
 const RECENT_EDITED_LIMIT = 6;
 const RECENT_REVIEWED_LIMIT = 3;
@@ -73,6 +79,7 @@ const normalizePlaylistIndex = (playlist) => {
 const getNotebookListData = () => unwrapApiResponse(() => notebookAPI.getNotebooks());
 const getRecentlyEditedData = () => unwrapApiResponse(() => notebookAPI.getRecentlyEditedNotebooks());
 const getRecentlyReviewedData = () => unwrapApiResponse(() => notebookAPI.getRecentlyReviewedNotebooks());
+const hasPatchValue = (patch, key) => Object.prototype.hasOwnProperty.call(patch || {}, key);
 
 export const NotebookProvider = ({ children }) => {
   const queryClient = useQueryClient();
@@ -241,6 +248,47 @@ export const NotebookProvider = ({ children }) => {
     syncPlaylistsWithNotebook(notebook, options);
   }, [syncNotebookLists, syncPlaylistsWithNotebook]);
 
+  const getNotebookMutationSnapshot = useCallback((uuid) => captureQuerySnapshot(queryClient, [
+    queryKeys.notebooks.list,
+    queryKeys.notebooks.recentEdited,
+    queryKeys.notebooks.recentReviewed,
+    queryKeys.notebooks.detail(uuid),
+    queryKeys.playlists.all,
+    queryKeys.quizzes.all,
+    queryKeys.flashcards.all,
+  ]), [queryClient]);
+
+  const applyOptimisticNotebookPatch = useCallback((uuid, patch = {}) => {
+    const categories = queryClient.getQueryData(queryKeys.categories.all) ?? [];
+    const detailKey = queryKeys.notebooks.detail(uuid);
+    const cachedNotebook = queryClient.getQueryData(detailKey)
+      || notebooksRef.current.find((notebook) => notebook.uuid === uuid)
+      || (currentNotebookRef.current?.uuid === uuid ? currentNotebookRef.current : null);
+
+    if (!cachedNotebook?.uuid) {
+      return null;
+    }
+
+    const optimisticNotebook = normalizeNotebook(applyNotebookPatch(cachedNotebook, patch, categories));
+    queryClient.setQueryData(detailKey, (currentNotebook) => (
+      currentNotebook?.uuid
+        ? normalizeNotebook(applyNotebookPatch(currentNotebook, patch, categories))
+        : optimisticNotebook
+    ));
+    syncNotebookCaches(optimisticNotebook);
+
+    if (hasPatchValue(patch, 'title')) {
+      queryClient.setQueryData(queryKeys.quizzes.all, (currentQuizzes = []) => (
+        applyNotebookTitleToStudyLists(currentQuizzes, uuid, patch.title)
+      ));
+      queryClient.setQueryData(queryKeys.flashcards.all, (currentFlashcards = []) => (
+        applyNotebookTitleToStudyLists(currentFlashcards, uuid, patch.title)
+      ));
+    }
+
+    return optimisticNotebook;
+  }, [queryClient, syncNotebookCaches]);
+
   const fetchNotebooks = useCallback((showSpinner = true, forceRefresh = false) => withLoading(
     async () => {
       if (forceRefresh) {
@@ -347,8 +395,12 @@ export const NotebookProvider = ({ children }) => {
 
   const updateNotebook = useCallback((uuid, notebook, showSpinner = false) => withLoading(
     async () => {
+      const snapshot = getNotebookMutationSnapshot(uuid);
+      applyOptimisticNotebookPatch(uuid, notebook);
+
       const response = await notebookAPI.updateNotebook(uuid, notebook);
       if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
         return response;
       }
 
@@ -361,14 +413,18 @@ export const NotebookProvider = ({ children }) => {
       return response;
     },
     showSpinner
-  ), [invalidateNotebookDerivedQueries, setNotebookDetail, syncNotebookCaches, withLoading]);
+  ), [
+    applyOptimisticNotebookPatch,
+    getNotebookMutationSnapshot,
+    invalidateNotebookDerivedQueries,
+    queryClient,
+    setNotebookDetail,
+    syncNotebookCaches,
+    withLoading,
+  ]);
 
   const markNotebookReviewed = useCallback(async (uuid) => {
-    const response = await notebookAPI.updateReview(uuid);
-    if (!response.success) {
-      return response;
-    }
-
+    const snapshot = getNotebookMutationSnapshot(uuid);
     const cachedNotebook = queryClient.getQueryData(queryKeys.notebooks.detail(uuid))
       || notebooksRef.current.find((notebook) => notebook.uuid === uuid)
       || currentNotebookRef.current;
@@ -383,22 +439,31 @@ export const NotebookProvider = ({ children }) => {
       syncNotebookCaches(reviewedNotebook, { moveToRecentReviewed: true });
     }
 
+    const response = await notebookAPI.updateReview(uuid);
+    if (!response.success) {
+      restoreQuerySnapshot(queryClient, snapshot);
+      return response;
+    }
+
     broadcastResourceInvalidation(['notebooks'], { uuid });
     void queryClient.invalidateQueries({ queryKey: queryKeys.notebooks.recentReviewed });
 
     return response;
-  }, [queryClient, syncNotebookCaches]);
+  }, [getNotebookMutationSnapshot, queryClient, syncNotebookCaches]);
 
   const deleteNotebook = useCallback((uuid, showSpinner = true) => withLoading(
     async () => {
+      const snapshot = getNotebookMutationSnapshot(uuid);
+      syncNotebookCaches({ uuid }, { remove: true });
+
       const response = await notebookAPI.deleteNotebook(uuid);
       if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
         return response;
       }
 
       queryClient.removeQueries({ queryKey: queryKeys.notebooks.detail(uuid) });
       queryClient.removeQueries({ queryKey: queryKeys.notebooks.versions(uuid) });
-      syncNotebookCaches({ uuid }, { remove: true });
 
       if (currentNotebookUuid === uuid) {
         setCurrentNotebookUuid(null);
@@ -410,7 +475,14 @@ export const NotebookProvider = ({ children }) => {
       return response;
     },
     showSpinner
-  ), [currentNotebookUuid, invalidateNotebookDerivedQueries, queryClient, syncNotebookCaches, withLoading]);
+  ), [
+    currentNotebookUuid,
+    getNotebookMutationSnapshot,
+    invalidateNotebookDerivedQueries,
+    queryClient,
+    syncNotebookCaches,
+    withLoading,
+  ]);
 
   const fetchVersions = useCallback((uuid, showSpinner = true, forceRefresh = false) => withLoading(
     async () => {

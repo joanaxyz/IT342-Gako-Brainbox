@@ -1,9 +1,13 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { FolderOpen, Plus } from 'lucide-react';
 import Modal from '../../common/components/Modal';
+import PaginationControls from '../../common/components/PaginationControls';
 import { useNotification } from '../../common/hooks/hooks';
+import usePagination from '../../common/hooks/usePagination';
 import { useNotebook, useCategory } from '../../notebook/shared/hooks/hooks';
 import NewCategoryModal from '../shared/components/NewCategoryModal';
 import NewNoteBookModal from '../shared/components/NewNotebookModal';
+import HomeTabHero from '../shared/components/HomeTabHero';
 import SortSelect from '../../common/components/SortSelect';
 import SortDirectionToggle from '../../common/components/SortDirectionToggle';
 import { formatUpdatedAt } from '../../common/utils/date';
@@ -14,6 +18,7 @@ import './library.css';
 
 const UNCATEGORIZED_VALUE = 'uncategorized';
 const CREATE_CATEGORY_VALUE = '__create_category__';
+const NOTEBOOK_PAGE_SIZE = 12;
 
 const SearchIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -67,7 +72,6 @@ const DEFAULT_SORT_DIRECTIONS = {
   name: 'asc',
   count: 'desc',
 };
-
 const getNotebookWordCount = (notebook) =>
   notebook.wordCount ?? countWordsFromHtml(notebook.content || '');
 
@@ -193,7 +197,6 @@ const Library = () => {
   const [showNewNotebookModal, setShowNewNotebookModal] = useState(false);
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
   const [pendingNotebookForCategory, setPendingNotebookForCategory] = useState(null);
-  const [savingNotebookId, setSavingNotebookId] = useState(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedNotebookUuids, setSelectedNotebookUuids] = useState(() => new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState(() => new Set());
@@ -321,6 +324,17 @@ const Library = () => {
     selectedCategoryId,
   ]);
 
+  const notebookPagination = usePagination(filteredNotebooks, {
+    pageSize: NOTEBOOK_PAGE_SIZE,
+    resetKey: [
+      deferredNotebookSearch,
+      notebookSortBy,
+      notebookSortDirection,
+      selectedCategoryId,
+    ].join('|'),
+  });
+  const visibleNotebooks = notebookPagination.pageItems;
+
   const selectedCategoryNotebookUuids = useMemo(
     () => notebooks
       .filter((notebook) => notebook.categoryId && selectedCategoryIds.has(notebook.categoryId))
@@ -388,7 +402,11 @@ const Library = () => {
   };
 
   const selectAllVisibleNotebooks = () => {
-    setSelectedNotebookUuids(new Set(filteredNotebooks.map((notebook) => notebook.uuid)));
+    setSelectedNotebookUuids((currentSelection) => {
+      const nextSelection = new Set(currentSelection);
+      visibleNotebooks.forEach((notebook) => nextSelection.add(notebook.uuid));
+      return nextSelection;
+    });
   };
 
   const selectAllVisibleCategories = () => {
@@ -404,6 +422,18 @@ const Library = () => {
     }
 
     setDeleteSelectionPending(true);
+    setShowDeleteModal(false);
+    setSelectionMode(false);
+    setSelectedCategoryIds(new Set());
+    setSelectedNotebookUuids(new Set());
+
+    if (
+      selectedCategoryId !== 'all'
+      && selectedCategoryId !== UNCATEGORIZED_VALUE
+      && categoryIds.includes(Number(selectedCategoryId))
+    ) {
+      setSelectedCategoryId('all');
+    }
 
     const categoryResults = await Promise.all(
       categoryIds.map(async (categoryId) => ({
@@ -441,7 +471,7 @@ const Library = () => {
     );
 
     setDeleteSelectionPending(false);
-    setShowDeleteModal(false);
+    setCategoryDeleteMode('uncategorize');
 
     const failedNotebookUuids = notebookResults
       .filter(({ response }) => !response.success)
@@ -481,6 +511,7 @@ const Library = () => {
     }
 
     if (totalFailureCount > 0) {
+      setSelectionMode(true);
       setSelectedCategoryIds(new Set(failedCategoryIds));
       setSelectedNotebookUuids(new Set(failedNotebookUuids));
       addNotification(
@@ -489,8 +520,6 @@ const Library = () => {
       );
       return;
     }
-
-    resetSelectionState();
   };
 
   const handleCloseCategoryModal = () => {
@@ -510,9 +539,7 @@ const Library = () => {
       ? 'Uncategorized'
       : sortedCategories.find((category) => String(category.id) === nextValue)?.name || 'the selected category';
 
-    setSavingNotebookId(notebook.uuid);
     const response = await updateNotebook(notebook.uuid, { categoryId: nextCategoryId });
-    setSavingNotebookId(null);
 
     if (!response.success) {
       addNotification(response.message || `Couldn't update the category for "${notebook.title}".`, 'error');
@@ -535,10 +562,8 @@ const Library = () => {
 
     const notebookToMove = pendingNotebookForCategory;
     setPendingNotebookForCategory(null);
-    setSavingNotebookId(notebookToMove.uuid);
 
     const response = await updateNotebook(notebookToMove.uuid, { categoryId: category.id });
-    setSavingNotebookId(null);
 
     if (!response.success) {
       addNotification(
@@ -567,15 +592,29 @@ const Library = () => {
   };
 
   return (
-    <div className="page-body page-body-wide">
-      <div className="library-page-header">
-        <div>
-          <div className="page-title">Library</div>
-          <div className="page-subtitle">Create categories, sort notebooks into them, and keep everything easy to find.</div>
-        </div>
-      </div>
+    <div className="page-body-full">
+      <HomeTabHero
+        label="Notebook library"
+        title="Keep your notes easy to find"
+        description="Create categories, sort notebooks into them, and keep everything easy to find."
+        meta={`${categories.length} categories / ${notebooks.length} notebooks`}
+        icon={<FolderOpen />}
+        actions={(
+          <>
+            <button className="btn btn-ghost" onClick={() => setShowNewCategoryModal(true)}>
+              <Plus size={16} />
+              New category
+            </button>
+            <button className="btn btn-primary" onClick={() => setShowNewNotebookModal(true)}>
+              <Plus size={16} />
+              New notebook
+            </button>
+          </>
+        )}
+      />
 
-      <div className="library-shell">
+      <div className="page-body page-body-wide home-tab-shell__content">
+        <div className="library-shell">
         <aside className="library-panel library-sidebar">
           <div className="library-panel-header">
             <div className="library-panel-head-row">
@@ -583,12 +622,6 @@ const Library = () => {
                 <div className="library-panel-title">Categories</div>
                 <div className="library-panel-copy">Pick a category to browse it, or create a new one when your notes need a home.</div>
               </div>
-              {!selectionMode && (
-                <button className="btn btn-ghost" onClick={() => setShowNewCategoryModal(true)}>
-                  <FolderIcon />
-                  New category
-                </button>
-              )}
             </div>
           </div>
 
@@ -701,12 +734,6 @@ const Library = () => {
               >
                 {selectionMode ? 'Cancel selection' : 'Select'}
               </button>
-              {!selectionMode && (
-                <button className="btn btn-primary" onClick={() => setShowNewNotebookModal(true)}>
-                  <PlusIcon />
-                  New notebook
-                </button>
-              )}
             </div>
           </div>
 
@@ -719,8 +746,8 @@ const Library = () => {
                 </div>
               </div>
               <div className="library-selection-actions">
-                <button className="btn btn-ghost" onClick={selectAllVisibleNotebooks} disabled={filteredNotebooks.length === 0}>
-                  Select visible notebooks ({filteredNotebooks.length})
+                <button className="btn btn-ghost" onClick={selectAllVisibleNotebooks} disabled={visibleNotebooks.length === 0}>
+                  Select visible notebooks ({visibleNotebooks.length})
                 </button>
                 <button className="btn btn-ghost" onClick={selectAllVisibleCategories} disabled={filteredCategories.length === 0}>
                   Select visible categories ({filteredCategories.length})
@@ -775,7 +802,7 @@ const Library = () => {
 
             {notebooksLoading
               ? [...Array(6)].map((_, index) => <LibRowSkeleton key={index} />)
-              : filteredNotebooks.map((notebook) => {
+              : visibleNotebooks.map((notebook) => {
                 const wordCount = getNotebookWordCount(notebook);
                 const notebookSelected = selectedNotebookUuids.has(notebook.uuid);
 
@@ -823,7 +850,6 @@ const Library = () => {
                         <select
                           className="field-select library-category-select"
                           value={notebook.categoryId ? String(notebook.categoryId) : UNCATEGORIZED_VALUE}
-                          disabled={savingNotebookId === notebook.uuid}
                           aria-label={`Choose a category for ${notebook.title}`}
                           onClick={(event) => event.stopPropagation()}
                           onKeyDown={(event) => event.stopPropagation()}
@@ -910,7 +936,22 @@ const Library = () => {
               </div>
             )}
           </div>
+
+          {!notebooksLoading && filteredNotebooks.length > 0 && (
+            <PaginationControls
+              className="library-pagination"
+              currentPage={notebookPagination.currentPage}
+              endItem={notebookPagination.endItem}
+              label="Notebook pagination"
+              onPageChange={notebookPagination.setPage}
+              pageSize={notebookPagination.pageSize}
+              startItem={notebookPagination.startItem}
+              totalItems={notebookPagination.totalItems}
+              totalPages={notebookPagination.totalPages}
+            />
+          )}
         </section>
+        </div>
       </div>
 
       <LibraryDeleteModal

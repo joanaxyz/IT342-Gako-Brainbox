@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Play, Pause, SkipForward, ListMusic, ChevronDown, RotateCcw, Volume2, VolumeX, Repeat, Captions } from 'lucide-react';
+import { Play, Pause, SkipForward, ListMusic, ChevronDown, RotateCcw, Volume2, VolumeX, Repeat, Captions, Shuffle } from 'lucide-react';
 import { useAudioPlayer } from '../../../common/hooks/hooks';
 import TtsWordTracker from '../../../common/audio/TtsWordTracker';
 import { buildPlaybackWordRanges } from '../../../common/audio/playbackModel';
@@ -31,6 +31,8 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
     setRate,
     loop,
     toggleLoop,
+    shuffle,
+    toggleShuffle,
     currentTimeSec,
     durationSec,
     currentCharOffset,
@@ -168,6 +170,16 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
           </div>
           <div className="player-content player-content--review">
             <div className="player-controls player-controls--review">
+              <button
+                className={`player-btn${shuffle ? ' active' : ''}`}
+                onClick={toggleShuffle}
+                disabled={queue.length <= 1}
+                style={{ opacity: queue.length > 1 ? 1 : 0.35 }}
+                title={shuffle ? 'Turn shuffle off' : 'Turn shuffle on'}
+                aria-pressed={shuffle}
+              >
+                <Shuffle size={16} />
+              </button>
               <button
                 className={`player-btn${loop ? ' active' : ''}`}
                 onClick={toggleLoop}
@@ -316,6 +328,16 @@ const PlayerBar = ({ variant = 'global', onTogglePlay }) => {
             </div>
 
             <div className="player-controls">
+              <button
+                className={`player-btn${shuffle ? ' active' : ''}`}
+                onClick={toggleShuffle}
+                disabled={queue.length <= 1}
+                style={{ opacity: queue.length > 1 ? 1 : 0.35 }}
+                title={shuffle ? 'Turn shuffle off' : 'Turn shuffle on'}
+                aria-pressed={shuffle}
+              >
+                <Shuffle size={16} />
+              </button>
               <button
                 className={`player-btn${loop ? ' active' : ''}`}
                 onClick={toggleLoop}

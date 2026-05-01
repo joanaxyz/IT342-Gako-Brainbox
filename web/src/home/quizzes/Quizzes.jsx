@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ClipboardList } from 'lucide-react';
 import QuizPlayer from './QuizPlayer';
 import CreateQuizPage from './components/CreateQuizPage';
 import EditQuizPage from './components/EditQuizPage';
 import { useNotebook, useQuiz } from '../../notebook/shared/hooks/hooks';
 import { useNotification } from '../../common/hooks/hooks';
+import PaginationControls from '../../common/components/PaginationControls';
 import useStudyList from '../shared/hooks/useStudyList';
 import {
   StudyPageHeader,
   StudyControlsBar,
+  StudyFilterModeToggle,
   StudyNotebookPills,
+  StudyCategoryPills,
   StudySelectionBar,
   StudyGroupedList,
   StudyFlatList,
@@ -97,6 +101,7 @@ const Quizzes = () => {
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [editQuiz, setEditQuiz] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const quizCount = quizzes?.length ?? 0;
 
   const list = useStudyList({
     items: quizzes,
@@ -122,8 +127,12 @@ const Quizzes = () => {
       return;
     }
 
-    setActiveQuiz(targetQuiz);
-    navigate(location.pathname, { replace: true, state: null });
+    const timeoutId = setTimeout(() => {
+      setActiveQuiz(targetQuiz);
+      navigate(location.pathname, { replace: true, state: null });
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [location.pathname, location.state, navigate, quizzes, quizzesLoading]);
 
   if (showCreate) {
@@ -151,10 +160,13 @@ const Quizzes = () => {
   const isEmpty = !quizzesLoading && list.filtered.length === 0;
 
   return (
-    <div className="page-body page-body-wide">
+    <div className="page-body-full">
       <StudyPageHeader
+        label="Study mode"
         title="Quizzes"
         subtitle="Test your knowledge with multiple-choice quizzes"
+        meta={`${quizCount} ${pluralize(quizCount)} available`}
+        icon={<ClipboardList />}
         createLabel="Create quiz"
         selectionMode={list.selectionMode}
         hasSelection={list.hasSelection}
@@ -164,7 +176,8 @@ const Quizzes = () => {
         onDeleteClick={() => list.setShowDeleteModal(true)}
       />
 
-      <StudyControlsBar
+      <div className="page-body page-body-wide home-tab-shell__content">
+        <StudyControlsBar
         searchValue={list.search}
         searchPlaceholder="Search quizzes…"
         sortOptions={SORT_OPTIONS}
@@ -177,17 +190,32 @@ const Quizzes = () => {
         onSortDirectionToggle={list.toggleSortDirection}
       />
 
-      <StudyNotebookPills
-        linkedNotebooks={list.notebookPills.linkedNotebooks}
-        hasStandalone={list.notebookPills.hasStandalone}
-        selectedNotebookId={list.selectedNotebookId}
-        onSelect={list.setSelectedNotebookId}
-      />
+        <StudyFilterModeToggle
+          filterMode={list.filterMode}
+          onChange={list.setFilterMode}
+        />
 
-      {list.selectionMode && (
+        {list.filterMode === 'categories' ? (
+          <StudyCategoryPills
+            linkedCategories={list.categoryPills.linkedCategories}
+            hasUncategorized={list.categoryPills.hasUncategorized}
+            hasStandalone={list.categoryPills.hasStandalone}
+            selectedCategoryId={list.selectedCategoryId}
+            onSelect={list.setSelectedCategoryId}
+          />
+        ) : (
+          <StudyNotebookPills
+            linkedNotebooks={list.notebookPills.linkedNotebooks}
+            hasStandalone={list.notebookPills.hasStandalone}
+            selectedNotebookId={list.selectedNotebookId}
+            onSelect={list.setSelectedNotebookId}
+          />
+        )}
+
+        {list.selectionMode && (
         <StudySelectionBar
           selectedCount={list.selectedCount}
-          filteredCount={list.filtered.length}
+          filteredCount={list.visibleCount}
           hasSelection={list.hasSelection}
           deletePending={list.deletePending}
           onSelectAll={list.selectAllVisible}
@@ -195,7 +223,7 @@ const Quizzes = () => {
         />
       )}
 
-      {quizzesLoading ? (
+        {quizzesLoading ? (
         <StudySkeletonGrid count={4} />
       ) : isEmpty ? (
         <div className="study-empty-state">
@@ -206,9 +234,13 @@ const Quizzes = () => {
           </svg>
           <p className="study-empty-title">No quizzes found</p>
           <p className="study-empty-desc">
-            {list.search ? `No results for "${list.search}"` : 'Create your first quiz to start testing yourself.'}
+            {list.search
+              ? `No results for "${list.search}"`
+              : list.hasActiveFilter
+                ? 'No quizzes match this filter.'
+                : 'Create your first quiz to start testing yourself.'}
           </p>
-          {!list.search && (
+          {!list.search && !list.hasActiveFilter && (
             <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
               Create quiz
             </button>
@@ -217,10 +249,28 @@ const Quizzes = () => {
       ) : list.grouped ? (
         <StudyGroupedList grouped={list.grouped} pluralize={pluralize} renderCard={renderCard} />
       ) : (
-        <StudyFlatList items={list.filtered} pluralize={pluralize} renderCard={renderCard} />
+        <StudyFlatList
+          items={list.visibleItems}
+          totalItems={list.filtered.length}
+          pluralize={pluralize}
+          renderCard={renderCard}
+        />
       )}
 
-      <StudyDeleteModal
+        {!quizzesLoading && !isEmpty && (
+          <PaginationControls
+            currentPage={list.pagination.currentPage}
+            endItem={list.pagination.endItem}
+            label="Quiz pagination"
+            onPageChange={list.pagination.setPage}
+            pageSize={list.pagination.pageSize}
+            startItem={list.pagination.startItem}
+            totalItems={list.pagination.totalItems}
+            totalPages={list.pagination.totalPages}
+          />
+        )}
+
+        <StudyDeleteModal
         isOpen={list.showDeleteModal}
         selectedCount={list.selectedCount}
         pluralize={pluralize}
@@ -228,6 +278,7 @@ const Quizzes = () => {
         onClose={() => list.setShowDeleteModal(false)}
         onConfirm={list.handleDeleteSelection}
       />
+      </div>
     </div>
   );
 };

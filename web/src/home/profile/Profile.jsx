@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserRound } from 'lucide-react';
 import { useAuth } from '../../auth/shared/hooks/useAuth';
-import { useSettingsModal } from '../../common/contexts/SettingsModalContext';
+import { useSettingsModal } from '../../common/hooks/useSettingsModal';
 import Modal from '../../common/components/Modal';
+import HomeTabHero from '../shared/components/HomeTabHero';
 import './profile.css';
 
 const Profile = () => {
@@ -27,13 +29,17 @@ const Profile = () => {
   };
 
   return (
-    <div className="page-body page-body-wide page-enter">
-      <div className="profile-page">
-        <div className="profile-header">
-          <h1 className="profile-title">Profile</h1>
-          <p className="profile-subtitle">Your account at a glance.</p>
-        </div>
+    <div className="page-body-full page-enter">
+      <HomeTabHero
+        label="Account"
+        title="Profile"
+        description="Your account at a glance."
+        meta={`Joined ${joinedDate}`}
+        icon={<UserRound />}
+      />
 
+      <div className="page-body page-body-wide home-tab-shell__content">
+        <div className="profile-page">
         <div className="profile-card">
           <div className="profile-card-identity">
             <div className="profile-avatar-lg">{initials}</div>
@@ -135,6 +141,7 @@ const Profile = () => {
             </button>
           </div>
         </Modal>
+        </div>
       </div>
     </div>
   );

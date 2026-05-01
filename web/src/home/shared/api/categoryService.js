@@ -1,4 +1,4 @@
-import { apiCall } from './httpClient';
+import { apiCall } from '../../../common/api/httpClient';
 
 export const categoryAPI = {
   getAllCategories: () =>

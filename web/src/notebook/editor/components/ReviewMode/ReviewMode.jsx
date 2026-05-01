@@ -1,5 +1,4 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
 import TtsWordTracker from '../../../../common/audio/TtsWordTracker';
 import PlayerBar from '../../../../home/shared/components/PlayerBar';
 import { useAudioPlayer, useNotification } from '../../../../common/hooks/hooks';
@@ -242,25 +241,8 @@ const ReviewMode = ({
           outline={playbackModel.headings}
           title="Navigator"
           emptyMessage="No headings yet."
-          renderItem={(heading, index) => {
-            const isActive = activeTocIndex === index;
-
-            return (
-              <button
-                key={heading.id}
-                type="button"
-                className={`outline-item outline-item--review level-${heading.level}${isActive ? ' is-active' : ''}`}
-                onClick={() => handleSelectHeading(heading)}
-                title={heading.text}
-                aria-current={isActive ? 'true' : undefined}
-              >
-                <span className="outline-item-marker">
-                  <ChevronRight size={12} />
-                </span>
-                <span className="outline-item-text">{heading.text}</span>
-              </button>
-            );
-          }}
+          onSelectItem={handleSelectHeading}
+          isItemActive={(_, index) => activeTocIndex === index}
         />
 
         <main className="editor-main review-main">

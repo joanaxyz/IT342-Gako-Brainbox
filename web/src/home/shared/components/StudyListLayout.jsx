@@ -7,6 +7,7 @@ import SortSelect from '../../../common/components/SortSelect';
 import SortDirectionToggle from '../../../common/components/SortDirectionToggle';
 import { StudyCardSkeleton } from '../../../common/components/Skeleton';
 import ConfirmModal from '../../../common/components/ConfirmModal';
+import HomeTabHero from './HomeTabHero';
 
 /* ── Icons ──────────────────────────────────────────────── */
 export const ArrowRightIcon = () => (
@@ -39,8 +40,12 @@ export const SearchIcon = () => (
 
 /* ── Page header (title + action buttons) ───────────────── */
 export const StudyPageHeader = ({
+  label,
   title,
   subtitle,
+  meta,
+  gradient,
+  icon,
   createLabel,
   selectionMode,
   hasSelection,
@@ -49,31 +54,35 @@ export const StudyPageHeader = ({
   onSelectionToggle,
   onDeleteClick,
 }) => (
-  <div className="flex-between mb-28">
-    <div>
-      <div className="page-title">{title}</div>
-      <div className="page-subtitle">{subtitle}</div>
-    </div>
-    <div className="study-page-actions">
-      <button className="btn btn-ghost" onClick={onSelectionToggle}>
-        {selectionMode ? 'Cancel selection' : 'Select'}
-      </button>
-      {selectionMode ? (
-        <button
-          className="btn btn-danger"
-          disabled={!hasSelection || deletePending}
-          onClick={onDeleteClick}
-        >
-          Delete selected
+  <HomeTabHero
+    label={label}
+    title={title}
+    description={subtitle}
+    meta={meta}
+    gradient={gradient}
+    icon={icon}
+    actions={(
+      <>
+        <button className="btn btn-ghost" onClick={onSelectionToggle}>
+          {selectionMode ? 'Cancel selection' : 'Select'}
         </button>
-      ) : (
-        <button className="btn btn-primary" onClick={onCreateClick}>
-          <PlusIcon />
-          {createLabel}
-        </button>
-      )}
-    </div>
-  </div>
+        {selectionMode ? (
+          <button
+            className="btn btn-danger"
+            disabled={!hasSelection || deletePending}
+            onClick={onDeleteClick}
+          >
+            Delete selected
+          </button>
+        ) : (
+          <button className="btn btn-primary" onClick={onCreateClick}>
+            <PlusIcon />
+            {createLabel}
+          </button>
+        )}
+      </>
+    )}
+  />
 );
 
 /* ── Search + sort controls ─────────────────────────────── */
@@ -115,6 +124,26 @@ export const StudyControlsBar = ({
 );
 
 /* ── Notebook filter pills ──────────────────────────────── */
+export const StudyFilterModeToggle = ({ filterMode, onChange }) => (
+  <div className="study-filter-mode" role="group" aria-label="Filter by">
+    <span className="study-filter-mode-label">Filter by</span>
+    <button
+      type="button"
+      className={`study-filter-mode-btn${filterMode === 'notebooks' ? ' active' : ''}`}
+      onClick={() => onChange('notebooks')}
+    >
+      Notebooks
+    </button>
+    <button
+      type="button"
+      className={`study-filter-mode-btn${filterMode === 'categories' ? ' active' : ''}`}
+      onClick={() => onChange('categories')}
+    >
+      Categories
+    </button>
+  </div>
+);
+
 export const StudyNotebookPills = ({ linkedNotebooks, hasStandalone, selectedNotebookId, onSelect }) => (
   <div className="pill-row mb-20">
     <button
@@ -144,6 +173,48 @@ export const StudyNotebookPills = ({ linkedNotebooks, hasStandalone, selectedNot
 );
 
 /* ── Bulk-selection action bar ──────────────────────────── */
+export const StudyCategoryPills = ({
+  linkedCategories,
+  hasUncategorized,
+  hasStandalone,
+  selectedCategoryId,
+  onSelect,
+}) => (
+  <div className="pill-row mb-20">
+    <button
+      className={`pill${selectedCategoryId === 'all' ? ' active' : ''}`}
+      onClick={() => onSelect('all')}
+    >
+      All
+    </button>
+    {linkedCategories.map((category) => (
+      <button
+        key={category.id}
+        className={`pill${selectedCategoryId === category.id ? ' active' : ''}`}
+        onClick={() => onSelect(category.id)}
+      >
+        {category.name}
+      </button>
+    ))}
+    {hasUncategorized && (
+      <button
+        className={`pill${selectedCategoryId === 'uncategorized' ? ' active' : ''}`}
+        onClick={() => onSelect('uncategorized')}
+      >
+        Uncategorized
+      </button>
+    )}
+    {hasStandalone && (
+      <button
+        className={`pill${selectedCategoryId === 'standalone' ? ' active' : ''}`}
+        onClick={() => onSelect('standalone')}
+      >
+        Standalone
+      </button>
+    )}
+  </div>
+);
+
 export const StudySelectionBar = ({ selectedCount, filteredCount, hasSelection, deletePending, onSelectAll, onDeleteClick }) => (
   <div className="study-selection-bar">
     <span className="study-selection-summary">{selectedCount} selected</span>
@@ -170,6 +241,12 @@ const NotebookBookIcon = () => (
   </svg>
 );
 
+const CategoryFolderIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10l2 2h6.5A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-11z"/>
+  </svg>
+);
+
 const StandaloneIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -179,23 +256,34 @@ const StandaloneIcon = () => (
 
 export const StudyGroupedList = ({ grouped, pluralize, renderCard }) => (
   <>
-    {grouped.groups.map((group) => (
-      <div key={group.notebook.uuid} className="study-group">
-        <div className="study-group-header">
-          <NotebookBookIcon />
-          <span className="study-group-title">{group.notebook.title}</span>
-          {group.notebook.categoryName && (
-            <span className="chip chip-neutral">{group.notebook.categoryName}</span>
-          )}
-          <span className="study-group-count">
-            {group.items.length} {pluralize(group.items.length)}
-          </span>
+    {grouped.groups.map((group) => {
+      const title = group.title || group.notebook?.title || 'Notebook';
+      const badge = group.badge || group.notebook?.categoryName;
+      const key = group.key || group.notebook?.uuid || title;
+      const Icon = group.kind === 'category'
+        ? CategoryFolderIcon
+        : group.kind === 'standalone'
+          ? StandaloneIcon
+          : NotebookBookIcon;
+
+      return (
+        <div key={key} className="study-group">
+          <div className="study-group-header">
+            <Icon />
+            <span className="study-group-title">{title}</span>
+            {badge && (
+              <span className="chip chip-neutral">{badge}</span>
+            )}
+            <span className="study-group-count">
+              {group.items.length} {pluralize(group.items.length)}
+            </span>
+          </div>
+          <div className="study-grid">
+            {group.items.map((item) => renderCard(item))}
+          </div>
         </div>
-        <div className="study-grid">
-          {group.items.map((item) => renderCard(item))}
-        </div>
-      </div>
-    ))}
+      );
+    })}
     {grouped.standalone.length > 0 && (
       <div className="study-group">
         <div className="study-group-header">
@@ -214,9 +302,9 @@ export const StudyGroupedList = ({ grouped, pluralize, renderCard }) => (
 );
 
 /* ── Flat grid (single notebook filter active) ──────────── */
-export const StudyFlatList = ({ items, pluralize, renderCard }) => (
+export const StudyFlatList = ({ items, pluralize, renderCard, totalItems = items.length }) => (
   <>
-    <div className="section-label">{items.length} {pluralize(items.length)}</div>
+    <div className="section-label">{totalItems} {pluralize(totalItems)}</div>
     <div className="study-grid">
       {items.map((item) => renderCard(item))}
     </div>
@@ -269,7 +357,7 @@ export const CardFooterButtons = ({ selectionMode, selected, uuid, primaryLabel,
 );
 
 /* ── Delete confirmation modal ──────────────────────────── */
-export const StudyDeleteModal = ({ isOpen, selectedCount, itemLabel, pluralize, deletePending, onClose, onConfirm }) => (
+export const StudyDeleteModal = ({ isOpen, selectedCount, pluralize, deletePending, onClose, onConfirm }) => (
   <ConfirmModal
     isOpen={isOpen}
     onClose={onClose}

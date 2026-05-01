@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Layers3 } from 'lucide-react';
 import FlashcardPlayer from './FlashcardPlayer';
 import CreateDeckPage from './components/CreateDeckPage';
 import EditDeckPage from './components/EditDeckPage';
 import { useNotebook, useFlashcard } from '../../notebook/shared/hooks/hooks';
 import { useNotification } from '../../common/hooks/hooks';
+import PaginationControls from '../../common/components/PaginationControls';
 import useStudyList from '../shared/hooks/useStudyList';
 import {
   StudyPageHeader,
   StudyControlsBar,
+  StudyFilterModeToggle,
   StudyNotebookPills,
+  StudyCategoryPills,
   StudySelectionBar,
   StudyGroupedList,
   StudyFlatList,
@@ -86,6 +90,7 @@ const Flashcards = () => {
   const [activeDeck, setActiveDeck] = useState(null);
   const [editDeck, setEditDeck] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const deckCount = flashcards?.length ?? 0;
 
   const list = useStudyList({
     items: flashcards,
@@ -111,8 +116,12 @@ const Flashcards = () => {
       return;
     }
 
-    setActiveDeck(targetDeck);
-    navigate(location.pathname, { replace: true, state: null });
+    const timeoutId = setTimeout(() => {
+      setActiveDeck(targetDeck);
+      navigate(location.pathname, { replace: true, state: null });
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [flashcards, flashcardsLoading, location.pathname, location.state, navigate]);
 
   if (showCreate) {
@@ -140,10 +149,13 @@ const Flashcards = () => {
   const isEmpty = !flashcardsLoading && list.filtered.length === 0;
 
   return (
-    <div className="page-body page-body-wide">
+    <div className="page-body-full">
       <StudyPageHeader
+        label="Study mode"
         title="Flashcards"
         subtitle="Active recall decks for long-term retention"
+        meta={`${deckCount} ${pluralize(deckCount)} available`}
+        icon={<Layers3 />}
         createLabel="New deck"
         selectionMode={list.selectionMode}
         hasSelection={list.hasSelection}
@@ -153,7 +165,8 @@ const Flashcards = () => {
         onDeleteClick={() => list.setShowDeleteModal(true)}
       />
 
-      <StudyControlsBar
+      <div className="page-body page-body-wide home-tab-shell__content">
+        <StudyControlsBar
         searchValue={list.search}
         searchPlaceholder="Search decks…"
         sortOptions={SORT_OPTIONS}
@@ -166,17 +179,32 @@ const Flashcards = () => {
         onSortDirectionToggle={list.toggleSortDirection}
       />
 
-      <StudyNotebookPills
-        linkedNotebooks={list.notebookPills.linkedNotebooks}
-        hasStandalone={list.notebookPills.hasStandalone}
-        selectedNotebookId={list.selectedNotebookId}
-        onSelect={list.setSelectedNotebookId}
-      />
+        <StudyFilterModeToggle
+          filterMode={list.filterMode}
+          onChange={list.setFilterMode}
+        />
 
-      {list.selectionMode && (
+        {list.filterMode === 'categories' ? (
+          <StudyCategoryPills
+            linkedCategories={list.categoryPills.linkedCategories}
+            hasUncategorized={list.categoryPills.hasUncategorized}
+            hasStandalone={list.categoryPills.hasStandalone}
+            selectedCategoryId={list.selectedCategoryId}
+            onSelect={list.setSelectedCategoryId}
+          />
+        ) : (
+          <StudyNotebookPills
+            linkedNotebooks={list.notebookPills.linkedNotebooks}
+            hasStandalone={list.notebookPills.hasStandalone}
+            selectedNotebookId={list.selectedNotebookId}
+            onSelect={list.setSelectedNotebookId}
+          />
+        )}
+
+        {list.selectionMode && (
         <StudySelectionBar
           selectedCount={list.selectedCount}
-          filteredCount={list.filtered.length}
+          filteredCount={list.visibleCount}
           hasSelection={list.hasSelection}
           deletePending={list.deletePending}
           onSelectAll={list.selectAllVisible}
@@ -184,7 +212,7 @@ const Flashcards = () => {
         />
       )}
 
-      {flashcardsLoading ? (
+        {flashcardsLoading ? (
         <StudySkeletonGrid count={4} />
       ) : isEmpty ? (
         <div className="study-empty-state">
@@ -194,9 +222,13 @@ const Flashcards = () => {
           </svg>
           <p className="study-empty-title">No decks found</p>
           <p className="study-empty-desc">
-            {list.search ? `No results for "${list.search}"` : 'Create your first flashcard deck to get started.'}
+            {list.search
+              ? `No results for "${list.search}"`
+              : list.hasActiveFilter
+                ? 'No decks match this filter.'
+                : 'Create your first flashcard deck to get started.'}
           </p>
-          {!list.search && (
+          {!list.search && !list.hasActiveFilter && (
             <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
               New deck
             </button>
@@ -205,10 +237,28 @@ const Flashcards = () => {
       ) : list.grouped ? (
         <StudyGroupedList grouped={list.grouped} pluralize={pluralize} renderCard={renderCard} />
       ) : (
-        <StudyFlatList items={list.filtered} pluralize={pluralize} renderCard={renderCard} />
+        <StudyFlatList
+          items={list.visibleItems}
+          totalItems={list.filtered.length}
+          pluralize={pluralize}
+          renderCard={renderCard}
+        />
       )}
 
-      <StudyDeleteModal
+        {!flashcardsLoading && !isEmpty && (
+          <PaginationControls
+            currentPage={list.pagination.currentPage}
+            endItem={list.pagination.endItem}
+            label="Flashcard pagination"
+            onPageChange={list.pagination.setPage}
+            pageSize={list.pagination.pageSize}
+            startItem={list.pagination.startItem}
+            totalItems={list.pagination.totalItems}
+            totalPages={list.pagination.totalPages}
+          />
+        )}
+
+        <StudyDeleteModal
         isOpen={list.showDeleteModal}
         selectedCount={list.selectedCount}
         pluralize={pluralize}
@@ -216,6 +266,7 @@ const Flashcards = () => {
         onClose={() => list.setShowDeleteModal(false)}
         onConfirm={list.handleDeleteSelection}
       />
+      </div>
     </div>
   );
 };

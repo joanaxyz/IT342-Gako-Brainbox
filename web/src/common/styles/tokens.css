@@ -48,7 +48,9 @@
   --page-max-compact: 960px;
   --app-topbar-height: 64px;
   --page-bottom-clearance: 168px;
+  --page-bottom-clearance-minimized: 96px;
   --page-bottom-clearance-mobile: 112px;
+  --page-bottom-clearance-minimized-mobile: 84px;
 
   /* ── Easing ── */
   --ease:     cubic-bezier(0.16, 1, 0.3, 1);

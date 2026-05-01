@@ -98,8 +98,6 @@ export const useAiProposalState = ({
     clearAllAiSelectionsOnAccept,
     proposalRenderToken,
     proposalChanges,
-    proposalChangeDecisions,
-    proposalWorkingChangedBlockIndexes,
     proposalWorkingBlockIndexesByChange,
     activeProposalChangeIndex,
   } = activeState;

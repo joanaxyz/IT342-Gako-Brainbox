@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PanelLeftOpen } from 'lucide-react';
+import { PanelLeftOpen, Sparkles, Upload } from 'lucide-react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useNotebook, useCategory } from '../shared/hooks/hooks';
 import { useNoteEditorData } from './hooks/useNoteEditorData';
@@ -11,6 +11,7 @@ import { useNoteEditorPersistence } from './hooks/useNoteEditorPersistence';
 import useVersionHistory from './hooks/useVersionHistory';
 import useEditorNavigation from './hooks/useEditorNavigation';
 import EditorNavbar from './components/EditorNavbar/EditorNavbar';
+import ExportMenu from './components/ExportMenu/ExportMenu';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
 import NoteEditorContent from './components/NoteEditorContent/NoteEditorContent';
 import OutlineNav from './components/OutlineNav/OutlineNav';
@@ -27,17 +28,130 @@ import { isAndroidHost, reportHostReady } from '../../app/host/brainBoxHost';
 import './components/ReviewMode/ReviewMode.css';
 import './editor.css';
 
+const EditorMobileDockActions = ({
+  notebookTitle,
+  showDocumentActions = true,
+  onImportContent,
+  getExportContent,
+  getExportLayout,
+  isAiSidebarOpen,
+  onAiSidebarToggle,
+}) => {
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = useCallback((event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      onImportContent?.(file.name, loadEvent.target.result);
+    };
+    reader.readAsText(file, 'utf-8');
+    event.target.value = '';
+  }, [onImportContent]);
+
+  return (
+    <>
+      {showDocumentActions && onImportContent && (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.html,.htm"
+            hidden
+            onChange={handleFileChange}
+          />
+          <button
+            type="button"
+            className="editor-mobile-dock-icon-btn"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Import document"
+            title="Import document"
+          >
+            <Upload size={15} strokeWidth={1.85} />
+          </button>
+        </>
+      )}
+
+      {showDocumentActions && getExportContent && (
+        <ExportMenu
+          getContent={getExportContent}
+          getLayout={getExportLayout}
+          title={notebookTitle}
+          buttonClassName="editor-mobile-dock-icon-btn"
+          dropdownPlacement="portal-top"
+        />
+      )}
+
+      {onAiSidebarToggle && (
+        <button
+          type="button"
+          className={`editor-mobile-dock-icon-btn editor-mobile-dock-icon-btn--accent ${isAiSidebarOpen ? 'is-active' : ''}`.trim()}
+          onClick={() => onAiSidebarToggle(!isAiSidebarOpen)}
+          aria-label={isAiSidebarOpen ? 'Close AI assistant' : 'Open AI assistant'}
+          title={isAiSidebarOpen ? 'Close AI assistant' : 'Open AI assistant'}
+        >
+          <Sparkles size={15} strokeWidth={1.85} />
+        </button>
+      )}
+    </>
+  );
+};
+
 const NoteEditor = () => {
   const { id: notebookUuid } = useParams();
   const { state: locationState, search } = useLocation();
+
+  return (
+    <NoteEditorWorkspace
+      key={notebookUuid ?? 'new'}
+      notebookUuid={notebookUuid}
+      locationState={locationState}
+      search={search}
+    />
+  );
+};
+
+const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
   const editorRef = useRef(null);
   const reviewEditorRef = useRef(null);
   const editorContainerRef = useRef(null);
+  const editorLayoutRef = useRef(null);
   const hasReportedHostReadyRef = useRef(false);
   const lastEditorSelectionTextRef = useRef('');
   const lastReviewSelectionTextRef = useRef('');
-  const autoAppliedSelectionReviewRef = useRef(null);
   const isEmbeddedAndroidHost = useMemo(() => isAndroidHost(), []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const updateViewportHeight = () => {
+      const nextHeight = Math.round(window.visualViewport?.height || window.innerHeight || 0);
+
+      if (nextHeight > 0) {
+        editorLayoutRef.current?.style.setProperty('--editor-viewport-height', `${nextHeight}px`);
+      }
+    };
+
+    updateViewportHeight();
+    window.addEventListener('resize', updateViewportHeight);
+    window.addEventListener('orientationchange', updateViewportHeight);
+    window.visualViewport?.addEventListener('resize', updateViewportHeight);
+    window.visualViewport?.addEventListener('scroll', updateViewportHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateViewportHeight);
+      window.removeEventListener('orientationchange', updateViewportHeight);
+      window.visualViewport?.removeEventListener('resize', updateViewportHeight);
+      window.visualViewport?.removeEventListener('scroll', updateViewportHeight);
+    };
+  }, []);
 
   // Merge mode from URL query param and location state
   const editorLocationState = useMemo(() => {
@@ -75,21 +189,6 @@ const NoteEditor = () => {
   const [aiSelectionState, setAiSelectionState] = useState({ hasTextSelection: false, aiSelectionCount: 0 });
   const [reviewOutline, setReviewOutline] = useState([]);
   const [reviewAiSelectionState, setReviewAiSelectionState] = useState({ hasTextSelection: false, aiSelectionCount: 0 });
-
-  // Reset all per-notebook UI state when the notebook changes
-  useEffect(() => {
-    setAcceptedCheckpointEvent(null);
-    setAiToolKey('chat');
-    setIsAiToolHelpOpen(false);
-    setIsNavigatorMobileOpen(false);
-    setAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
-    setReviewOutline([]);
-    setReviewAiSelectionState({ hasTextSelection: false, aiSelectionCount: 0 });
-    hasReportedHostReadyRef.current = false;
-    lastEditorSelectionTextRef.current = '';
-    lastReviewSelectionTextRef.current = '';
-    autoAppliedSelectionReviewRef.current = null;
-  }, [notebookUuid]);
 
   const {
     aiSidebarOpen, setAiSidebarOpen,
@@ -149,13 +248,22 @@ const NoteEditor = () => {
   const editorKey = `${routeNotebook?.uuid ?? notebookUuid}_${editorSurfaceState}`;
   const editorStorageKey = routeNotebook?.uuid || notebookUuid;
   const isDocumentHydrated = hydratedNotebookUuid === routeNotebook?.uuid;
+  const hydratedDocumentContent = isDocumentHydrated
+    ? (documentContent ?? '')
+    : (routeNotebook?.content ?? documentContent ?? '');
   const editorContentSyncToken = isAiProposalOpen ? proposalRenderToken : contentSyncToken;
   const initialContent = isAiProposalOpen
     ? (aiWorkingContent || aiProposedContent || '')
     : (isDocumentHydrated ? (documentContent || '') : (routeNotebook?.content || ''));
+  const currentVersionPreviewContent = documentContent ?? routeNotebook?.content ?? '';
+  const reviewContentForDisplay = reviewContent || (isReviewModeOpen ? hydratedDocumentContent : '');
   const notebookTitle = notebookUuid === 'new'
     ? (locationState?.title || 'New notebook')
     : (routeNotebook?.title || 'Loading...');
+  const getCurrentExportLayout = useCallback(
+    () => ({ paperWidth, paperHeight, fontFamily }),
+    [fontFamily, paperHeight, paperWidth],
+  );
 
   // ── Editor content helpers ────────────────────────────────────────────
   const getCurrentDocumentContent = useCallback(
@@ -166,7 +274,7 @@ const NoteEditor = () => {
   const hasUnsavedDocumentChanges = useCallback(() => {
     if (!routeNotebook?.uuid) return false;
     return getCurrentDocumentContent() !== (routeNotebook.content ?? '');
-  }, [getCurrentDocumentContent, routeNotebook?.content, routeNotebook?.uuid]);
+  }, [getCurrentDocumentContent, routeNotebook]);
 
   const handleSaveNotebook = useCallback(async () => {
     if (!routeNotebook?.uuid) return null;
@@ -219,13 +327,6 @@ const NoteEditor = () => {
     }
   }, [routeNotebook?.uuid, isReviewModeOpen, markNotebookReviewed]);
 
-  useEffect(() => {
-    if (!isReviewModeOpen) return;
-    const content = editorRef.current?.getHTML?.()
-      ?? (reviewContent ? null : (documentContent ?? routeNotebook?.content ?? ''));
-    if (typeof content === 'string') setReviewContent(content);
-  }, [documentContent, isReviewModeOpen, reviewContent, routeNotebook?.content]);
-
   const handleReviewModeToggle = useCallback((nextValue) => {
     if (nextValue) setReviewContent(getCurrentDocumentContent());
     setIsReviewModeOpen(nextValue);
@@ -235,8 +336,8 @@ const NoteEditor = () => {
 
   // ── Review mode: playback model & audio state ─────────────────────────
   const reviewPlaybackModel = useMemo(
-    () => (isReviewModeOpen ? buildPlaybackModel(reviewContent) : { words: [], headings: [], fullText: '' }),
-    [isReviewModeOpen, reviewContent],
+    () => (isReviewModeOpen ? buildPlaybackModel(reviewContentForDisplay) : { words: [], headings: [], fullText: '' }),
+    [isReviewModeOpen, reviewContentForDisplay],
   );
   const isReviewNotebookActive = audioNotebook?.uuid === (routeNotebook?.uuid ?? notebookUuid);
   const reviewActiveOffset = isReviewNotebookActive ? currentCharOffset : 0;
@@ -370,7 +471,7 @@ const NoteEditor = () => {
     handleDocumentChange,
     pendingAiSelectionIds,
     pendingProposalSourceId,
-    routeNotebook?.uuid,
+    routeNotebook,
     saveDocument,
   ]);
 
@@ -430,10 +531,10 @@ const NoteEditor = () => {
   const handleTogglePlay = useCallback(async () => {
     if (!routeNotebook?.uuid) return;
     const content = isReviewModeOpen
-      ? reviewContent
+      ? reviewContentForDisplay
       : (editorRef.current?.getHTML?.() ?? documentContent ?? '');
     await togglePlay(routeNotebook, content || undefined);
-  }, [documentContent, isReviewModeOpen, reviewContent, routeNotebook, togglePlay]);
+  }, [documentContent, isReviewModeOpen, reviewContentForDisplay, routeNotebook, togglePlay]);
 
   const handleAiToolSelect = useCallback((toolKey) => {
     setAiSidebarOpen((isOpen) => toolKey === aiToolKey ? !isOpen : true);
@@ -456,6 +557,20 @@ const NoteEditor = () => {
     handleDocumentChange(html);
     addNotification(`"${filename}" imported successfully`, 'success', 3000);
   }, [addNotification, handleDocumentChange]);
+
+  const navigatorOutline = isReviewModeOpen ? reviewOutline : outline;
+
+  const mobileDockActions = (
+    <EditorMobileDockActions
+      notebookTitle={notebookTitle}
+      showDocumentActions={!isReviewModeOpen}
+      onImportContent={handleImportContent}
+      getExportContent={getCurrentDocumentContent}
+      getExportLayout={getCurrentExportLayout}
+      isAiSidebarOpen={aiSidebarOpen}
+      onAiSidebarToggle={setAiSidebarOpen}
+    />
+  );
 
   const handleEditorReady = useCallback((currentEditor) => {
     setActiveEditor(currentEditor);
@@ -489,7 +604,7 @@ const NoteEditor = () => {
           title={isNavigatorMobileOpen ? 'Close navigator' : 'Open navigator'}
         >
           <PanelLeftOpen size={17} />
-          <span className="outline-toolbar-toggle-count">{outline.length}</span>
+          <span className="outline-toolbar-toggle-count">{navigatorOutline.length}</span>
         </button>
       )}
     />
@@ -497,7 +612,7 @@ const NoteEditor = () => {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className="editor-layout">
+    <div className="editor-layout" ref={editorLayoutRef}>
       <EditorNavbar
         notebookTitle={notebookTitle}
         onBackHome={handleBackHome}
@@ -523,7 +638,7 @@ const NoteEditor = () => {
         }}
         onImportContent={handleImportContent}
         getExportContent={getCurrentDocumentContent}
-        getExportLayout={() => ({ paperWidth, paperHeight, fontFamily })}
+        getExportLayout={getCurrentExportLayout}
         isAiSidebarOpen={aiSidebarOpen}
         onAiSidebarToggle={setAiSidebarOpen}
         showHomeButton
@@ -564,7 +679,8 @@ const NoteEditor = () => {
                     <NoteEditorContent
                       key={`review-${routeNotebook.uuid}`}
                       ref={reviewEditorRef}
-                      content={reviewContent}
+                      content={reviewContentForDisplay}
+                      contentSyncToken={contentSyncToken}
                       readOnly
                       reviewMode
                       ttsActiveOffset={reviewActiveOffset}
@@ -623,6 +739,7 @@ const NoteEditor = () => {
                   showLeadingDivider={false}
                   layout="dock"
                   className="review-canvas-toolbar"
+                  mobileDockActions={mobileDockActions}
                 />
               </div>
             </div>
@@ -683,6 +800,7 @@ const NoteEditor = () => {
                   onAddAiSelection={handleAddAiSelection}
                   onClearAiSelections={handleClearAiSelections}
                   isAiSelectionDisabled={!routeNotebook?.uuid || isAiProposalOpen}
+                  mobileDockActions={mobileDockActions}
                 />
               </div>
             </main>
@@ -713,7 +831,7 @@ const NoteEditor = () => {
           <VersionPreviewOverlay
             isOpen={Boolean(versionPreview)}
             previewVersion={versionPreview?.version ?? null}
-            currentContent={getCurrentDocumentContent()}
+            currentContent={currentVersionPreviewContent}
             previewContent={versionPreview?.content ?? ''}
             fontFamily={fontFamily}
             paperWidth={paperWidth}

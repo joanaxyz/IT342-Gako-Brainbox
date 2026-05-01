@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -40,12 +40,30 @@ const VersionPreviewOverlay = ({
 }) => {
   const currentPaneRef = useRef(null);
   const previewPaneRef = useRef(null);
-  const [activeChangeIndex, setActiveChangeIndex] = useState(-1);
+  const [activeChangeState, setActiveChangeState] = useState({ scopeKey: null, index: -1 });
   const comparisonSession = useMemo(
     () => buildProposalComparisonSession(currentContent || '', previewContent || ''),
     [currentContent, previewContent],
   );
   const changes = comparisonSession.changes;
+  const changeScopeKey = `${previewVersion?.id ?? 'none'}:${changes.length}`;
+  const defaultActiveChangeIndex = changes.length > 0 ? 0 : -1;
+  const activeChangeIndex = activeChangeState.scopeKey === changeScopeKey
+    ? activeChangeState.index
+    : defaultActiveChangeIndex;
+  const setActiveChangeIndex = useCallback((value) => {
+    setActiveChangeState((currentState) => {
+      const currentIndex = currentState.scopeKey === changeScopeKey
+        ? currentState.index
+        : defaultActiveChangeIndex;
+      const nextIndex = typeof value === 'function' ? value(currentIndex) : value;
+      const clampedIndex = changes.length > 0
+        ? Math.min(Math.max(nextIndex, 0), changes.length - 1)
+        : -1;
+
+      return { scopeKey: changeScopeKey, index: clampedIndex };
+    });
+  }, [changeScopeKey, changes.length, defaultActiveChangeIndex]);
   const currentChange = activeChangeIndex >= 0 ? changes[activeChangeIndex] || null : null;
   const currentDescriptors = useMemo(() => ([
     {
@@ -62,10 +80,6 @@ const VersionPreviewOverlay = ({
     },
   ]), [changes, currentChange]);
   const previewDate = getVersionDate(previewVersion);
-
-  useEffect(() => {
-    setActiveChangeIndex(changes.length > 0 ? 0 : -1);
-  }, [changes.length, previewVersion?.id]);
 
   useEffect(() => {
     if (!isOpen) {

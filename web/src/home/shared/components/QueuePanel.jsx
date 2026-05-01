@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, ListMusic, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { X, ListMusic, ChevronDown, ChevronRight, Shuffle } from 'lucide-react';
 import { useAudioPlayer } from '../../../common/hooks/hooks';
 import { usePlaylist } from '../../../notebook/shared/hooks/hooks';
 import '../styles/player.css';
@@ -31,11 +31,12 @@ const QueuePanel = () => {
     isPreparing,
     progress,
     queue,
-    removeFromQueue,
-    clearQueue,
+    queueCurrentIndex,
     playNext,
-    play,
-    addToQueue,
+    playPlaylist,
+    activeQueuePlaylist,
+    shuffle,
+    toggleShuffle,
     showQueue,
     setShowQueue,
   } = useAudioPlayer();
@@ -50,16 +51,17 @@ const QueuePanel = () => {
   const handleQueuePlaylist = (playlist) => {
     const notebooks = playlist.queue || [];
     if (notebooks.length === 0) return;
-
-    if (!currentNotebook) {
-      play(notebooks[0]);
-      notebooks.slice(1).forEach((nb) => addToQueue(nb));
-    } else {
-      notebooks.forEach((nb) => addToQueue(nb));
-    }
+    playPlaylist(playlist, notebooks, 0);
   };
 
   if (!showQueue) return null;
+
+  const indexedNotebook = queue.length > 0
+    ? queue[Math.min(Math.max(queueCurrentIndex || 0, 0), queue.length - 1)]
+    : null;
+  const nowPlayingNotebook = currentNotebook || indexedNotebook;
+  const activeNotebookUuid = currentNotebook?.uuid || indexedNotebook?.uuid;
+  const activePlaylistTitle = activeQueuePlaylist?.title || (queue.length > 0 ? 'Saved queue' : 'No playlist selected');
 
   return (
     <>
@@ -76,10 +78,10 @@ const QueuePanel = () => {
         <div className="queue-panel-body">
           <section className="queue-now-section">
             <div className="queue-section-label">Now Playing</div>
-            {currentNotebook ? (
+            {nowPlayingNotebook ? (
               <div className="queue-now-card">
                 <div className="queue-now-art">
-                  {currentNotebook.title.charAt(0)}
+                  {nowPlayingNotebook.title.charAt(0)}
                   {(isPlaying || isPreparing) && (
                     <span className="queue-now-bars">
                       <span /><span /><span />
@@ -87,8 +89,8 @@ const QueuePanel = () => {
                   )}
                 </div>
                 <div className="queue-now-info">
-                  <div className="queue-now-title">{currentNotebook.title}</div>
-                  <div className="queue-now-sub">{currentNotebook.categoryName || 'Notebook'}</div>
+                  <div className="queue-now-title">{nowPlayingNotebook.title}</div>
+                  <div className="queue-now-sub">{nowPlayingNotebook.categoryName || 'Notebook'}</div>
                 </div>
                 <div className="queue-now-progress-wrap">
                   <div className="queue-now-progress-track">
@@ -104,12 +106,20 @@ const QueuePanel = () => {
 
           <section className="queue-next-section">
             <div className="queue-section-header">
-              <span className="queue-section-label">Next Up</span>
-              {queue.length > 0 && (
-                <button className="queue-clear-btn" onClick={clearQueue}>
-                  Clear all
-                </button>
-              )}
+              <div className="queue-section-heading">
+                <span className="queue-section-label">Current Playlist</span>
+                <span className="queue-current-playlist-name">{activePlaylistTitle}</span>
+              </div>
+              <button
+                className={`queue-shuffle-btn${shuffle ? ' active' : ''}`}
+                onClick={toggleShuffle}
+                disabled={queue.length <= 1}
+                title={shuffle ? 'Turn shuffle off' : 'Turn shuffle on'}
+                aria-pressed={shuffle}
+              >
+                <Shuffle size={13} />
+                <span>{shuffle ? 'Shuffle on' : 'Shuffle'}</span>
+              </button>
             </div>
 
             {queue.length === 0 ? (
@@ -119,25 +129,21 @@ const QueuePanel = () => {
                   <line x1="3" y1="12" x2="15" y2="12" />
                   <line x1="3" y1="18" x2="9" y2="18" />
                 </svg>
-                <p>Queue is empty</p>
-                <p>Add notebooks with the queue button on any track</p>
+                <p>No playlist selected</p>
+                <p>Choose a playlist below to see its notebooks here</p>
               </div>
             ) : (
               <div className="queue-next-list">
                 {queue.map((nb, i) => (
-                  <div key={nb.uuid} className="queue-next-item">
+                  <div
+                    key={nb.uuid}
+                    className={`queue-next-item${activeNotebookUuid === nb.uuid ? ' queue-next-item-active' : ''}`}
+                  >
                     <span className="queue-next-num">{i + 1}</span>
                     <div className="queue-next-info">
                       <div className="queue-next-title">{nb.title}</div>
                       <div className="queue-next-sub">{nb.categoryName || 'Notebook'}</div>
                     </div>
-                    <button
-                      className="queue-next-remove"
-                      onClick={() => removeFromQueue(nb.uuid)}
-                      title="Remove"
-                    >
-                      <X size={13} />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -151,7 +157,7 @@ const QueuePanel = () => {
                 onClick={() => setPlaylistsOpen((v) => !v)}
               >
                 <ListMusic size={13} />
-                <span className="queue-section-label">Add from Playlist</span>
+                <span className="queue-section-label">Choose Playlist</span>
                 {playlistsOpen
                   ? <ChevronDown size={13} />
                   : <ChevronRight size={13} />}
@@ -159,30 +165,41 @@ const QueuePanel = () => {
 
               {playlistsOpen && (
                 <div className="queue-playlist-list">
-                  {playlists.map((pl, i) => (
-                    <div key={pl.uuid} className="queue-playlist-item">
+                  {playlists.map((pl, i) => {
+                    const playlistSize = pl.queue?.length || 0;
+                    const isActivePlaylist = activeQueuePlaylist?.uuid === pl.uuid;
+
+                    return (
                       <div
-                        className="queue-playlist-cover"
-                        style={{ background: getGradient(i) }}
+                        key={pl.uuid}
+                        className={`queue-playlist-item${isActivePlaylist ? ' queue-playlist-item-active' : ''}`}
+                        aria-current={isActivePlaylist ? 'true' : undefined}
                       >
-                        <MusicNote />
+                        <div
+                          className="queue-playlist-cover"
+                          style={{ background: getGradient(i) }}
+                        >
+                          <MusicNote />
+                        </div>
+                        <div className="queue-playlist-info">
+                          <span className="queue-playlist-name">{pl.title}</span>
+                          <span className="queue-playlist-count">
+                            {playlistSize} notebook{playlistSize !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {!isActivePlaylist && (
+                          <button
+                            className="queue-playlist-select-btn"
+                            title={`Use "${pl.title}" as the queue`}
+                            disabled={playlistSize === 0}
+                            onClick={() => handleQueuePlaylist(pl)}
+                          >
+                            Use
+                          </button>
+                        )}
                       </div>
-                      <div className="queue-playlist-info">
-                        <span className="queue-playlist-name">{pl.title}</span>
-                        <span className="queue-playlist-count">
-                          {pl.queue?.length || 0} notebook{pl.queue?.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <button
-                        className="queue-playlist-add-btn"
-                        title={`Queue all from "${pl.title}"`}
-                        disabled={(pl.queue?.length || 0) === 0}
-                        onClick={() => handleQueuePlaylist(pl)}
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -192,7 +209,7 @@ const QueuePanel = () => {
         {queue.length > 0 && (
           <div className="queue-panel-footer">
             <button className="queue-play-next-btn" onClick={playNext}>
-              Skip to next
+              {shuffle ? 'Shuffle next' : 'Skip to next'}
             </button>
           </div>
         )}

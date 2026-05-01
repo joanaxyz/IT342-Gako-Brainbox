@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { useAuth } from '../../../auth/shared/hooks/useAuth';
 import { useNotebook } from '../../../notebook/shared/hooks/hooks';
 import ConfirmModal from '../../../common/components/ConfirmModal';
-import { useSettingsModal } from '../../../common/contexts/SettingsModalContext';
+import { useSettingsModal } from '../../../common/hooks/useSettingsModal';
 import { getNotebookLinkProps } from '../../../notebook/shared/utils/notebookNavigation';
 
 const NAV_SECTIONS = [

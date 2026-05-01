@@ -307,7 +307,10 @@ const NoteEditorContent = forwardRef(({
       return;
     }
 
-    if (lastAppliedContentSyncTokenRef.current === contentSyncToken) {
+    const isSyncedToCurrentToken = lastAppliedContentSyncTokenRef.current === contentSyncToken;
+    const shouldApplyReadOnlyContent = readOnly && content !== lastKnownContentRef.current;
+
+    if (isSyncedToCurrentToken && !shouldApplyReadOnlyContent) {
       return;
     }
 
@@ -321,7 +324,7 @@ const NoteEditorContent = forwardRef(({
     lastAppliedContentSyncTokenRef.current = contentSyncToken;
     updateOutline(editor);
     emitSelectionState(editor);
-  }, [applyExternalContent, content, contentSyncToken, editor, emitSelectionState, updateOutline]);
+  }, [applyExternalContent, content, contentSyncToken, editor, emitSelectionState, readOnly, updateOutline]);
 
   useEffect(() => {
     if (!editor) {

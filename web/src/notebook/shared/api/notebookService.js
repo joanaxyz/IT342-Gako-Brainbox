@@ -1,4 +1,4 @@
-import { apiCall } from './httpClient';
+import { apiCall } from '../../../common/api/httpClient';
 
 export const notebookAPI = {
   getNotebooks: () =>
@@ -26,7 +26,7 @@ export const notebookAPI = {
     apiCall(`/notebooks/${notebookUuid}`, 'DELETE'),
 
   updateReview: (notebookUuid) =>
-    apiCall(`/notebooks/update-review/${notebookUuid}`, 'PATCH'),
+    apiCall(`/notebooks/${notebookUuid}/review`, 'PATCH'),
 
   createVersion: (notebookUuid, versionSnapshot) =>
     apiCall(`/notebooks/${notebookUuid}/versions`, 'POST', versionSnapshot),

@@ -157,10 +157,14 @@ const refreshAccessToken = async (baseUrl, requestOptions, endpoint, method, bod
   let didTimeout = false;
 
   try {
-    const refreshUrl = `${baseUrl}/auth/refresh-token?refreshToken=${refreshToken}`;
+    const refreshUrl = `${baseUrl}/auth/tokens/refresh`;
     const { response: refreshResponse, didTimeout: timedOut } = await fetchWithTimeout(
       refreshUrl,
-      { method: 'POST' },
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      },
       requestOptions.timeoutMs
     );
     didTimeout = timedOut;

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, File, FileText, FileType, X } from 'lucide-react';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { exportToDocx, exportToPdf, exportToText } from '../../utils/exportUtils';
@@ -17,6 +18,8 @@ const MARGIN_OPTIONS = [
   { label: 'Moderate  (1")', value: 1 },
   { label: 'Wide  (1.5")', value: 1.5 },
 ];
+
+const isEmbeddedAndroidHost = isAndroidHost();
 
 const PdfOptionsModal = ({ onClose, onExport }) => {
   const [paperSizeValue, setPaperSizeValue] = useState('letter');
@@ -92,16 +95,55 @@ const PdfOptionsModal = ({ onClose, onExport }) => {
   );
 };
 
-const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
+const ExportMenu = ({
+  getContent,
+  getLayout,
+  title = 'Untitled',
+  buttonClassName = 'editor-navbar-icon-btn',
+  wrapClassName = '',
+  dropdownPlacement = 'bottom',
+}) => {
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(null);
   const [showPdfOptions, setShowPdfOptions] = useState(false);
+  const [portalStyle, setPortalStyle] = useState(null);
   const ref = useRef(null);
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
   const { addNotification } = useNotification();
+  const usePortalDropdown = dropdownPlacement === 'portal-top';
+
+  const updatePortalPosition = useCallback(() => {
+    if (!usePortalDropdown || typeof window === 'undefined') {
+      return;
+    }
+
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+
+    const menuWidth = 220;
+    const gutter = 10;
+    const left = Math.min(
+      window.innerWidth - menuWidth - gutter,
+      Math.max(gutter, rect.right - menuWidth),
+    );
+
+    setPortalStyle({
+      position: 'fixed',
+      left: `${left}px`,
+      bottom: `${window.innerHeight - rect.top + 8}px`,
+      minWidth: `${menuWidth}px`,
+    });
+  }, [usePortalDropdown]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) {
+      const clickedInsideWrap = ref.current && ref.current.contains(event.target);
+      const clickedInsideDropdown = dropdownRef.current && dropdownRef.current.contains(event.target);
+
+      if (!clickedInsideWrap && !clickedInsideDropdown) {
         setOpen(false);
       }
     };
@@ -112,6 +154,22 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !usePortalDropdown) {
+      setPortalStyle(null);
+      return undefined;
+    }
+
+    updatePortalPosition();
+    window.addEventListener('resize', updatePortalPosition);
+    window.addEventListener('scroll', updatePortalPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePortalPosition);
+      window.removeEventListener('scroll', updatePortalPosition, true);
+    };
+  }, [open, updatePortalPosition, usePortalDropdown]);
 
   const handleExport = async (format, pdfOptions = {}) => {
     setExporting(format);
@@ -135,12 +193,42 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
     }
   };
 
+  const dropdown = (
+    <div
+      ref={dropdownRef}
+      className={`export-menu-dropdown ${usePortalDropdown ? 'export-menu-dropdown--portal' : ''}`.trim()}
+      style={usePortalDropdown ? (portalStyle || { visibility: 'hidden' }) : undefined}
+    >
+      <button type="button" onClick={() => {
+        if (isEmbeddedAndroidHost) {
+          void handleExport('print');
+          return;
+        }
+
+        setOpen(false);
+        setShowPdfOptions(true);
+      }} disabled={Boolean(exporting)}>
+        <FileText size={14} />
+        {isEmbeddedAndroidHost ? 'Print / Share PDF' : 'Print / Save as PDF'}
+      </button>
+      <button type="button" onClick={() => handleExport('docx')} disabled={Boolean(exporting)}>
+        <FileType size={14} />
+        {exporting === 'docx' ? 'Exporting...' : 'Export as Word (.docx)'}
+      </button>
+      <button type="button" onClick={() => handleExport('txt')} disabled={Boolean(exporting)}>
+        <File size={14} />
+        {exporting === 'txt' ? 'Exporting...' : 'Export as Text (.txt)'}
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="export-menu-wrap" ref={ref}>
+      <div className={`export-menu-wrap ${wrapClassName}`.trim()} ref={ref}>
         <button
+          ref={buttonRef}
           type="button"
-          className="editor-navbar-icon-btn"
+          className={buttonClassName}
           onClick={() => setOpen((value) => !value)}
           title="Export"
           aria-label="Export"
@@ -149,28 +237,9 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
         </button>
 
         {open && (
-          <div className="export-menu-dropdown">
-            <button type="button" onClick={() => {
-              if (isEmbeddedAndroidHost) {
-                void handleExport('print');
-                return;
-              }
-
-              setOpen(false);
-              setShowPdfOptions(true);
-            }} disabled={Boolean(exporting)}>
-              <FileText size={14} />
-              {isEmbeddedAndroidHost ? 'Print / Share PDF' : 'Print / Save as PDF'}
-            </button>
-            <button type="button" onClick={() => handleExport('docx')} disabled={Boolean(exporting)}>
-              <FileType size={14} />
-              {exporting === 'docx' ? 'Exporting...' : 'Export as Word (.docx)'}
-            </button>
-            <button type="button" onClick={() => handleExport('txt')} disabled={Boolean(exporting)}>
-              <File size={14} />
-              {exporting === 'txt' ? 'Exporting...' : 'Export as Text (.txt)'}
-            </button>
-          </div>
+          usePortalDropdown && typeof document !== 'undefined'
+            ? createPortal(dropdown, document.body)
+            : dropdown
         )}
       </div>
 
@@ -185,4 +254,3 @@ const ExportMenu = ({ getContent, getLayout, title = 'Untitled' }) => {
 };
 
 export default ExportMenu;
-  const isEmbeddedAndroidHost = isAndroidHost();
