@@ -1,0 +1,25 @@
+package edu.cit.gako.brainbox.modules.user.repository;
+
+import edu.cit.gako.brainbox.modules.user.entity.User;
+import edu.cit.gako.brainbox.modules.user.entity.UserRole;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByEmailAndPassword(String email, String password);
+
+    Optional<User> findByUsername(String username);
+
+    List<User> findByRole(UserRole role);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    Optional<User> findByGoogleId(String googleId);
+}
