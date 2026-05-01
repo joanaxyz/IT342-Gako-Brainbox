@@ -31,7 +31,7 @@
         </activity>
 
         <service
-            android:name=".audio.BrainBoxAudioService"
+            android:name=".features.playback.audio.BrainBoxAudioService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>

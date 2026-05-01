@@ -1,4 +1,4 @@
-﻿package edu.cit.gako.brainbox
+package edu.cit.gako.brainbox
 
 import android.os.Bundle
 import android.util.Log
@@ -13,14 +13,16 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import edu.cit.gako.brainbox.app.BrainBoxApp
 import edu.cit.gako.brainbox.app.BrainBoxAppController
 import edu.cit.gako.brainbox.app.BrainBoxAppGraph
-import edu.cit.gako.brainbox.data.worker.BrainBoxSyncWorkScheduler
-import edu.cit.gako.brainbox.ui.theme.BrainboxTheme
+import edu.cit.gako.brainbox.app.worker.BrainBoxSyncWorkScheduler
+import edu.cit.gako.brainbox.features.home.HomeDependencies
+import edu.cit.gako.brainbox.shared.ui.theme.BrainboxTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -41,8 +43,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BrainboxTheme {
+                val homeDependencies = remember(appGraph) {
+                    HomeDependencies(
+                        libraryRepository = appGraph.libraryRepository,
+                        offlinePackRepository = appGraph.homeOfflinePackRepository,
+                        playlistRepository = appGraph.playlistRepository
+                    )
+                }
                 BrainBoxApp(
                     state = controller.state,
+                    homeDependencies = homeDependencies,
                     onLogin = controller::handleLogin,
                     onGoogleLogin = { token ->
                         if (token == "__TRIGGER_GOOGLE_SIGN_IN__") {
@@ -69,9 +79,13 @@ class MainActivity : ComponentActivity() {
                     onRecordFlashcardAttempt = controller::handleRecordFlashcardAttempt,
                     onLogout = controller::handleLogout,
                     onFeatureRequest = ::showMessage,
-                    onAddToQueue = controller::handleAddToQueue,
-                    onRemoveFromQueue = controller::handleRemoveFromQueue,
-                    onSkipNext = controller::handleSkipNext
+                    onPlayNotebook = controller::handlePlayNotebook,
+                    onSelectQueuePlaylist = controller::handleSelectQueuePlaylist,
+                    onSkipNext = controller::handleSkipNext,
+                    onSkipPrevious = controller::handleSkipPrevious,
+                    onTogglePlaybackLoop = controller::handleTogglePlaybackLoop,
+                    onTogglePlaybackShuffle = controller::handleTogglePlaybackShuffle,
+                    onStartQueue = controller::handleStartQueue
                 )
             }
         }

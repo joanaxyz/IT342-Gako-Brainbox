@@ -1,4 +1,4 @@
-﻿package edu.cit.gako.brainbox.app
+package edu.cit.gako.brainbox.app
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -38,10 +38,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import edu.cit.gako.brainbox.ui.theme.Accent
-import edu.cit.gako.brainbox.ui.theme.Cream
-import edu.cit.gako.brainbox.ui.theme.Ink
-import edu.cit.gako.brainbox.ui.theme.Ink3
+import edu.cit.gako.brainbox.shared.ui.theme.Accent
+import edu.cit.gako.brainbox.shared.ui.theme.Cream
+import edu.cit.gako.brainbox.shared.ui.theme.Ink
+import edu.cit.gako.brainbox.shared.ui.theme.Ink3
 import kotlin.math.pow
 
 private const val LoadingCycleDurationMs = 3000

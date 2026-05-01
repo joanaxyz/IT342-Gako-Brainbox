@@ -23,8 +23,18 @@ fun existingExecutable(path: String?): String? {
     }
 
     val executable = File(path)
-    return executable.takeIf { it.isFile && it.exists() && it.canExecute() }?.absolutePath
+    return executable
+        .takeIf {
+            it.isFile &&
+                it.exists() &&
+                it.canExecute() &&
+                !it.isWindowsAppsExecutable()
+        }
+        ?.absolutePath
 }
+
+fun File.isWindowsAppsExecutable(): Boolean =
+    isWindows && absolutePath.replace('/', '\\').contains("\\WindowsApps\\", ignoreCase = true)
 
 fun findExecutableOnPath(vararg names: String): String? {
     val pathEntries = System.getenv("PATH")
@@ -234,7 +244,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.session)
-    implementation("org.wordpress:aztec:v1.6.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

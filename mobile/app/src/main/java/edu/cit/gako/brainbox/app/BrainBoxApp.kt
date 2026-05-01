@@ -1,15 +1,17 @@
-﻿package edu.cit.gako.brainbox.app
+package edu.cit.gako.brainbox.app
 
 import androidx.compose.runtime.Composable
-import edu.cit.gako.brainbox.auth.AuthScene
-import edu.cit.gako.brainbox.home.HomeScene
-import edu.cit.gako.brainbox.notebook.NativeNotebookEditorScreen
-import edu.cit.gako.brainbox.study.FlashcardStudyScreen
-import edu.cit.gako.brainbox.study.QuizStudyScreen
+import edu.cit.gako.brainbox.features.home.HomeDependencies
+import edu.cit.gako.brainbox.features.auth.AuthScene
+import edu.cit.gako.brainbox.features.home.HomeScene
+import edu.cit.gako.brainbox.features.notebook.editor.NotebookEditorScreen
+import edu.cit.gako.brainbox.features.home.flashcards.FlashcardStudyScreen
+import edu.cit.gako.brainbox.features.home.quizzes.QuizStudyScreen
 
 @Composable
 fun BrainBoxApp(
     state: AppState,
+    homeDependencies: HomeDependencies,
     onLogin: (String, String) -> Unit,
     onGoogleLogin: (String) -> Unit,
     onRegister: (String, String, String) -> Unit,
@@ -30,9 +32,13 @@ fun BrainBoxApp(
     onRecordFlashcardAttempt: (String, Int) -> Unit,
     onLogout: () -> Unit,
     onFeatureRequest: (String) -> Unit,
-    onAddToQueue: (edu.cit.gako.brainbox.network.models.NotebookSummary) -> Unit = {},
-    onRemoveFromQueue: (String) -> Unit = {},
-    onSkipNext: () -> Unit = {}
+    onPlayNotebook: (edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary, Boolean) -> Unit = { _, _ -> },
+    onSelectQueuePlaylist: (String) -> Unit = {},
+    onSkipNext: () -> Unit = {},
+    onSkipPrevious: () -> Unit = {},
+    onTogglePlaybackLoop: () -> Unit = {},
+    onTogglePlaybackShuffle: () -> Unit = {},
+    onStartQueue: () -> Unit = {}
 ) {
     when {
         state.isBootstrapping -> LoadingScreen()
@@ -47,7 +53,7 @@ fun BrainBoxApp(
             onAuthStageChange = onAuthStageChange,
             onFeatureRequest = onFeatureRequest
         )
-        state.activeNotebookUuid != null -> NativeNotebookEditorScreen(
+        state.activeNotebookUuid != null -> NotebookEditorScreen(
             notebookUuid = state.activeNotebookUuid,
             onClose = onCloseNotebookEditor,
             onOpenQuiz = onOpenQuizFromNotebook,
@@ -65,6 +71,7 @@ fun BrainBoxApp(
         )
         else -> HomeScene(
             state = state,
+            dependencies = homeDependencies,
             onTabSelected = onTabSelected,
             onCreateNotebook = onCreateNotebook,
             onOpenNotebook = onOpenNotebook,
@@ -72,9 +79,13 @@ fun BrainBoxApp(
             onOpenFlashcardDeck = onOpenFlashcardDeck,
             onLogout = onLogout,
             onFeatureRequest = onFeatureRequest,
-            onAddToQueue = onAddToQueue,
-            onRemoveFromQueue = onRemoveFromQueue,
-            onSkipNext = onSkipNext
+            onPlayNotebook = onPlayNotebook,
+            onSelectQueuePlaylist = onSelectQueuePlaylist,
+            onSkipNext = onSkipNext,
+            onSkipPrevious = onSkipPrevious,
+            onTogglePlaybackLoop = onTogglePlaybackLoop,
+            onTogglePlaybackShuffle = onTogglePlaybackShuffle,
+            onStartQueue = onStartQueue
         )
     }
 }

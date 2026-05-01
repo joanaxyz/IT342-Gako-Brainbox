@@ -1,13 +1,13 @@
 package edu.cit.gako.brainbox.app
 
-import edu.cit.gako.brainbox.audio.PlaybackUiState
-import edu.cit.gako.brainbox.network.models.FlashcardDeckDetail
-import edu.cit.gako.brainbox.network.models.FlashcardDeckSummary
-import edu.cit.gako.brainbox.network.models.NotebookSummary
-import edu.cit.gako.brainbox.network.models.PlaylistSummary
-import edu.cit.gako.brainbox.network.models.QuizDetail
-import edu.cit.gako.brainbox.network.models.QuizSummary
-import edu.cit.gako.brainbox.network.models.UserProfile
+import edu.cit.gako.brainbox.features.playback.ui.PlaybackUiState
+import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckDetail
+import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckSummary
+import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
+import edu.cit.gako.brainbox.features.home.playlists.data.dto.PlaylistSummary
+import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizDetail
+import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizSummary
+import edu.cit.gako.brainbox.features.home.profile.data.dto.UserProfile
 
 
 enum class AuthStage {
@@ -23,7 +23,7 @@ enum class HomeTab(val label: String) {
     LIBRARY("Library"),
     QUIZZES("Quizzes"),
     FLASHCARDS("Flashcards"),
-    PLAYLISTS("Playlists"),
+    PLAYLISTS("Playlist"),
     PROFILE("Profile")
 }
 
@@ -35,6 +35,9 @@ data class HomeData(
     val flashcards: List<FlashcardDeckSummary> = emptyList(),
     val playlists: List<PlaylistSummary> = emptyList(),
     val playbackQueue: List<NotebookSummary> = emptyList(),
+    val playbackPlaylistUuid: String? = null,
+    val playbackPlaylistTitle: String? = null,
+    val playbackPlaylistCurrentIndex: Int = 0,
     val syncNotice: String? = null,
     val syncedAtLabel: String? = null
 )
@@ -61,5 +64,10 @@ data class AppState(
     val studyReturnNotebookUuid: String? = null,
     val playbackState: PlaybackUiState = PlaybackUiState(),
     val playbackQueue: List<NotebookSummary> = emptyList(),
+    val playbackPlaylistUuid: String? = null,
+    val playbackPlaylistTitle: String? = null,
+    val playbackPlaylistCurrentIndex: Int = 0,
+    val isPlaybackLooping: Boolean = false,
+    val isPlaybackShuffling: Boolean = false,
     val offlineSyncState: OfflineSyncState = OfflineSyncState()
 )

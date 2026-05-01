@@ -1,6 +1,10 @@
 *.iml
 .gradle
 /local.properties
+*.log
+hs_err_pid*.log
+empty.txt
+tmp_richeditor_src/
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -19,3 +23,4 @@ local.properties
 
 # Root-level build output
 /build/
+/app/build/
