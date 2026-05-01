@@ -49,7 +49,6 @@ internal class BrainBoxAudioNotification(private val context: Context) {
             snapshot.status == BrainBoxAudioPlaybackStatus.READY -> "Ready to resume"
             snapshot.status == BrainBoxAudioPlaybackStatus.LOADING -> "Preparing audio..."
             snapshot.status == BrainBoxAudioPlaybackStatus.ENDED -> "Playback finished"
-            request?.offlineOnly == true -> "Offline voice"
             else -> "Preparing audio..."
         }
 

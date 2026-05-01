@@ -39,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,9 +57,7 @@ import edu.cit.gako.brainbox.shared.ui.BrandedSearchField
 import edu.cit.gako.brainbox.shared.ui.EmptyStateCard
 import edu.cit.gako.brainbox.shared.study.NotebookCard
 import edu.cit.gako.brainbox.shared.study.StudyNotebookCardModel
-import edu.cit.gako.brainbox.shared.ui.OfflinePackActionButton
 import edu.cit.gako.brainbox.shared.ui.SimpleHomePage
-import edu.cit.gako.brainbox.shared.ui.SyncNoticeBanner
 import edu.cit.gako.brainbox.shared.ui.theme.Accent
 import edu.cit.gako.brainbox.shared.ui.theme.AccentBg
 import edu.cit.gako.brainbox.shared.ui.theme.Border
@@ -325,11 +322,8 @@ internal fun LibraryNotebookToolbar(
 @Composable
 internal fun LibraryNotebookFooter(
     notebook: NotebookSummary,
-    isOffline: Boolean,
-    isWorking: Boolean,
     isMoving: Boolean,
-    onMove: () -> Unit,
-    onOfflineClick: () -> Unit
+    onMove: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         HorizontalDivider(color = Border)
@@ -360,22 +354,6 @@ internal fun LibraryNotebookFooter(
                 Spacer(modifier = Modifier.size(6.dp))
                 Text(if (isMoving) "Moving" else "Move", style = MaterialTheme.typography.labelMedium)
             }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OfflinePackActionButton(
-                isOffline = isOffline,
-                isWorking = isWorking,
-                onClick = onOfflineClick
-            )
-            Text(
-                text = if (isOffline) "Available offline" else "Online only",
-                color = if (isOffline) Accent else Ink3,
-                style = MaterialTheme.typography.bodySmall
-            )
         }
     }
 }

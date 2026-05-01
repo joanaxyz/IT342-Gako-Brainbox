@@ -9,8 +9,6 @@ import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookDetail
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookUpdateRequest
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookVersionItem
-import edu.cit.gako.brainbox.features.notebook.data.dto.OfflineNotebookBundle
-import edu.cit.gako.brainbox.features.notebook.data.dto.OfflineNotebookBundleRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -98,9 +96,4 @@ interface NotebookApiService {
         @Path("id") id: Long,
         @Body request: CategoryDeleteRequest
     ): ApiEnvelope<Unit?>
-
-    @POST("api/mobile/offline-bundles/notebooks")
-    suspend fun getOfflineNotebookBundleEnvelope(
-        @Body request: OfflineNotebookBundleRequest
-    ): ApiEnvelope<OfflineNotebookBundle>
 }

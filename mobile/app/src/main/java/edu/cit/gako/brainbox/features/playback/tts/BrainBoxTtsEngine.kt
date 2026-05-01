@@ -1,8 +1,6 @@
 package edu.cit.gako.brainbox.features.playback.tts
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -40,13 +38,9 @@ class BrainBoxTtsEngine(
     private val onSnapshotChanged: (BrainBoxAudioSnapshot) -> Unit = {}
 ) {
     private val appContext = context.applicationContext
-    private val offlineAudioCache = BrainBoxOfflineAudioCache(appContext)
 
     @Volatile
     private var tts: TextToSpeech? = null
-
-    @Volatile
-    private var preparedAudioPlayer: MediaPlayer? = null
 
     @Volatile
     private var initialized = false
@@ -92,7 +86,7 @@ class BrainBoxTtsEngine(
                 initialized = status == TextToSpeech.SUCCESS
                 if (initialized) {
                     tts?.setOnUtteranceProgressListener(progressListener)
-                } else if (currentRequest?.let(::hasPreparedOfflineAudio) != true) {
+                } else {
                     updateSnapshot(
                         snapshotState.value.copy(
                             status = BrainBoxAudioPlaybackStatus.ERROR,
@@ -102,10 +96,7 @@ class BrainBoxTtsEngine(
                     )
                 }
 
-                if ((initialized || currentRequest?.let(::hasPreparedOfflineAudio) == true) &&
-                    pendingAutoplay &&
-                    currentRequest != null
-                ) {
+                if (initialized && pendingAutoplay && currentRequest != null) {
                     pendingAutoplay = false
                     speakCurrentChunk()
                 }
@@ -113,16 +104,9 @@ class BrainBoxTtsEngine(
         }
     }
 
-    fun restore(snapshot: BrainBoxAudioSnapshot) {
-        currentRequest = snapshot.request
-        pendingAutoplay = snapshot.status == BrainBoxAudioPlaybackStatus.PLAYING
-        updateSnapshot(snapshot.copy(updatedAtEpochMs = System.currentTimeMillis()), persist = false)
-    }
-
     fun load(request: BrainBoxTtsRequest, autoplay: Boolean = false) {
         invalidateActivePlayback()
         stopProgressTracking()
-        releasePreparedAudioPlayer()
         tts?.stop()
         val normalizedRequest = request.copy(
             speechRate = request.speechRate.coerceIn(0.25f, 3.0f),
@@ -133,18 +117,7 @@ class BrainBoxTtsEngine(
         currentChunkStartedAtElapsedRealtimeMs = 0L
         resetTtsRangeTracking()
 
-        val offlineAudioAvailable = hasPreparedOfflineAudio(normalizedRequest)
-        val voiceAvailable = if (offlineAudioAvailable) {
-            true
-        } else if (tts == null) {
-            !normalizedRequest.offlineOnly
-        } else {
-            isOfflineVoiceAvailable(normalizedRequest)
-        }
         val status = when {
-            normalizedRequest.offlineOnly && offlineAudioAvailable -> BrainBoxAudioPlaybackStatus.READY
-            normalizedRequest.offlineOnly && tts == null -> BrainBoxAudioPlaybackStatus.LOADING
-            normalizedRequest.offlineOnly && !voiceAvailable -> BrainBoxAudioPlaybackStatus.UNAVAILABLE
             normalizedRequest.chunks.isEmpty() -> BrainBoxAudioPlaybackStatus.IDLE
             else -> BrainBoxAudioPlaybackStatus.READY
         }
@@ -157,19 +130,14 @@ class BrainBoxTtsEngine(
                 currentCharOffset = normalizedRequest.startCharOffset,
                 currentChunkElapsedMs = 0L,
                 speechRate = normalizedRequest.speechRate,
-                offlineVoiceAvailable = voiceAvailable,
-                errorMessage = if (status == BrainBoxAudioPlaybackStatus.UNAVAILABLE) {
-                    "Offline audio is not available on this device yet."
-                } else {
-                    null
-                },
+                errorMessage = null,
                 updatedAtEpochMs = System.currentTimeMillis()
             )
         )
 
         if (autoplay && status != BrainBoxAudioPlaybackStatus.UNAVAILABLE && status != BrainBoxAudioPlaybackStatus.IDLE) {
             pendingAutoplay = true
-            if (initialized || offlineAudioAvailable) {
+            if (initialized) {
                 pendingAutoplay = false
                 speakCurrentChunk()
             }
@@ -190,17 +158,7 @@ class BrainBoxTtsEngine(
             snapshot = snapshotState.value
         }
 
-        if (preparedAudioPlayer != null && snapshot.status == BrainBoxAudioPlaybackStatus.PAUSED) {
-            startPreparedAudioPlayback()
-            return
-        }
-
         pendingAutoplay = true
-        if (snapshot.request?.let(::hasPreparedOfflineAudio) == true) {
-            pendingAutoplay = false
-            speakCurrentChunk()
-            return
-        }
         if (!initialized) {
             updateSnapshot(snapshot.copy(status = BrainBoxAudioPlaybackStatus.LOADING, updatedAtEpochMs = System.currentTimeMillis()))
             return
@@ -212,22 +170,6 @@ class BrainBoxTtsEngine(
         val current = snapshotState.value
         if (!current.hasLoadedRequest) return
         pendingAutoplay = false
-        if (preparedAudioPlayer != null) {
-            val chunk = current.currentChunk
-            val pausedCharOffset = chunk?.let(::currentPreparedAudioCharOffset) ?: current.currentCharOffset
-            val pausedElapsedMs = currentChunkElapsedMs()
-            stopProgressTracking()
-            updateSnapshot(
-                current.copy(
-                    status = BrainBoxAudioPlaybackStatus.PAUSED,
-                    currentCharOffset = pausedCharOffset,
-                    currentChunkElapsedMs = pausedElapsedMs,
-                    updatedAtEpochMs = System.currentTimeMillis()
-                )
-            )
-            runCatching { preparedAudioPlayer?.pause() }
-            return
-        }
         val elapsedMs = currentChunkElapsedMs()
         val pausedCharOffset = current.currentChunk
             ?.let { chunk -> current.currentCharOffset.coerceIn(chunk.startCharIndex, chunk.endCharIndex) }
@@ -248,7 +190,6 @@ class BrainBoxTtsEngine(
     fun stop(resetToStart: Boolean = true) {
         pendingAutoplay = false
         invalidateActivePlayback()
-        releasePreparedAudioPlayer(stopFirst = true)
         tts?.stop()
         stopProgressTracking()
         resetTtsRangeTracking()
@@ -274,7 +215,6 @@ class BrainBoxTtsEngine(
         val clampedIndex = chunkIndex.coerceIn(0, (request.chunks.size - 1).coerceAtLeast(0))
         pendingAutoplay = snapshotState.value.status == BrainBoxAudioPlaybackStatus.PLAYING
         invalidateActivePlayback()
-        releasePreparedAudioPlayer(stopFirst = true)
         tts?.stop()
         stopProgressTracking()
         resetTtsRangeTracking()
@@ -290,17 +230,13 @@ class BrainBoxTtsEngine(
         if (pendingAutoplay && initialized) {
             pendingAutoplay = false
             speakCurrentChunk()
-        } else if (pendingAutoplay && hasPreparedOfflineAudio(request)) {
-            pendingAutoplay = false
-            speakCurrentChunk()
         }
     }
 
     fun setSpeechRate(rate: Float) {
         val normalizedRate = rate.coerceIn(0.25f, 3.0f)
         val snapshot = snapshotState.value
-        val shouldRestartTts = preparedAudioPlayer == null &&
-            snapshot.status == BrainBoxAudioPlaybackStatus.PLAYING &&
+        val shouldRestartTts = snapshot.status == BrainBoxAudioPlaybackStatus.PLAYING &&
             snapshot.hasLoadedRequest
         val restartCharOffset = snapshot.currentCharOffset
         val restartElapsedMs = currentChunkElapsedMs()
@@ -311,11 +247,6 @@ class BrainBoxTtsEngine(
             currentChunkStartedAtElapsedRealtimeMs = 0L
         }
         tts?.setSpeechRate(normalizedRate)
-        preparedAudioPlayer?.let { player ->
-            runCatching {
-                player.playbackParams = player.playbackParams.setSpeed(normalizedRate)
-            }
-        }
         val request = currentRequest?.copy(speechRate = normalizedRate)
         if (request != null) {
             currentRequest = request
@@ -339,7 +270,6 @@ class BrainBoxTtsEngine(
         currentRequest = null
         invalidateActivePlayback()
         resetTtsRangeTracking()
-        releasePreparedAudioPlayer(stopFirst = true)
         tts?.stop()
         stopProgressTracking()
         tts?.shutdown()
@@ -349,8 +279,7 @@ class BrainBoxTtsEngine(
             BrainBoxAudioSnapshot(
                 status = BrainBoxAudioPlaybackStatus.IDLE,
                 updatedAtEpochMs = System.currentTimeMillis()
-            ),
-            persist = false
+            )
         )
     }
 
@@ -370,32 +299,9 @@ class BrainBoxTtsEngine(
             return
         }
 
-        val cachedAudioFile = if (request.offlineOnly) {
-            offlineAudioCache.chunkFile(request.notebookId, chunk.id).takeIf { it.isFile && it.length() > 0L }
-        } else {
-            null
-        }
-        if (cachedAudioFile != null) {
-            playPreparedAudioChunk(request, chunk, cachedAudioFile)
-            return
-        }
-
         val ttsInstance = tts ?: run {
             pendingAutoplay = true
             updateSnapshot(snapshotState.value.copy(status = BrainBoxAudioPlaybackStatus.LOADING, updatedAtEpochMs = System.currentTimeMillis()))
-            return
-        }
-
-        if (request.offlineOnly && !isOfflineVoiceAvailable(request)) {
-            updateSnapshot(
-                snapshotState.value.copy(
-                    status = BrainBoxAudioPlaybackStatus.UNAVAILABLE,
-                    offlineVoiceAvailable = false,
-                    errorMessage = "Offline audio is not available on this device yet.",
-                    updatedAtEpochMs = System.currentTimeMillis()
-                )
-            )
-            pendingAutoplay = false
             return
         }
 
@@ -421,7 +327,6 @@ class BrainBoxTtsEngine(
             snapshotState.value.copy(
                 status = BrainBoxAudioPlaybackStatus.PLAYING,
                 speechRate = request.speechRate,
-                offlineVoiceAvailable = snapshotState.value.offlineVoiceAvailable,
                 currentChunkElapsedMs = 0L,
                 updatedAtEpochMs = System.currentTimeMillis()
             )
@@ -500,25 +405,6 @@ class BrainBoxTtsEngine(
         }
     }
 
-    private fun isOfflineVoiceAvailable(request: BrainBoxTtsRequest): Boolean {
-        val ttsInstance = tts ?: return true
-        if (!request.offlineOnly) return true
-
-        val locale = request.languageTag?.takeIf { it.isNotBlank() }?.let(Locale::forLanguageTag) ?: Locale.getDefault()
-        val matchingVoices = ttsInstance.voices ?: return false
-        val requestedVoice = request.voiceName?.let { voiceName ->
-            matchingVoices.firstOrNull { it.name == voiceName }
-        }
-
-        if (requestedVoice != null) {
-            return !requestedVoice.isNetworkConnectionRequired
-        }
-
-        return matchingVoices.any { voice ->
-            !voice.isNetworkConnectionRequired && voice.locale.language == locale.language
-        }
-    }
-
     private fun beginPlaybackGeneration(): Long {
         nextChunkJob?.cancel()
         nextChunkJob = null
@@ -540,10 +426,6 @@ class BrainBoxTtsEngine(
             utteranceId.startsWith("${playbackGeneration.get()}:")
     }
 
-    private fun isCurrentPreparedAudioPlayer(player: MediaPlayer, generation: Long): Boolean {
-        return preparedAudioPlayer === player && playbackGeneration.get() == generation
-    }
-
     private fun buildUtteranceId(
         request: BrainBoxTtsRequest,
         chunk: BrainBoxTtsChunk,
@@ -553,17 +435,14 @@ class BrainBoxTtsEngine(
     }
 
     private fun currentChunkElapsedMs(): Long {
-        preparedAudioPlayer?.let { player ->
-            return runCatching { player.currentPosition.toLong() }.getOrDefault(snapshotState.value.currentChunkElapsedMs)
-        }
         if (currentChunkStartedAtElapsedRealtimeMs == 0L) return snapshotState.value.currentChunkElapsedMs
         return SystemClock.elapsedRealtime() - currentChunkStartedAtElapsedRealtimeMs
     }
 
-    private fun updateSnapshot(snapshot: BrainBoxAudioSnapshot, persist: Boolean = true) {
+    private fun updateSnapshot(snapshot: BrainBoxAudioSnapshot) {
         snapshotState.value = snapshot
         onSnapshotChanged(snapshot)
-        store.publishSnapshot(snapshot, persist = persist)
+        store.publishSnapshot(snapshot)
     }
 
     private fun restartEndedSnapshotFromStart(snapshot: BrainBoxAudioSnapshot) {
@@ -576,7 +455,6 @@ class BrainBoxTtsEngine(
         )
 
         invalidateActivePlayback()
-        releasePreparedAudioPlayer(stopFirst = true)
         tts?.stop()
         stopProgressTracking()
         resetTtsRangeTracking()
@@ -590,161 +468,6 @@ class BrainBoxTtsEngine(
                 updatedAtEpochMs = System.currentTimeMillis()
             )
         )
-    }
-
-    private fun hasPreparedOfflineAudio(request: BrainBoxTtsRequest): Boolean {
-        return request.offlineOnly && offlineAudioCache.hasPreparedAudio(request)
-    }
-
-    private fun playPreparedAudioChunk(
-        request: BrainBoxTtsRequest,
-        chunk: BrainBoxTtsChunk,
-        audioFile: java.io.File
-    ) {
-        val generation = beginPlaybackGeneration()
-        releasePreparedAudioPlayer(stopFirst = true)
-        tts?.stop()
-
-        val mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build()
-            )
-        }
-        preparedAudioPlayer = mediaPlayer
-
-        mediaPlayer.setOnPreparedListener { player ->
-            if (!isCurrentPreparedAudioPlayer(player, generation)) {
-                return@setOnPreparedListener
-            }
-            runCatching {
-                player.playbackParams = player.playbackParams.setSpeed(request.speechRate)
-            }
-            player.start()
-            startProgressTracking(player, chunk)
-            updateSnapshot(
-                snapshotState.value.copy(
-                    status = BrainBoxAudioPlaybackStatus.PLAYING,
-                    currentCharOffset = chunk.startCharIndex,
-                    currentChunkElapsedMs = 0L,
-                    speechRate = request.speechRate,
-                    offlineVoiceAvailable = true,
-                    errorMessage = null,
-                    updatedAtEpochMs = System.currentTimeMillis()
-                )
-            )
-        }
-        mediaPlayer.setOnCompletionListener { player ->
-            if (!isCurrentPreparedAudioPlayer(player, generation) ||
-                snapshotState.value.status != BrainBoxAudioPlaybackStatus.PLAYING
-            ) {
-                return@setOnCompletionListener
-            }
-            val duration = runCatching { player.duration.toLong() }.getOrDefault(snapshotState.value.currentChunkElapsedMs)
-            stopProgressTracking()
-            releasePreparedAudioPlayer()
-            updateSnapshot(
-                snapshotState.value.copy(
-                    currentCharOffset = chunk.endCharIndex.coerceAtLeast(chunk.startCharIndex),
-                    currentChunkElapsedMs = duration,
-                    updatedAtEpochMs = System.currentTimeMillis()
-                ),
-                persist = false
-            )
-            speakNextChunk()
-        }
-        mediaPlayer.setOnErrorListener { player, _, _ ->
-            if (!isCurrentPreparedAudioPlayer(player, generation)) {
-                return@setOnErrorListener true
-            }
-            stopProgressTracking()
-            releasePreparedAudioPlayer()
-            updateSnapshot(
-                snapshotState.value.copy(
-                    status = BrainBoxAudioPlaybackStatus.ERROR,
-                    errorMessage = "Offline audio playback failed.",
-                    updatedAtEpochMs = System.currentTimeMillis()
-                )
-            )
-            pendingAutoplay = false
-            true
-        }
-
-        updateSnapshot(
-            snapshotState.value.copy(
-                status = BrainBoxAudioPlaybackStatus.LOADING,
-                currentChunkElapsedMs = 0L,
-                errorMessage = null,
-                updatedAtEpochMs = System.currentTimeMillis()
-            )
-        )
-
-        runCatching {
-            mediaPlayer.setDataSource(audioFile.absolutePath)
-            mediaPlayer.prepareAsync()
-        }.onFailure {
-            if (isCurrentPreparedAudioPlayer(mediaPlayer, generation)) {
-                releasePreparedAudioPlayer()
-                updateSnapshot(
-                    snapshotState.value.copy(
-                        status = BrainBoxAudioPlaybackStatus.ERROR,
-                        errorMessage = "Offline audio playback failed.",
-                        updatedAtEpochMs = System.currentTimeMillis()
-                    )
-                )
-                pendingAutoplay = false
-            }
-        }
-    }
-
-    private fun startPreparedAudioPlayback() {
-        val player = preparedAudioPlayer ?: return
-        val chunk = snapshotState.value.currentChunk ?: return
-        runCatching {
-            player.start()
-            startProgressTracking(player, chunk)
-            updateSnapshot(
-                snapshotState.value.copy(
-                    status = BrainBoxAudioPlaybackStatus.PLAYING,
-                    currentCharOffset = currentPreparedAudioCharOffset(chunk),
-                    currentChunkElapsedMs = currentChunkElapsedMs(),
-                    updatedAtEpochMs = System.currentTimeMillis()
-                )
-            )
-        }.onFailure {
-            releasePreparedAudioPlayer()
-            updateSnapshot(
-                snapshotState.value.copy(
-                    status = BrainBoxAudioPlaybackStatus.ERROR,
-                    errorMessage = "Offline audio playback failed.",
-                    updatedAtEpochMs = System.currentTimeMillis()
-                )
-            )
-        }
-    }
-
-    private fun startProgressTracking(player: MediaPlayer, chunk: BrainBoxTtsChunk) {
-        stopProgressTracking()
-        playbackProgressJob = scope.launch {
-            while (isActive && preparedAudioPlayer === player) {
-                val duration = runCatching { player.duration }.getOrDefault(0)
-                val position = runCatching { player.currentPosition }.getOrDefault(0)
-                updateSnapshot(
-                    snapshotState.value.copy(
-                        currentCharOffset = currentPreparedAudioCharOffset(chunk, position, duration),
-                        currentChunkElapsedMs = position.toLong().coerceAtLeast(0L),
-                        updatedAtEpochMs = System.currentTimeMillis()
-                    ),
-                    persist = false
-                )
-                if (!runCatching { player.isPlaying }.getOrDefault(false)) {
-                    break
-                }
-                delay(180L)
-            }
-        }
     }
 
     private fun startTtsProgressTracking(
@@ -763,7 +486,6 @@ class BrainBoxTtsEngine(
             while (
                 isActive &&
                 playbackGeneration.get() == generation &&
-                preparedAudioPlayer == null &&
                 snapshotState.value.status == BrainBoxAudioPlaybackStatus.PLAYING &&
                 snapshotState.value.currentChunk?.id == chunk.id
             ) {
@@ -820,8 +542,7 @@ class BrainBoxTtsEngine(
                         currentCharOffset = nextCharOffset.coerceIn(chunk.startCharIndex, chunk.endCharIndex),
                         currentChunkElapsedMs = elapsedMs,
                         updatedAtEpochMs = System.currentTimeMillis()
-                    ),
-                    persist = false
+                    )
                 )
                 if (finalRangeShouldCompleteChunk &&
                     completeCurrentTtsChunkIfCurrent(chunk, generation, currentChunkElapsedMs())
@@ -855,7 +576,6 @@ class BrainBoxTtsEngine(
     ): Boolean {
         val current = snapshotState.value
         if (playbackGeneration.get() != generation ||
-            preparedAudioPlayer != null ||
             current.status != BrainBoxAudioPlaybackStatus.PLAYING ||
             current.currentChunk?.id != chunk.id
         ) {
@@ -870,8 +590,7 @@ class BrainBoxTtsEngine(
                 currentCharOffset = chunk.endCharIndex.coerceAtLeast(chunk.startCharIndex),
                 currentChunkElapsedMs = elapsedMs.coerceAtLeast(0L),
                 updatedAtEpochMs = System.currentTimeMillis()
-            ),
-            persist = false
+            )
         )
         tts?.stop()
         scheduleSpeakNextChunk(generation)
@@ -886,7 +605,6 @@ class BrainBoxTtsEngine(
     ): Boolean {
         val current = snapshotState.value
         if (playbackGeneration.get() != generation ||
-            preparedAudioPlayer != null ||
             current.status != BrainBoxAudioPlaybackStatus.PLAYING ||
             current.currentChunk?.id != chunk.id
         ) {
@@ -908,8 +626,7 @@ class BrainBoxTtsEngine(
                 currentCharOffset = restartAbsoluteOffset,
                 currentChunkElapsedMs = 0L,
                 updatedAtEpochMs = System.currentTimeMillis()
-            ),
-            persist = false
+            )
         )
         nextChunkJob?.cancel()
         nextChunkJob = scope.launch {
@@ -942,22 +659,6 @@ class BrainBoxTtsEngine(
         playbackProgressJob = null
     }
 
-    private fun releasePreparedAudioPlayer(stopFirst: Boolean = false) {
-        stopProgressTracking()
-        val player = preparedAudioPlayer ?: return
-        preparedAudioPlayer = null
-        player.setOnPreparedListener(null)
-        player.setOnCompletionListener(null)
-        player.setOnErrorListener(null)
-        player.let {
-            if (stopFirst) {
-                runCatching { it.stop() }
-            }
-            runCatching { it.reset() }
-            it.release()
-        }
-    }
-
     private fun resetTtsRangeTracking() {
         currentTtsRelativeStartOffset = 0
         lastTtsRangeUpdateElapsedRealtimeMs = 0L
@@ -966,34 +667,11 @@ class BrainBoxTtsEngine(
         lastTtsRangeEndRelativeOffset = 0
     }
 
-    private fun currentPreparedAudioCharOffset(chunk: BrainBoxTtsChunk): Int {
-        val player = preparedAudioPlayer ?: return chunk.startCharIndex
-        val duration = runCatching { player.duration }.getOrDefault(0)
-        val position = runCatching { player.currentPosition }.getOrDefault(0)
-        return currentPreparedAudioCharOffset(chunk, position, duration)
-    }
-
-    private fun currentPreparedAudioCharOffset(
-        chunk: BrainBoxTtsChunk,
-        positionMs: Int,
-        durationMs: Int
-    ): Int {
-        if (durationMs <= 0 || chunk.text.isBlank()) {
-            return chunk.startCharIndex
-        }
-        val progress = positionMs.toFloat() / durationMs.toFloat()
-        val relativeOffset = (chunk.text.length * progress)
-            .toInt()
-            .coerceIn(0, chunk.text.length)
-        return (chunk.startCharIndex + relativeOffset).coerceIn(chunk.startCharIndex, chunk.endCharIndex)
-    }
-
     private val progressListener = object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) {
             if (!isCurrentTtsUtterance(utteranceId)) {
                 return
             }
-            val request = currentRequest ?: return
             val chunk = snapshotState.value.currentChunk ?: return
             lastTtsRangeUpdateElapsedRealtimeMs = 0L
             updateSnapshot(
@@ -1004,13 +682,9 @@ class BrainBoxTtsEngine(
                         .coerceIn(chunk.startCharIndex, chunk.endCharIndex),
                     currentChunkElapsedMs = 0L,
                     updatedAtEpochMs = System.currentTimeMillis()
-                ),
-                persist = false
+                )
             )
             currentChunkStartedAtElapsedRealtimeMs = SystemClock.elapsedRealtime()
-            if (request.offlineOnly && !snapshotState.value.offlineVoiceAvailable) {
-                stop()
-            }
         }
 
         override fun onDone(utteranceId: String?) {
@@ -1028,8 +702,7 @@ class BrainBoxTtsEngine(
                     currentCharOffset = spokenCharOffset,
                     currentChunkElapsedMs = currentChunkElapsedMs(),
                     updatedAtEpochMs = System.currentTimeMillis()
-                ),
-                persist = false
+                )
             )
             scheduleSpeakNextChunk(generation)
             if (snapshotState.value.currentChunkIndex >= request.chunks.size - 1 && snapshotState.value.status == BrainBoxAudioPlaybackStatus.ENDED) {
@@ -1086,8 +759,7 @@ class BrainBoxTtsEngine(
                     currentCharOffset = absoluteOffset,
                     currentChunkElapsedMs = currentChunkElapsedMs(),
                     updatedAtEpochMs = System.currentTimeMillis()
-                ),
-                persist = false
+                )
             )
         }
 

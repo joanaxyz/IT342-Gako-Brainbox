@@ -25,10 +25,14 @@ class QuizRepository(
             .requireData("We couldn't load that quiz.")
     }
 
-    suspend fun recordQuizAttempt(uuid: String, score: Int): QuizDetail {
+    suspend fun recordQuizAttempt(
+        uuid: String,
+        score: Int,
+        clientMutationId: String = UUID.randomUUID().toString()
+    ): QuizDetail {
         return apiService.recordQuizAttemptEnvelope(
             uuid,
-            QuizAttemptRequest(score = score, clientMutationId = UUID.randomUUID().toString())
+            QuizAttemptRequest(score = score, clientMutationId = clientMutationId)
         )
             .requireData("We couldn't save your quiz score.")
     }

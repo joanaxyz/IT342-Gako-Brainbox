@@ -7,8 +7,7 @@ import edu.cit.gako.brainbox.features.playback.model.BrainBoxTtsRequest
 
 fun buildNotebookTtsRequest(
     notebook: NotebookDetail,
-    html: String,
-    offlineOnly: Boolean
+    html: String
 ): BrainBoxTtsRequest {
     val plainText = html.htmlToPlaybackText()
     val chunks = splitIntoTtsChunks(plainText)
@@ -16,8 +15,7 @@ fun buildNotebookTtsRequest(
         notebookId = notebook.uuid,
         notebookTitle = notebook.title,
         chunks = chunks,
-        fullText = plainText,
-        offlineOnly = offlineOnly
+        fullText = plainText
     )
 }
 

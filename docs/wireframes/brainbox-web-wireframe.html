@@ -1,0 +1,1542 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BrainBox Web Wireframes</title>
+  <style>
+    :root {
+      --ink: #111;
+      --line: #222;
+      --paper: #fff;
+      --soft: #f1f1f1;
+      --soft-2: #f8f8f8;
+      --mid: #777;
+      --sidebar: 232px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.35;
+    }
+
+    .doc-header {
+      padding: 22px 28px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .doc-header h1,
+    .doc-header p,
+    .wireframe h2,
+    .wireframe p {
+      margin: 0;
+    }
+
+    .doc-header h1 {
+      font-size: 26px;
+    }
+
+    .doc-header p {
+      color: var(--mid);
+      margin-top: 6px;
+      max-width: 900px;
+    }
+
+    main {
+      display: grid;
+      gap: 34px;
+      padding: 28px;
+    }
+
+    .wireframe {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .wireframe h2 {
+      font-size: 19px;
+      margin-bottom: 10px;
+    }
+
+    .browser-frame {
+      border: 2px solid var(--line);
+      background: var(--paper);
+    }
+
+    .browser-bar {
+      height: 32px;
+      border-bottom: 2px solid var(--line);
+      background: var(--soft);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 12px;
+    }
+
+    .browser-dot {
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid var(--line);
+      border-radius: 50%;
+      background: var(--paper);
+    }
+
+    .browser-url {
+      margin-left: 8px;
+      flex: 1;
+      height: 17px;
+      border: 1.5px solid var(--line);
+      background: var(--paper);
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--mid);
+    }
+
+    .screen {
+      min-height: 700px;
+      background: var(--soft-2);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .auth-screen {
+      min-height: 640px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--paper);
+    }
+
+    .auth-left {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 640px;
+    }
+
+    .auth-logo-block {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .logo-wide {
+      width: 174px;
+      height: 58px;
+      border: 2px solid var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .auth-brand-name {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .auth-copy {
+      max-width: 410px;
+      border-top: 1px solid var(--paper);
+      padding-top: 20px;
+      color: #ddd;
+    }
+
+    .auth-right {
+      background: var(--soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .auth-card {
+      width: min(100%, 460px);
+      background: var(--paper);
+      border: 2px solid var(--line);
+      padding: 34px;
+    }
+
+    .auth-card h3 {
+      margin: 0;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    .auth-card .sub {
+      text-align: center;
+      color: var(--mid);
+      margin: 8px 0 24px;
+    }
+
+    .field-stack {
+      display: grid;
+      gap: 13px;
+    }
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .field {
+      height: 40px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      padding: 10px;
+      color: var(--mid);
+      font-size: 12px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-height: 34px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn-dark {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .inline-link {
+      font-size: 12px;
+      color: var(--ink);
+      text-align: right;
+    }
+
+    .code-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin: 10px 0 18px;
+    }
+
+    .code-box {
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      background: var(--paper);
+    }
+
+    .web-app {
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+      min-height: 700px;
+    }
+
+    .app-sidebar {
+      background: var(--paper);
+      border-right: 2px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
+    }
+
+    .side-logo {
+      height: 42px;
+      border-bottom: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding-bottom: 16px;
+      margin-bottom: 18px;
+      font-weight: 700;
+    }
+
+    .logo-mark {
+      width: 30px;
+      height: 30px;
+      background: var(--ink);
+      color: var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .side-section {
+      margin-bottom: 18px;
+    }
+
+    .side-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--mid);
+      margin: 0 0 7px 4px;
+      font-weight: 700;
+    }
+
+    .nav-item {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 10px;
+      border: 1.5px solid transparent;
+      font-size: 12px;
+    }
+
+    .nav-item.active {
+      border-color: var(--line);
+      background: var(--soft);
+      font-weight: 700;
+      border-left-width: 5px;
+    }
+
+    .nav-icon {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid currentColor;
+    }
+
+    .side-footer {
+      margin-top: auto;
+      border-top: 2px solid var(--line);
+      padding-top: 12px;
+      display: grid;
+      grid-template-columns: 34px 1fr 20px;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .main-area {
+      min-width: 0;
+      background: var(--soft);
+      padding-bottom: 112px;
+      position: relative;
+    }
+
+    .hero {
+      min-height: 154px;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 28px 32px 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 18px;
+    }
+
+    .hero-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ddd;
+      margin-bottom: 7px;
+      font-weight: 700;
+    }
+
+    .hero h3 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.08;
+    }
+
+    .hero p {
+      max-width: 610px;
+      color: #e6e6e6;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .hero-art {
+      width: 62px;
+      height: 62px;
+      border: 2px solid var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .content {
+      padding: 22px 32px 0;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card,
+    .card,
+    .panel {
+      border: 2px solid var(--line);
+      background: var(--paper);
+    }
+
+    .stat-card {
+      padding: 15px;
+      min-height: 86px;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .stat-icon {
+      width: 30px;
+      height: 30px;
+      border: 2px solid var(--line);
+      background: var(--soft);
+    }
+
+    .stat-value {
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--mid);
+      margin-top: 5px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 10px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--mid);
+      font-weight: 700;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-height: 124px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--line);
+      background: var(--soft);
+    }
+
+    .card-title {
+      height: 15px;
+      width: 70%;
+      background: var(--ink);
+      margin-top: 4px;
+    }
+
+    .card-line {
+      height: 10px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+    }
+
+    .card-line.short {
+      width: 55%;
+    }
+
+    .progress-track {
+      height: 5px;
+      border: 1.5px solid var(--line);
+      margin-top: auto;
+      background: var(--paper);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 58%;
+      background: var(--ink);
+    }
+
+    .progress-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .progress-panel {
+      padding: 18px;
+      min-height: 150px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .library-shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .library-sidebar,
+    .library-content {
+      background: var(--paper);
+      border: 2px solid var(--line);
+      padding: 18px;
+    }
+
+    .category-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .category-row {
+      height: 40px;
+      border: 2px solid var(--line);
+      display: grid;
+      grid-template-columns: 28px 1fr 36px;
+      gap: 9px;
+      align-items: center;
+      padding: 0 10px;
+      background: var(--paper);
+      font-size: 12px;
+    }
+
+    .category-row.active {
+      background: var(--soft);
+      font-weight: 700;
+    }
+
+    .searchbar,
+    .selectbox {
+      height: 36px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      padding: 9px 10px;
+      font-size: 12px;
+      color: var(--mid);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 16px 0;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .table {
+      border: 2px solid var(--line);
+      background: var(--paper);
+    }
+
+    .table-head,
+    .table-row {
+      display: grid;
+      grid-template-columns: minmax(0, 2.4fr) 1fr 80px 130px 78px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1.5px solid var(--line);
+      font-size: 12px;
+    }
+
+    .table-head {
+      background: var(--soft);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .file-cell {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .file-icon {
+      width: 30px;
+      height: 30px;
+      border: 2px solid var(--line);
+      background: var(--soft);
+    }
+
+    .study-controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 2px solid var(--line);
+      background: var(--paper);
+      min-height: 30px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .study-card {
+      min-height: 170px;
+      padding: 16px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      display: grid;
+      gap: 10px;
+    }
+
+    .study-meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--mid);
+    }
+
+    .chip {
+      border: 1.5px solid var(--line);
+      padding: 3px 8px;
+      background: var(--soft);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .playlist-layout {
+      display: grid;
+      grid-template-columns: 264px minmax(0, 1fr);
+      min-height: 668px;
+      background: var(--soft);
+    }
+
+    .playlist-sidebar {
+      background: var(--paper);
+      border-right: 2px solid var(--line);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .playlist-item {
+      border: 2px solid var(--line);
+      background: var(--soft);
+      min-height: 54px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 7px;
+      font-size: 12px;
+    }
+
+    .playlist-cover {
+      width: 38px;
+      height: 38px;
+      background: var(--ink);
+    }
+
+    .playlist-main {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-width: 0;
+    }
+
+    .playlist-hero {
+      min-height: 148px;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 28px 30px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 64px;
+      gap: 20px;
+      align-items: end;
+    }
+
+    .playlist-workspace {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+      padding: 18px 20px 26px;
+      min-height: 0;
+    }
+
+    .playlist-panel {
+      border: 2px solid var(--line);
+      background: var(--paper);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .playlist-panel-head {
+      padding: 16px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .playlist-panel-body {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .playlist-row {
+      min-height: 54px;
+      border: 2px solid var(--line);
+      background: var(--soft-2);
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 9px;
+      font-size: 12px;
+    }
+
+    .profile-page {
+      max-width: 560px;
+      display: grid;
+      gap: 16px;
+      margin: 0 auto;
+    }
+
+    .profile-card {
+      background: var(--paper);
+      border: 2px solid var(--line);
+      padding: 22px;
+    }
+
+    .profile-identity {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .profile-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .action-row {
+      min-height: 54px;
+      border-top: 1.5px solid var(--line);
+      display: grid;
+      grid-template-columns: 36px 1fr 20px;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .editor-screen {
+      min-height: 720px;
+      background: var(--soft);
+      display: grid;
+      grid-template-rows: 72px minmax(0, 1fr);
+    }
+
+    .editor-nav {
+      background: var(--paper);
+      border-bottom: 2px solid var(--line);
+      padding: 12px 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .editor-title-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .editor-body {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) 414px;
+      min-height: 0;
+    }
+
+    .outline {
+      background: var(--paper);
+      border-right: 2px solid var(--line);
+      padding: 14px;
+      display: grid;
+      align-content: start;
+      gap: 10px;
+    }
+
+    .outline-item {
+      min-height: 32px;
+      border: 1.5px solid var(--line);
+      background: var(--soft-2);
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .editor-main {
+      min-width: 0;
+      padding: 18px 20px 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .format-toolbar {
+      min-height: 46px;
+      background: var(--paper);
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      overflow: hidden;
+    }
+
+    .tool {
+      width: 30px;
+      height: 30px;
+      border: 1.5px solid var(--line);
+      background: var(--soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .paper-stage {
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 10px 0 0;
+    }
+
+    .editor-paper {
+      width: 72%;
+      min-height: 620px;
+      background: var(--paper);
+      border: 2px solid var(--line);
+      padding: 46px 54px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .paper-heading {
+      height: 26px;
+      background: var(--ink);
+      width: 66%;
+    }
+
+    .paper-line {
+      height: 12px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .paper-line.short {
+      width: 70%;
+    }
+
+    .ai-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 56px;
+      border-left: 2px solid var(--line);
+      background: var(--paper);
+      min-width: 0;
+    }
+
+    .ai-panel {
+      padding: 14px;
+      border-right: 2px solid var(--line);
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 12px;
+    }
+
+    .ai-rail {
+      padding: 12px 8px;
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      background: var(--soft);
+    }
+
+    .ai-message {
+      border: 2px solid var(--line);
+      background: var(--soft-2);
+      min-height: 58px;
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .ai-input {
+      min-height: 48px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+    }
+
+    .player {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      min-height: 94px;
+      background: var(--paper);
+      border-top: 2px solid var(--line);
+      padding: 10px 24px;
+      display: grid;
+      grid-template-rows: 16px 1fr;
+      gap: 10px;
+    }
+
+    .player-progress {
+      display: grid;
+      grid-template-columns: 40px 1fr 40px;
+      gap: 8px;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .player-track {
+      height: 6px;
+      border: 1.5px solid var(--line);
+    }
+
+    .player-fill {
+      width: 44%;
+      height: 100%;
+      background: var(--ink);
+    }
+
+    .player-content {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .player-info {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .album {
+      width: 44px;
+      height: 44px;
+      border: 2px solid var(--line);
+      background: var(--soft);
+    }
+
+    .player-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .queue-panel {
+      position: absolute;
+      right: 0;
+      top: 32px;
+      bottom: 94px;
+      width: 342px;
+      border-left: 2px solid var(--line);
+      background: var(--paper);
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 14px;
+      box-shadow: -6px 0 0 rgba(0, 0, 0, 0.04);
+    }
+
+    .queue-card {
+      border: 2px solid var(--line);
+      background: var(--soft);
+      padding: 12px;
+      min-height: 82px;
+    }
+
+    .queue-list {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .queue-row {
+      border: 2px solid var(--line);
+      background: var(--paper);
+      min-height: 42px;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 7px;
+      font-size: 12px;
+    }
+
+    .text-line {
+      height: 11px;
+      background: var(--ink);
+      width: 74%;
+    }
+
+    .text-line.light {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      height: 10px;
+      margin-top: 6px;
+      width: 55%;
+    }
+
+    .muted {
+      color: var(--mid);
+      font-size: 12px;
+    }
+
+    @media print {
+      main {
+        padding: 0;
+      }
+
+      .wireframe {
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="doc-header">
+    <h1>BrainBox Web Wireframes</h1>
+    <p>Low-fidelity black and white wireframes based on the actual BrainBox web layout and feature screens.</p>
+  </header>
+
+  <main>
+    <section class="wireframe">
+      <h2>Login Screen</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/login</div></div>
+        <div class="screen auth-screen">
+          <div class="auth-left">
+            <div class="auth-logo-block">
+              <div class="logo-wide">BRAINBOX LOGO</div>
+              <div class="auth-brand-name">BrainBox</div>
+            </div>
+            <p class="auth-copy">BrainBox is presented as a focused notebook and study workspace with brand copy on the left panel.</p>
+          </div>
+          <div class="auth-right">
+            <div class="auth-card">
+              <h3>Welcome Back</h3>
+              <p class="sub">Log in to continue learning.</p>
+              <div class="field-stack">
+                <div><div class="field-label">Username/Email</div><div class="field">Enter your username or email</div></div>
+                <div><div class="field-label">Password</div><div class="field">Enter your password</div></div>
+                <div class="inline-link">Forgot password?</div>
+                <div class="btn btn-dark btn-full">Log In</div>
+                <div class="btn btn-full">Log in with Google</div>
+                <p class="muted" style="text-align:center;">Do not have an account? Sign up</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Register Screen</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/register</div></div>
+        <div class="screen auth-screen">
+          <div class="auth-left">
+            <div class="auth-logo-block">
+              <div class="logo-wide">BRAINBOX LOGO</div>
+              <div class="auth-brand-name">BrainBox</div>
+            </div>
+            <p class="auth-copy">Same split authentication layout; only the card content changes per auth route.</p>
+          </div>
+          <div class="auth-right">
+            <div class="auth-card">
+              <h3>Create Account</h3>
+              <p class="sub">Start organizing your study materials.</p>
+              <div class="field-stack">
+                <div><div class="field-label">Username</div><div class="field">Enter your username</div></div>
+                <div><div class="field-label">Email Address</div><div class="field">Enter your email</div></div>
+                <div><div class="field-label">Password</div><div class="field">Create a password</div></div>
+                <div><div class="field-label">Confirm Password</div><div class="field">Confirm your password</div></div>
+                <div class="btn btn-dark btn-full">Register</div>
+                <div class="btn btn-full">Sign up with Google</div>
+                <p class="muted" style="text-align:center;">Already have an account? Log in</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Forgot Password Flow</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/forgot-password</div></div>
+        <div class="screen auth-screen">
+          <div class="auth-left">
+            <div class="auth-logo-block">
+              <div class="logo-wide">BRAINBOX LOGO</div>
+              <div class="auth-brand-name">BrainBox</div>
+            </div>
+            <p class="auth-copy">Password recovery uses the same card container with three states: email, code, and reset password.</p>
+          </div>
+          <div class="auth-right">
+            <div class="auth-card">
+              <h3>Reset Password</h3>
+              <p class="sub">Enter the verification code sent to email.</p>
+              <div class="field-stack">
+                <div><div class="field-label">Email Address</div><div class="field">student@email.com</div></div>
+                <div class="code-row"><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span></div>
+                <div><div class="field-label">New Password</div><div class="field">Enter new password</div></div>
+                <div><div class="field-label">Confirm New Password</div><div class="field">Confirm new password</div></div>
+                <div class="btn btn-dark btn-full">Reset Password</div>
+                <p class="muted" style="text-align:center;">Remember your password? Log in</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Dashboard</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/dashboard</div></div>
+        <div class="screen">
+          <div class="web-app">
+            <aside class="app-sidebar">
+              <div class="side-logo"><span class="logo-mark">B</span><span>BrainBox</span></div>
+              <div class="side-section"><div class="side-label">Workspace</div><div class="nav-item active"><span class="nav-icon"></span>Dashboard</div><div class="nav-item"><span class="nav-icon"></span>Library</div></div>
+              <div class="side-section"><div class="side-label">Study</div><div class="nav-item"><span class="nav-icon"></span>Quizzes</div><div class="nav-item"><span class="nav-icon"></span>Flashcards</div></div>
+              <div class="side-section"><div class="side-label">Listen</div><div class="nav-item"><span class="nav-icon"></span>Study Playlists</div></div>
+              <div class="side-section"><div class="side-label">Recent</div><div class="nav-item"><span class="nav-icon"></span>Biology Notes</div><div class="nav-item"><span class="nav-icon"></span>IT342 Review</div></div>
+              <div class="side-footer"><span class="avatar">JD</span><span><b>Joana</b><br><span class="muted">student@email.com</span></span><span>...</span></div>
+            </aside>
+            <main class="main-area">
+              <section class="hero">
+                <div><div class="hero-label">Friday, May 1 - Good evening</div><h3>Ready to learn, Joana?</h3><p>Study overview, recent notebooks, quizzes, flashcards, and progress are grouped on the dashboard.</p></div>
+                <div class="hero-actions"><span class="btn">New notebook</span><span class="hero-art">DB</span></div>
+              </section>
+              <div class="content">
+                <div class="stats-grid">
+                  <div class="stat-card"><span class="stat-icon"></span><span><div class="stat-value">12</div><div class="stat-label">Notebooks</div></span></div>
+                  <div class="stat-card"><span class="stat-icon"></span><span><div class="stat-value">5</div><div class="stat-label">Quizzes</div></span></div>
+                  <div class="stat-card"><span class="stat-icon"></span><span><div class="stat-value">8</div><div class="stat-label">Decks</div></span></div>
+                  <div class="stat-card"><span class="stat-icon"></span><span><div class="stat-value">3</div><div class="stat-label">Playlists</div></span></div>
+                </div>
+                <div class="section-head"><span class="section-title">Continue learning</span></div>
+                <div class="grid-3">
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span class="chip">Queue</span></div><div class="card-title"></div><div class="card-line"></div><div class="progress-track"><div class="progress-fill"></div></div></div>
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span class="chip">Quiz</span></div><div class="card-title"></div><div class="card-line short"></div><div class="progress-track"><div class="progress-fill" style="width:72%"></div></div></div>
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span class="chip">Deck</span></div><div class="card-title"></div><div class="card-line"></div><div class="progress-track"><div class="progress-fill" style="width:36%"></div></div></div>
+                </div>
+                <div class="section-head"><span class="section-title">Recently edited</span><span class="muted">View all</span></div>
+                <div class="grid-4">
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span>...</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div></div>
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span>...</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div></div>
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span>...</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div></div>
+                  <div class="card"><div class="card-top"><span class="card-icon"></span><span>+</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div></div>
+                </div>
+                <div class="progress-grid">
+                  <div class="panel progress-panel"><b>Quiz progress</b><div class="progress-track"><div class="progress-fill" style="width:64%"></div></div><div class="card-line"></div><div class="card-line short"></div></div>
+                  <div class="panel progress-panel"><b>Flashcard mastery</b><div class="progress-track"><div class="progress-fill" style="width:48%"></div></div><div class="card-line"></div><div class="card-line short"></div></div>
+                </div>
+              </div>
+              <div class="player"><div class="player-progress"><span>0:24</span><div class="player-track"><div class="player-fill"></div></div><span>4:18</span></div><div class="player-content"><div class="player-info"><span class="album"></span><span><b>Current notebook title</b><br><span class="muted">Category name</span></span></div><div class="player-controls"><span class="icon-button">S</span><span class="icon-button">P</span><span class="icon-button">N</span></div><div class="button-row" style="justify-content:flex-end;"><span class="btn">1x</span><span class="btn">Queue</span></div></div></div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Library</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/library</div></div>
+        <div class="screen">
+          <div class="web-app">
+            <aside class="app-sidebar">
+              <div class="side-logo"><span class="logo-mark">B</span><span>BrainBox</span></div>
+              <div class="side-section"><div class="side-label">Workspace</div><div class="nav-item"><span class="nav-icon"></span>Dashboard</div><div class="nav-item active"><span class="nav-icon"></span>Library</div></div>
+              <div class="side-section"><div class="side-label">Study</div><div class="nav-item"><span class="nav-icon"></span>Quizzes</div><div class="nav-item"><span class="nav-icon"></span>Flashcards</div></div>
+              <div class="side-section"><div class="side-label">Listen</div><div class="nav-item"><span class="nav-icon"></span>Study Playlists</div></div>
+              <div class="side-footer"><span class="avatar">JD</span><span><b>Joana</b><br><span class="muted">student@email.com</span></span><span>...</span></div>
+            </aside>
+            <main class="main-area">
+              <section class="hero">
+                <div><div class="hero-label">Notebook library</div><h3>Keep your notes easy to find</h3><p>Create categories, sort notebooks into them, and keep everything easy to find.</p></div>
+                <div class="hero-actions"><span class="btn">New category</span><span class="btn">New notebook</span><span class="hero-art">LB</span></div>
+              </section>
+              <div class="content">
+                <div class="library-shell">
+                  <aside class="library-sidebar">
+                    <b>Categories</b>
+                    <p class="muted">Pick a category to browse it, or create a new one.</p>
+                    <div class="searchbar">Search categories</div>
+                    <div class="toolbar"><span class="selectbox">Sort by name</span><span class="btn">Dir</span></div>
+                    <div class="category-list">
+                      <div class="category-row active"><span class="card-icon"></span><span>All notebooks</span><span>12</span></div>
+                      <div class="category-row"><span class="card-icon"></span><span>Uncategorized</span><span>2</span></div>
+                      <div class="category-row"><span class="card-icon"></span><span>IT342</span><span>4</span></div>
+                      <div class="category-row"><span class="card-icon"></span><span>Biology</span><span>3</span></div>
+                    </div>
+                  </aside>
+                  <section class="library-content">
+                    <div class="toolbar">
+                      <div><b>All notebooks</b><br><span class="muted">12 notebooks visible</span></div>
+                      <div class="button-row"><span class="btn">Select</span><span class="btn">Delete</span></div>
+                    </div>
+                    <div class="toolbar">
+                      <div class="toolbar-left"><span class="searchbar" style="width:260px;">Search notebooks</span><span class="selectbox">Sort by updated</span><span class="btn">Dir</span></div>
+                    </div>
+                    <div class="table">
+                      <div class="table-head"><span>Notebook</span><span>Category</span><span>Words</span><span>Last modified</span><span>Open</span></div>
+                      <div class="table-row"><span class="file-cell"><span class="file-icon"></span><span><b>Integration Notes</b><br><span class="muted">Reviewed recently</span></span></span><span>IT342</span><span>1,840</span><span>May 1</span><span class="btn">Open</span></div>
+                      <div class="table-row"><span class="file-cell"><span class="file-icon"></span><span><b>Biology Terms</b><br><span class="muted">2 pages</span></span></span><span>Biology</span><span>920</span><span>Apr 30</span><span class="btn">Open</span></div>
+                      <div class="table-row"><span class="file-cell"><span class="file-icon"></span><span><b>Quiz Draft</b><br><span class="muted">Saved version</span></span></span><span>Uncategorized</span><span>640</span><span>Apr 28</span><span class="btn">Open</span></div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+              <div class="player"><div class="player-progress"><span>0:24</span><div class="player-track"><div class="player-fill"></div></div><span>4:18</span></div><div class="player-content"><div class="player-info"><span class="album"></span><span><b>Library notebook audio</b><br><span class="muted">Queue ready</span></span></div><div class="player-controls"><span class="icon-button">S</span><span class="icon-button">P</span><span class="icon-button">N</span></div><div class="button-row" style="justify-content:flex-end;"><span class="btn">Queue</span></div></div></div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Notebook Editor with AI Sidebar</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/notebook/{uuid}</div></div>
+        <div class="screen editor-screen">
+          <header class="editor-nav">
+            <div class="editor-title-row"><span class="icon-button">B</span><span><b>Integration Notes</b><br><span class="muted">Category badge - Saved</span></span></div>
+            <div class="editor-actions"><span class="btn">Review</span><span class="icon-button">Imp</span><span class="icon-button">Exp</span><span class="icon-button">Save</span><span class="icon-button">Hist</span><span class="icon-button">AI</span></div>
+          </header>
+          <div class="editor-body">
+            <aside class="outline">
+              <b>Outline</b>
+              <div class="outline-item">1. Overview</div>
+              <div class="outline-item">2. Requirements</div>
+              <div class="outline-item">2.1 Features</div>
+              <div class="outline-item">3. Notes</div>
+            </aside>
+            <main class="editor-main">
+              <div class="format-toolbar">
+                <span class="tool">U</span><span class="tool">R</span><span class="tool">Font</span><span class="tool">12</span><span class="tool">P</span><span class="tool">H1</span><span class="tool">B</span><span class="tool">I</span><span class="tool">U</span><span class="tool">List</span><span class="tool">Table</span><span class="tool">Eq</span><span class="tool">Lines</span>
+              </div>
+              <div class="paper-stage">
+                <article class="editor-paper">
+                  <div class="paper-heading"></div>
+                  <div class="paper-line"></div>
+                  <div class="paper-line"></div>
+                  <div class="paper-line short"></div>
+                  <div class="paper-line"></div>
+                  <div class="paper-line"></div>
+                  <div class="paper-line short"></div>
+                  <div class="paper-line"></div>
+                  <div class="paper-line"></div>
+                  <div class="paper-line"></div>
+                </article>
+              </div>
+            </main>
+            <aside class="ai-shell">
+              <section class="ai-panel">
+                <b>BrainBox AI</b>
+                <div class="filter-row"><span class="pill active">Chat</span><span class="pill">Tools</span></div>
+                <div class="field-stack">
+                  <div class="ai-message">Assistant response and generated study content preview.</div>
+                  <div class="ai-message" style="justify-self:end;width:82%;">User prompt about the notebook.</div>
+                  <div class="ai-message">Proposal card with accept or dismiss actions.</div>
+                </div>
+                <div class="ai-input"></div>
+              </section>
+              <nav class="ai-rail"><span class="icon-button">AI</span><span class="icon-button">Q</span><span class="icon-button">F</span><span class="icon-button">?</span></nav>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Quizzes</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/quizzes</div></div>
+        <div class="screen">
+          <div class="web-app">
+            <aside class="app-sidebar">
+              <div class="side-logo"><span class="logo-mark">B</span><span>BrainBox</span></div>
+              <div class="side-section"><div class="side-label">Workspace</div><div class="nav-item"><span class="nav-icon"></span>Dashboard</div><div class="nav-item"><span class="nav-icon"></span>Library</div></div>
+              <div class="side-section"><div class="side-label">Study</div><div class="nav-item active"><span class="nav-icon"></span>Quizzes</div><div class="nav-item"><span class="nav-icon"></span>Flashcards</div></div>
+              <div class="side-section"><div class="side-label">Listen</div><div class="nav-item"><span class="nav-icon"></span>Study Playlists</div></div>
+              <div class="side-footer"><span class="avatar">JD</span><span><b>Joana</b><br><span class="muted">student@email.com</span></span><span>...</span></div>
+            </aside>
+            <main class="main-area">
+              <section class="hero">
+                <div><div class="hero-label">Study mode</div><h3>Quizzes</h3><p>Test your knowledge with multiple-choice quizzes.</p></div>
+                <div class="hero-actions"><span class="btn">Create quiz</span><span class="hero-art">QZ</span></div>
+              </section>
+              <div class="content">
+                <div class="study-controls"><div class="toolbar-left"><span class="searchbar" style="width:280px;">Search quizzes</span><span class="selectbox">Sort quizzes by</span><span class="btn">Dir</span></div><div class="button-row"><span class="btn">Select</span><span class="btn">Delete</span></div></div>
+                <div class="filter-row"><span class="pill active">All</span><span class="pill">Notebook</span><span class="pill">Standalone</span><span class="pill">Easy</span><span class="pill">Medium</span><span class="pill">Hard</span></div>
+                <div class="grid-3" style="margin-top:18px;">
+                  <div class="study-card"><div class="study-meta-row"><span>Integration Notes</span><span class="chip">Medium</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div><div class="study-meta-row"><span>10 questions</span><span>2 attempts</span></div><div class="button-row"><span class="btn btn-dark">Start quiz</span><span class="btn">Edit</span></div></div>
+                  <div class="study-card"><div class="study-meta-row"><span>Biology Terms</span><span class="chip">Easy</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div><div class="study-meta-row"><span>8 questions</span><span>1 attempt</span></div><div class="button-row"><span class="btn btn-dark">Start quiz</span><span class="btn">Edit</span></div></div>
+                  <div class="study-card"><div class="study-meta-row"><span>Standalone</span><span class="chip">Hard</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div><div class="study-meta-row"><span>15 questions</span><span>0 attempts</span></div><div class="button-row"><span class="btn btn-dark">Start quiz</span><span class="btn">Edit</span></div></div>
+                </div>
+              </div>
+              <div class="player"><div class="player-progress"><span>0:24</span><div class="player-track"><div class="player-fill"></div></div><span>4:18</span></div><div class="player-content"><div class="player-info"><span class="album"></span><span><b>No audio playing</b><br><span class="muted">Player bar remains available</span></span></div><div class="player-controls"><span class="icon-button">S</span><span class="icon-button">P</span><span class="icon-button">N</span></div><div></div></div></div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Flashcards</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/flashcards</div></div>
+        <div class="screen">
+          <div class="web-app">
+            <aside class="app-sidebar">
+              <div class="side-logo"><span class="logo-mark">B</span><span>BrainBox</span></div>
+              <div class="side-section"><div class="side-label">Workspace</div><div class="nav-item"><span class="nav-icon"></span>Dashboard</div><div class="nav-item"><span class="nav-icon"></span>Library</div></div>
+              <div class="side-section"><div class="side-label">Study</div><div class="nav-item"><span class="nav-icon"></span>Quizzes</div><div class="nav-item active"><span class="nav-icon"></span>Flashcards</div></div>
+              <div class="side-section"><div class="side-label">Listen</div><div class="nav-item"><span class="nav-icon"></span>Study Playlists</div></div>
+              <div class="side-footer"><span class="avatar">JD</span><span><b>Joana</b><br><span class="muted">student@email.com</span></span><span>...</span></div>
+            </aside>
+            <main class="main-area">
+              <section class="hero">
+                <div><div class="hero-label">Study mode</div><h3>Flashcards</h3><p>Active recall decks for long-term retention.</p></div>
+                <div class="hero-actions"><span class="btn">New deck</span><span class="hero-art">FC</span></div>
+              </section>
+              <div class="content">
+                <div class="study-controls"><div class="toolbar-left"><span class="searchbar" style="width:280px;">Search decks</span><span class="selectbox">Sort flashcards by</span><span class="btn">Dir</span></div><div class="button-row"><span class="btn">Select</span><span class="btn">Delete</span></div></div>
+                <div class="filter-row"><span class="pill active">All</span><span class="pill">Notebook</span><span class="pill">Standalone</span><span class="pill">Mastered</span><span class="pill">Needs review</span></div>
+                <div class="grid-3" style="margin-top:18px;">
+                  <div class="study-card"><div class="study-meta-row"><span>Integration Notes</span><span class="chip">Deck</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div><div class="study-meta-row"><span>24 cards</span><span>72% mastery</span></div><div class="button-row"><span class="btn btn-dark">Study deck</span><span class="btn">Edit</span></div></div>
+                  <div class="study-card"><div class="study-meta-row"><span>Biology Terms</span><span class="chip">Deck</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div><div class="study-meta-row"><span>18 cards</span><span>40% mastery</span></div><div class="button-row"><span class="btn btn-dark">Study deck</span><span class="btn">Edit</span></div></div>
+                  <div class="study-card"><div class="study-meta-row"><span>Standalone</span><span class="chip">Deck</span></div><div class="card-title"></div><div class="card-line"></div><div class="card-line short"></div><div class="study-meta-row"><span>12 cards</span><span>0 attempts</span></div><div class="button-row"><span class="btn btn-dark">Study deck</span><span class="btn">Edit</span></div></div>
+                </div>
+              </div>
+              <div class="player"><div class="player-progress"><span>0:24</span><div class="player-track"><div class="player-fill"></div></div><span>4:18</span></div><div class="player-content"><div class="player-info"><span class="album"></span><span><b>No audio playing</b><br><span class="muted">Player bar remains available</span></span></div><div class="player-controls"><span class="icon-button">S</span><span class="icon-button">P</span><span class="icon-button">N</span></div><div></div></div></div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Playlists and Playback Queue</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/playlists</div></div>
+        <div class="screen">
+          <div class="web-app">
+            <aside class="app-sidebar">
+              <div class="side-logo"><span class="logo-mark">B</span><span>BrainBox</span></div>
+              <div class="side-section"><div class="side-label">Workspace</div><div class="nav-item"><span class="nav-icon"></span>Dashboard</div><div class="nav-item"><span class="nav-icon"></span>Library</div></div>
+              <div class="side-section"><div class="side-label">Study</div><div class="nav-item"><span class="nav-icon"></span>Quizzes</div><div class="nav-item"><span class="nav-icon"></span>Flashcards</div></div>
+              <div class="side-section"><div class="side-label">Listen</div><div class="nav-item active"><span class="nav-icon"></span>Study Playlists</div></div>
+              <div class="side-footer"><span class="avatar">JD</span><span><b>Joana</b><br><span class="muted">student@email.com</span></span><span>...</span></div>
+            </aside>
+            <main class="main-area" style="padding-bottom:94px;">
+              <div class="playlist-layout">
+                <aside class="playlist-sidebar">
+                  <div class="toolbar"><span><span class="muted">Playlist management</span><br><b style="font-size:24px;">Playlists</b></span><span class="icon-button">+</span></div>
+                  <p class="muted">Choose a playlist and arrange notebooks into a listening order.</p>
+                  <div class="searchbar">Search playlists</div>
+                  <div class="playlist-item"><span class="playlist-cover"></span><span><b>Final Review</b><br><span class="muted">4 notebooks</span></span></div>
+                  <div class="playlist-item"><span class="playlist-cover"></span><span><b>Commute Study</b><br><span class="muted">6 notebooks</span></span></div>
+                  <div class="playlist-item"><span class="playlist-cover"></span><span><b>IT342</b><br><span class="muted">3 notebooks</span></span></div>
+                </aside>
+                <section class="playlist-main">
+                  <div class="playlist-hero"><div><span class="hero-label">Selected playlist</span><h3>Final Review</h3><p>Build a repeatable playback queue from notebooks.</p></div><div class="hero-art">PL</div></div>
+                  <div class="playlist-workspace">
+                    <section class="playlist-panel"><div class="playlist-panel-head"><b>Library</b><br><span class="muted">Add notebooks</span></div><div class="playlist-panel-body"><div class="toolbar"><span class="searchbar" style="width:180px;">Search notebooks</span><span class="selectbox">Sort</span></div><div class="playlist-row"><span class="file-icon"></span><span><b>Integration Notes</b><br><span class="muted">IT342</span></span><span class="btn">Add</span></div><div class="playlist-row"><span class="file-icon"></span><span><b>Architecture Review</b><br><span class="muted">IT342</span></span><span class="btn">Add</span></div><div class="playlist-row"><span class="file-icon"></span><span><b>Database Notes</b><br><span class="muted">Backend</span></span><span class="btn">Added</span></div></div></section>
+                    <section class="playlist-panel"><div class="playlist-panel-head"><b>Queue</b><br><span class="muted">3 notebooks in order</span></div><div class="playlist-panel-body"><div class="playlist-row"><span>1</span><span><b>Database Notes</b><br><span class="muted">Now playing</span></span><span class="button-row"><span class="icon-button">P</span><span class="icon-button">X</span></span></div><div class="playlist-row"><span>2</span><span><b>Integration Notes</b><br><span class="muted">Next</span></span><span class="button-row"><span class="icon-button">Up</span><span class="icon-button">X</span></span></div><div class="playlist-row"><span>3</span><span><b>Architecture Review</b><br><span class="muted">Later</span></span><span class="button-row"><span class="icon-button">Dn</span><span class="icon-button">X</span></span></div></div></section>
+                  </div>
+                </section>
+              </div>
+              <aside class="queue-panel">
+                <div class="toolbar"><b>Queue</b><span class="icon-button">X</span></div>
+                <div class="queue-card"><b>Now Playing</b><div class="card-line"></div><div class="progress-track"><div class="progress-fill"></div></div></div>
+                <div class="queue-list"><div class="queue-row"><span>1</span><span>Database Notes</span></div><div class="queue-row"><span>2</span><span>Integration Notes</span></div><div class="queue-row"><span>3</span><span>Architecture Review</span></div></div>
+                <div class="btn btn-dark btn-full">Play next</div>
+              </aside>
+              <div class="player"><div class="player-progress"><span>0:24</span><div class="player-track"><div class="player-fill"></div></div><span>4:18</span></div><div class="player-content"><div class="player-info"><span class="album"></span><span><b>Database Notes</b><br><span class="muted">Final Review</span></span></div><div class="player-controls"><span class="icon-button">S</span><span class="icon-button">P</span><span class="icon-button">N</span></div><div class="button-row" style="justify-content:flex-end;"><span class="btn">Queue</span></div></div></div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wireframe">
+      <h2>Profile</h2>
+      <div class="browser-frame">
+        <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="browser-url">/profile</div></div>
+        <div class="screen">
+          <div class="web-app">
+            <aside class="app-sidebar">
+              <div class="side-logo"><span class="logo-mark">B</span><span>BrainBox</span></div>
+              <div class="side-section"><div class="side-label">Workspace</div><div class="nav-item"><span class="nav-icon"></span>Dashboard</div><div class="nav-item"><span class="nav-icon"></span>Library</div></div>
+              <div class="side-section"><div class="side-label">Study</div><div class="nav-item"><span class="nav-icon"></span>Quizzes</div><div class="nav-item"><span class="nav-icon"></span>Flashcards</div></div>
+              <div class="side-section"><div class="side-label">Listen</div><div class="nav-item"><span class="nav-icon"></span>Study Playlists</div></div>
+              <div class="side-footer"><span class="avatar">JD</span><span><b>Joana</b><br><span class="muted">student@email.com</span></span><span>...</span></div>
+            </aside>
+            <main class="main-area">
+              <section class="hero">
+                <div><div class="hero-label">Account</div><h3>Profile</h3><p>Your account at a glance.</p></div>
+                <div class="hero-art">PR</div>
+              </section>
+              <div class="content">
+                <div class="profile-page">
+                  <section class="profile-card">
+                    <div class="profile-identity"><div class="profile-avatar">JD</div><div><b style="font-size:20px;">Joana Gako</b><br><span class="muted">student@email.com</span></div></div>
+                    <div class="card-line" style="margin:18px 0;"></div>
+                    <div class="toolbar"><span class="muted">Joined</span><b>May 1, 2026</b></div>
+                    <div class="toolbar"><span class="muted">Email</span><b>student@email.com</b></div>
+                  </section>
+                  <section class="profile-card">
+                    <b>Account</b>
+                    <div class="action-row"><span class="card-icon"></span><span><b>Edit profile</b><br><span class="muted">Update username or email</span></span><span>&gt;</span></div>
+                    <div class="action-row"><span class="card-icon"></span><span><b>Change password</b><br><span class="muted">Update account password</span></span><span>&gt;</span></div>
+                    <div class="action-row"><span class="card-icon"></span><span><b>AI provider</b><br><span class="muted">Configure AI integration</span></span><span>&gt;</span></div>
+                    <div class="btn btn-full" style="margin-top:14px;">Logout</div>
+                  </section>
+                </div>
+              </div>
+              <div class="player"><div class="player-progress"><span>0:24</span><div class="player-track"><div class="player-fill"></div></div><span>4:18</span></div><div class="player-content"><div class="player-info"><span class="album"></span><span><b>No audio playing</b><br><span class="muted">Player bar remains available</span></span></div><div class="player-controls"><span class="icon-button">S</span><span class="icon-button">P</span><span class="icon-button">N</span></div><div></div></div></div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

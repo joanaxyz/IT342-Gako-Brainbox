@@ -3,21 +3,11 @@ package edu.cit.gako.brainbox.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.google.gson.Gson
 import edu.cit.gako.brainbox.app.playback.PlaybackCoordinator
 import edu.cit.gako.brainbox.features.auth.AuthCoordinator
 import edu.cit.gako.brainbox.app.study.StudySessionCoordinator
-import edu.cit.gako.brainbox.platform.local.toDocument
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
-import edu.cit.gako.brainbox.features.home.profile.data.dto.UserProfile
-import edu.cit.gako.brainbox.app.sync.OfflineSyncCoordinator
-import edu.cit.gako.brainbox.app.worker.BrainBoxSyncWorkScheduler
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
@@ -27,22 +17,17 @@ class BrainBoxAppController(
     private val scope: CoroutineScope,
     private val onMessage: (String) -> Unit
 ) {
-    private val appContext = appGraph.context
     private val authRepository = appGraph.authRepository
     private val homeRepository = appGraph.homeRepository
     private val notebookRepository = appGraph.notebookRepository
     private val quizRepository = appGraph.quizRepository
     private val flashcardRepository = appGraph.flashcardRepository
-    private val localInfrastructure = appGraph.localInfrastructure
-    private val gson = Gson()
     private var lastAutomaticRefreshAtMillis = 0L
 
     private val playbackCoordinator = PlaybackCoordinator(
         appContext = appGraph.context,
         scope = scope,
-        authRepository = authRepository,
         notebookRepository = notebookRepository,
-        localInfrastructure = localInfrastructure,
         audioStore = appGraph.audioStore,
         getState = { state },
         setState = { state = it },
@@ -56,30 +41,18 @@ class BrainBoxAppController(
         setState = { state = it },
         prepareAudioService = playbackCoordinator::prepareAudioService,
         syncHome = { setBusy -> syncHome(setBusy) },
-        clearPlaybackSnapshot = { localInfrastructure.preferencesStore.clearPlaybackQueueSnapshot() },
         showMessage = ::showMessage
     )
 
     private val studyCoordinator = StudySessionCoordinator(
-        appContext = appContext,
         quizRepository = quizRepository,
         flashcardRepository = flashcardRepository,
-        localInfrastructure = localInfrastructure,
         scope = scope,
         getState = { state },
         setState = { state = it },
         syncHome = { setBusy -> syncHome(setBusy) },
         syncStudyContext = ::syncStudyContext,
-        showMessage = ::showMessage,
-        gson = gson
-    )
-
-    private val offlineSyncCoordinator = OfflineSyncCoordinator(
-        localInfrastructure = localInfrastructure,
-        getState = { state },
-        setState = { state = it },
-        formatSyncLabel = ::formatSyncLabel,
-        refreshHome = { syncHome(setBusy = false) }
+        showMessage = ::showMessage
     )
 
     var state by mutableStateOf(AppState())
@@ -87,7 +60,6 @@ class BrainBoxAppController(
 
     init {
         playbackCoordinator.start()
-        offlineSyncCoordinator.start(scope)
     }
 
     fun bootstrap() {
@@ -206,105 +178,35 @@ class BrainBoxAppController(
 
         try {
             val bundle = homeRepository.loadHome()
-            val preferences = localInfrastructure.preferencesStore.preferences.firstOrNull()
-            val homeData = playbackCoordinator.applyLocalPlaybackQueue(bundle.homeData, preferences)
             state = state.copy(
                 isBootstrapping = false,
                 isBusy = false,
                 isAuthenticated = true,
                 user = bundle.user,
-                homeData = homeData,
-                playbackQueue = homeData.playbackQueue,
-                playbackPlaylistUuid = homeData.playbackPlaylistUuid,
-                playbackPlaylistTitle = homeData.playbackPlaylistTitle,
-                playbackPlaylistCurrentIndex = homeData.playbackPlaylistCurrentIndex,
-                isPlaybackShuffling = preferences?.playbackQueueShuffle ?: state.isPlaybackShuffling
+                homeData = bundle.homeData,
+                playbackQueue = bundle.homeData.playbackQueue,
+                playbackPlaylistUuid = bundle.homeData.playbackPlaylistUuid,
+                playbackPlaylistTitle = bundle.homeData.playbackPlaylistTitle,
+                playbackPlaylistCurrentIndex = bundle.homeData.playbackPlaylistCurrentIndex
             )
             playbackCoordinator.installPlaylistPlaybackContext(
-                homeData.playbackPlaylistUuid,
-                homeData.playbackQueue,
-                homeData.playbackQueue
+                bundle.homeData.playbackPlaylistUuid,
+                bundle.homeData.playbackQueue,
+                bundle.homeData.playbackQueue
             )
         } catch (error: HttpException) {
             if (error.code() == 401) {
-                localInfrastructure.preferencesStore.clearPlaybackQueueSnapshot()
                 authRepository.logout()
                 state = AppState(isBootstrapping = false)
                 showMessage("Your session expired. Sign in again to keep going.")
             } else {
-                loadOfflineHome("Showing your offline library while live data catches up.")
+                state = state.copy(isBootstrapping = false, isBusy = false)
+                showMessage("We couldn't refresh BrainBox. Check your connection and try again.")
             }
         } catch (_: Exception) {
-            loadOfflineHome("Showing your offline library while live data catches up.")
+            state = state.copy(isBootstrapping = false, isBusy = false)
+            showMessage("We couldn't refresh BrainBox. Check your connection and try again.")
         }
-    }
-
-    private suspend fun loadOfflineHome(notice: String) {
-        val offlineNotebooks = localInfrastructure.database.notebookDao()
-            .getAllNotebooksOnce()
-            .map { it.toDocument() }
-        val offlineStudyCollections = localInfrastructure.offlineRepository.getOfflineStudyCollections()
-
-        val notebookSummaries = offlineNotebooks.map { document ->
-            NotebookSummary(
-                uuid = document.uuid,
-                title = document.title,
-                wordCount = document.wordCount,
-                createdAt = document.createdAt,
-                updatedAt = document.updatedAt,
-                lastReviewedAt = document.lastReviewedAt,
-                version = document.version,
-                categoryId = document.categoryId,
-                categoryName = document.categoryName
-            )
-        }
-
-        val recentlyReviewed = notebookSummaries
-            .filter { !it.lastReviewedAt.isNullOrBlank() }
-            .sortedByDescending { it.lastReviewedAt }
-            .take(6)
-
-        val preferences = localInfrastructure.preferencesStore.preferences.firstOrNull()
-        val lastSyncAtMillis = preferences?.lastSyncAtMillis
-        val offlineHomeData = playbackCoordinator.applyLocalPlaybackQueue(
-            homeData = HomeData(
-                notebooks = notebookSummaries,
-                recentlyEdited = notebookSummaries.take(6),
-                recentlyReviewed = recentlyReviewed,
-                quizzes = offlineStudyCollections.quizzes,
-                flashcards = offlineStudyCollections.flashcards,
-                playlists = offlineStudyCollections.playlists,
-                syncNotice = notice,
-                syncedAtLabel = lastSyncAtMillis?.let(::formatSyncLabel)
-            ),
-            preferences = preferences
-        )
-
-        state = state.copy(
-            isBootstrapping = false,
-            isBusy = false,
-            isAuthenticated = authRepository.hasSession(),
-            user = state.user ?: fallbackUser(),
-            homeData = offlineHomeData,
-            playbackQueue = offlineHomeData.playbackQueue,
-            playbackPlaylistUuid = offlineHomeData.playbackPlaylistUuid,
-            playbackPlaylistTitle = offlineHomeData.playbackPlaylistTitle,
-            playbackPlaylistCurrentIndex = offlineHomeData.playbackPlaylistCurrentIndex,
-            isPlaybackShuffling = preferences?.playbackQueueShuffle ?: state.isPlaybackShuffling
-        )
-        playbackCoordinator.installPlaylistPlaybackContext(
-            offlineHomeData.playbackPlaylistUuid,
-            offlineHomeData.playbackQueue,
-            offlineHomeData.playbackQueue
-        )
-    }
-
-    private fun fallbackUser(): UserProfile {
-        return UserProfile(
-            username = authRepository.sessionUsername().ifBlank { "BrainBox User" },
-            email = "",
-            createdAt = null
-        )
     }
 
     private fun syncStudyContext(notebookUuid: String?) {
@@ -336,14 +238,8 @@ class BrainBoxAppController(
 
         lastAutomaticRefreshAtMillis = now
         scope.launch {
-            BrainBoxSyncWorkScheduler.enqueueWhenOnline(appContext)
             syncHome(setBusy = false)
         }
-    }
-
-    private fun formatSyncLabel(timestampMillis: Long): String {
-        val formatter = DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.ENGLISH)
-        return "Updated ${Instant.ofEpochMilli(timestampMillis).atZone(ZoneId.systemDefault()).format(formatter)}"
     }
 
     private fun showMessage(message: String) {

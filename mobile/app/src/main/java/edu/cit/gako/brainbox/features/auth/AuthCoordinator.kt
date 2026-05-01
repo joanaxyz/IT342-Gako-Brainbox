@@ -14,7 +14,6 @@ internal class AuthCoordinator(
     private val setState: (AppState) -> Unit,
     private val prepareAudioService: () -> Unit,
     private val syncHome: suspend (setBusy: Boolean) -> Unit,
-    private val clearPlaybackSnapshot: suspend () -> Unit,
     private val showMessage: (String) -> Unit
 ) {
     fun handleGoogleLogin(idToken: String) {
@@ -172,7 +171,6 @@ internal class AuthCoordinator(
 
     fun handleLogout() {
         scope.launch {
-            clearPlaybackSnapshot()
             authRepository.logout()
             setState(AppState(isBootstrapping = false))
             showMessage("Signed out.")

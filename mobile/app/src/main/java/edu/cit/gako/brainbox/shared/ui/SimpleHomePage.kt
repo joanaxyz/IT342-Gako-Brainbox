@@ -20,8 +20,6 @@ import edu.cit.gako.brainbox.shared.ui.theme.Ink2
 internal fun SimpleHomePage(
     title: String,
     description: String,
-    syncNotice: String?,
-    syncedAtLabel: String?,
     contentPadding: PaddingValues,
     showHeader: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
@@ -39,9 +37,6 @@ internal fun SimpleHomePage(
             } else {
                 Text(description, style = MaterialTheme.typography.bodyMedium, color = Ink2)
             }
-        }
-        if (!syncNotice.isNullOrBlank()) {
-            item { SyncNoticeBanner(syncNotice, syncedAtLabel) }
         }
         item { Column(content = content) }
     }

@@ -67,7 +67,6 @@ class MobileArchitectureBoundaryTest {
         val expectedHomeFiles = listOf(
             "HomeScene.kt",
             "data/HomeRepository.kt",
-            "data/HomeOfflinePackRepository.kt",
             "dashboard/DashboardScreen.kt",
             "library/LibraryScreen.kt",
             "flashcards/FlashcardsScreen.kt",
@@ -124,9 +123,7 @@ class MobileArchitectureBoundaryTest {
             .filterNot { it.inPathSegment("data") }
             .flatMap { file ->
                 file.readLines().mapIndexedNotNull { index, line ->
-                    if (line.contains("BrainBoxAppGraph") ||
-                        line.contains("BrainBoxLocalInfrastructureFactory")
-                    ) {
+                    if (line.contains("BrainBoxAppGraph")) {
                         "${file.relativeTo(sourceRoot)}:${index + 1}: $line"
                     } else {
                         null
@@ -183,7 +180,7 @@ class MobileArchitectureBoundaryTest {
     @Test
     fun featureUiDoesNotImportSiblingRepositoriesOrServices() {
         val violations = kotlinFiles(sourceRoot.resolve("edu/cit/gako/brainbox/features"))
-            .filterNot { it.inPathSegment("data") || it.inPathSegment("offline") }
+            .filterNot { it.inPathSegment("data") }
             .flatMap { file ->
                 val owningFeature = file.relativeTo(sourceRoot.resolve("edu/cit/gako/brainbox/features"))
                     .invariantSeparatorsPath

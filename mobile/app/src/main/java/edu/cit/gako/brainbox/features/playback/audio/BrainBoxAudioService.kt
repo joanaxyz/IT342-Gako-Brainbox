@@ -51,21 +51,8 @@ class BrainBoxAudioService : MediaSessionService() {
         playerRef = player
         mediaSession = MediaSession.Builder(this, player).build()
 
-        serviceScope.launch {
-            val restored = store.restoreSnapshot()
-            if (restored.hasLoadedRequest) {
-                foregroundPlaybackSession = restored.status in setOf(
-                    BrainBoxAudioPlaybackStatus.LOADING,
-                    BrainBoxAudioPlaybackStatus.READY,
-                    BrainBoxAudioPlaybackStatus.PLAYING,
-                    BrainBoxAudioPlaybackStatus.PAUSED
-                )
-                player.restore(restored)
-            } else {
-                player.refreshState()
-            }
-            syncForegroundState(player.currentSnapshot())
-        }
+        player.refreshState()
+        syncForegroundState(player.currentSnapshot())
 
         registerReceiver(
             noisyAudioReceiver,

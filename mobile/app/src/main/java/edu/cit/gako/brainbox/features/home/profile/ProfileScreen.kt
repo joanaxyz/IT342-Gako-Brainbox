@@ -61,16 +61,11 @@ internal fun ProfileScreen(
                         ProfileAvatar(profile.username)
                         Column {
                             Text(profile.username, style = MaterialTheme.typography.titleLarge, color = Ink)
-                            Text(
-                                text = profile.email.ifBlank { "Email sync is still catching up." },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Ink3
-                            )
+                            Text(profile.email.ifBlank { "Email is not available yet." }, style = MaterialTheme.typography.bodySmall, color = Ink3)
                         }
                     }
                     HorizontalDivider(color = Border)
                     ProfileDetailRow("Joined", profile.createdAt?.let(::formatLongDate) ?: "Recently")
-                    ProfileDetailRow("Last sync", homeData.syncedAtLabel ?: "Waiting for first sync")
                     ProfileDetailRow(
                         "Workspace",
                         joinMeta(
@@ -95,7 +90,7 @@ internal fun ProfileScreen(
                 ) {
                     Text("Account", style = MaterialTheme.typography.titleMedium, color = Ink)
                     Text(
-                        "Mobile sync runs automatically whenever your changes can reach the server again.",
+                        "Mobile keeps your workspace current whenever it can reach the server.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink3
                     )

@@ -11,9 +11,6 @@ import edu.cit.gako.brainbox.platform.network.SessionManager
 import edu.cit.gako.brainbox.features.home.profile.data.dto.UserProfile
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class HomeRepository(
     private val authRepository: AuthRepository,
@@ -68,43 +65,30 @@ class HomeRepository(
             throw (
                 profileResult.exceptionOrNull()
                     ?: notebooksResult.exceptionOrNull()
-                    ?: IllegalStateException("We couldn't sync the home data.")
+                    ?: IllegalStateException("We couldn't load the home data.")
                 )
         }
 
-        val issues = mutableListOf<String>()
         val notebooks = notebooksResult.getOrElse {
-            issues += "library"
             emptyList()
         }
         val recentlyEdited = editedResult.getOrElse {
-            issues += "recent edits"
             emptyList()
         }
         val recentlyReviewed = reviewedResult.getOrElse {
-            issues += "continue learning"
             emptyList()
         }
         val quizzes = quizzesResult.getOrElse {
-            issues += "quizzes"
             emptyList()
         }
         val flashcards = flashcardsResult.getOrElse {
-            issues += "flashcards"
             emptyList()
         }
         val playlists = playlistsResult.getOrElse {
-            issues += "playlists"
             emptyList()
         }
 
         val user = profileResult.getOrElse { fallbackUser() }
-        val notice = when (issues.size) {
-            0 -> null
-            1 -> "The ${issues.first()} section is still syncing."
-            else -> "Some sections are still syncing on mobile."
-        }
-
         HomeBundle(
             user = user,
             homeData = HomeData(
@@ -113,9 +97,7 @@ class HomeRepository(
                 recentlyReviewed = recentlyReviewed,
                 quizzes = quizzes,
                 flashcards = flashcards,
-                playlists = playlists,
-                syncNotice = notice,
-                syncedAtLabel = "Updated ${timestampLabel()}"
+                playlists = playlists
             )
         )
     }
@@ -130,10 +112,5 @@ class HomeRepository(
         )
     }
 
-    private fun timestampLabel(): String {
-        return ZonedDateTime.now().format(
-            DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.ENGLISH)
-        )
-    }
 }
 

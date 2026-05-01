@@ -20,7 +20,6 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import edu.cit.gako.brainbox.app.BrainBoxApp
 import edu.cit.gako.brainbox.app.BrainBoxAppController
 import edu.cit.gako.brainbox.app.BrainBoxAppGraph
-import edu.cit.gako.brainbox.app.worker.BrainBoxSyncWorkScheduler
 import edu.cit.gako.brainbox.features.home.HomeDependencies
 import edu.cit.gako.brainbox.shared.ui.theme.BrainboxTheme
 import kotlinx.coroutines.launch
@@ -37,7 +36,6 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val appGraph = BrainBoxAppGraph.from(applicationContext)
-        BrainBoxSyncWorkScheduler.enqueueWhenOnline(this)
         controller = BrainBoxAppController(appGraph, lifecycleScope, ::showMessage)
         credentialManager = CredentialManager.create(this)
 
@@ -46,7 +44,6 @@ class MainActivity : ComponentActivity() {
                 val homeDependencies = remember(appGraph) {
                     HomeDependencies(
                         libraryRepository = appGraph.libraryRepository,
-                        offlinePackRepository = appGraph.homeOfflinePackRepository,
                         playlistRepository = appGraph.playlistRepository
                     )
                 }

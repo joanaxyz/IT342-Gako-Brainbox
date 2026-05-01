@@ -15,8 +15,6 @@ import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookDetail
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookUpdateRequest
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookVersionItem
-import edu.cit.gako.brainbox.features.notebook.data.dto.OfflineNotebookBundle
-import edu.cit.gako.brainbox.features.notebook.data.dto.OfflineNotebookBundleRequest
 import java.util.UUID
 import retrofit2.Response
 
@@ -141,12 +139,6 @@ class NotebookRepository(
             categoryId,
             CategoryDeleteRequest(deleteNotebooks = deleteNotebooks)
         ).requireSuccess("We couldn't delete that category.")
-    }
-
-    suspend fun getOfflineBundle(notebookUuids: List<String>): OfflineNotebookBundle {
-        return apiService.getOfflineNotebookBundleEnvelope(
-            OfflineNotebookBundleRequest(notebookUuids.distinct().filter { it.isNotBlank() })
-        ).requireData("We couldn't prepare those notebooks for offline use.")
     }
 
     suspend fun markNotebookReviewed(

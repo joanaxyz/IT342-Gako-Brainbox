@@ -1,20 +1,13 @@
 package edu.cit.gako.brainbox.features.home.library.data
 
-import edu.cit.gako.brainbox.features.home.data.HomeOfflinePackRepository
 import edu.cit.gako.brainbox.features.notebook.data.NotebookMutationResult
 import edu.cit.gako.brainbox.features.notebook.data.NotebookRepository
 import edu.cit.gako.brainbox.features.notebook.data.dto.CategoryDetail
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookDetail
-import edu.cit.gako.brainbox.features.notebook.offline.OfflinePackDownloadResult
-import kotlinx.coroutines.flow.Flow
 
 class LibraryRepository(
-    private val notebooks: NotebookRepository,
-    private val offlinePacks: HomeOfflinePackRepository
+    private val notebooks: NotebookRepository
 ) {
-    fun observeActiveOfflineNotebookUuids(): Flow<Set<String>> =
-        offlinePacks.observeActiveOfflineNotebookUuids()
-
     suspend fun getCategories(): List<CategoryDetail> =
         notebooks.getCategories()
 
@@ -30,13 +23,6 @@ class LibraryRepository(
         categoryId: Long?
     ): LibraryNotebookMutationResult =
         notebooks.updateNotebook(notebookUuid, categoryId = categoryId).toLibraryResult()
-
-    suspend fun downloadOfflinePack(notebookUuid: String): Result<OfflinePackDownloadResult> =
-        offlinePacks.downloadNotebookPack(notebookUuid)
-
-    suspend fun removeOfflinePackAssets(notebookUuid: String) {
-        offlinePacks.removeNotebookPackAssets(notebookUuid)
-    }
 }
 
 sealed interface LibraryNotebookMutationResult {

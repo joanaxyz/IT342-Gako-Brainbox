@@ -25,10 +25,14 @@ class FlashcardRepository(
             .requireData("We couldn't create that flashcard deck yet.")
     }
 
-    suspend fun recordFlashcardAttempt(uuid: String, mastery: Int): FlashcardDeckDetail {
+    suspend fun recordFlashcardAttempt(
+        uuid: String,
+        mastery: Int,
+        clientMutationId: String = UUID.randomUUID().toString()
+    ): FlashcardDeckDetail {
         return apiService.recordFlashcardAttemptEnvelope(
             uuid,
-            FlashcardAttemptRequest(mastery = mastery, clientMutationId = UUID.randomUUID().toString())
+            FlashcardAttemptRequest(mastery = mastery, clientMutationId = clientMutationId)
         )
             .requireData("We couldn't save your flashcard progress.")
     }

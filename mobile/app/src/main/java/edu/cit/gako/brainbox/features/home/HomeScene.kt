@@ -116,26 +116,18 @@ internal fun HomeScene(
                 HomeTab.LIBRARY -> LibraryScreen(
                     repository = dependencies.libraryRepository,
                     notebooks = state.homeData.notebooks,
-                    syncNotice = state.homeData.syncNotice,
-                    syncedAtLabel = state.homeData.syncedAtLabel,
                     contentPadding = contentPadding,
                     onOpenNotebook = onOpenNotebook
                 )
                 HomeTab.QUIZZES -> QuizzesScreen(
-                    offlinePackRepository = dependencies.offlinePackRepository,
                     quizzes = state.homeData.quizzes,
                     notebooks = state.homeData.notebooks,
-                    syncNotice = state.homeData.syncNotice,
-                    syncedAtLabel = state.homeData.syncedAtLabel,
                     contentPadding = contentPadding,
                     onOpenQuiz = onOpenQuiz
                 )
                 HomeTab.FLASHCARDS -> FlashcardsScreen(
-                    offlinePackRepository = dependencies.offlinePackRepository,
                     flashcards = state.homeData.flashcards,
                     notebooks = state.homeData.notebooks,
-                    syncNotice = state.homeData.syncNotice,
-                    syncedAtLabel = state.homeData.syncedAtLabel,
                     contentPadding = contentPadding,
                     onOpenFlashcardDeck = onOpenFlashcardDeck
                 )
@@ -144,8 +136,6 @@ internal fun HomeScene(
                     notebooks = state.homeData.notebooks,
                     playlists = state.homeData.playlists,
                     playbackState = state.playbackState,
-                    syncNotice = state.homeData.syncNotice,
-                    syncedAtLabel = state.homeData.syncedAtLabel,
                     contentPadding = contentPadding,
                     onPlayNotebook = { notebook -> onPlayNotebook(notebook, false) },
                     onFeatureRequest = onFeatureRequest

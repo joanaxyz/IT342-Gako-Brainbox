@@ -34,11 +34,6 @@ class BrainBoxTtsPlayer(
         invalidateState()
     }
 
-    fun restore(snapshot: BrainBoxAudioSnapshot) {
-        engine.restore(snapshot)
-        invalidateState()
-    }
-
     fun clearSession() {
         engine.stop(resetToStart = true)
         invalidateState()

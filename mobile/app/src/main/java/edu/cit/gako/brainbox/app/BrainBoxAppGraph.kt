@@ -4,7 +4,6 @@ import android.content.Context
 import edu.cit.gako.brainbox.features.auth.data.AuthApiService
 import edu.cit.gako.brainbox.features.auth.data.AuthRepository
 import edu.cit.gako.brainbox.features.home.data.HomeRepository
-import edu.cit.gako.brainbox.features.home.data.HomeOfflinePackRepository
 import edu.cit.gako.brainbox.features.home.flashcards.data.FlashcardApiService
 import edu.cit.gako.brainbox.features.home.flashcards.data.FlashcardRepository
 import edu.cit.gako.brainbox.features.home.library.data.LibraryRepository
@@ -13,15 +12,10 @@ import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioStore
 import edu.cit.gako.brainbox.features.notebook.data.NotebookRepository
 import edu.cit.gako.brainbox.features.playback.data.PlaybackQueueApiService
 import edu.cit.gako.brainbox.features.playback.data.PlaybackQueueRepository
-import edu.cit.gako.brainbox.features.playback.tts.BrainBoxOfflineAudioCache
 import edu.cit.gako.brainbox.features.home.playlists.data.PlaylistApiService
 import edu.cit.gako.brainbox.features.home.playlists.data.PlaylistRepository
 import edu.cit.gako.brainbox.features.home.quizzes.data.QuizApiService
 import edu.cit.gako.brainbox.features.home.quizzes.data.QuizRepository
-import edu.cit.gako.brainbox.app.infrastructure.BrainBoxLocalInfrastructure
-import edu.cit.gako.brainbox.app.infrastructure.BrainBoxLocalInfrastructureFactory
-import edu.cit.gako.brainbox.platform.sync.BrainBoxSyncCoordinatorRegistry
-import edu.cit.gako.brainbox.app.sync.DefaultBrainBoxSyncCoordinator
 import edu.cit.gako.brainbox.platform.network.RetrofitClient
 import edu.cit.gako.brainbox.platform.network.SessionManager
 
@@ -67,40 +61,12 @@ class BrainBoxAppGraph private constructor(context: Context) {
         PlaybackQueueRepository(playbackQueueApiService)
     }
     val playlistRepository: PlaylistRepository by lazy { PlaylistRepository(playlistApiService) }
-    private val offlineAudioCache: BrainBoxOfflineAudioCache by lazy {
-        BrainBoxOfflineAudioCache(appContext)
-    }
-    val homeOfflinePackRepository: HomeOfflinePackRepository by lazy {
-        HomeOfflinePackRepository(
-            notebooks = notebookRepository,
-            offlineRepository = localInfrastructure.offlineRepository,
-            audioCache = offlineAudioCache
-        )
-    }
     val libraryRepository: LibraryRepository by lazy {
         LibraryRepository(
-            notebooks = notebookRepository,
-            offlinePacks = homeOfflinePackRepository
+            notebooks = notebookRepository
         )
-    }
-    val localInfrastructure: BrainBoxLocalInfrastructure by lazy {
-        BrainBoxLocalInfrastructureFactory.create(appContext)
     }
     val audioStore: BrainBoxAudioStore by lazy { BrainBoxAudioStore(appContext) }
-    val syncCoordinator: DefaultBrainBoxSyncCoordinator by lazy {
-        DefaultBrainBoxSyncCoordinator(
-            notebookRepository = notebookRepository,
-            quizRepository = quizRepository,
-            flashcardRepository = flashcardRepository,
-            database = localInfrastructure.database,
-            offlineRepository = localInfrastructure.offlineRepository,
-            preferencesStore = localInfrastructure.preferencesStore
-        )
-    }
-
-    fun installIntoRuntime() {
-        BrainBoxSyncCoordinatorRegistry.install(syncCoordinator)
-    }
 
     companion object {
         @Volatile
@@ -109,7 +75,6 @@ class BrainBoxAppGraph private constructor(context: Context) {
         fun from(context: Context): BrainBoxAppGraph {
             return instance ?: synchronized(this) {
                 instance ?: BrainBoxAppGraph(context).also { graph ->
-                    graph.installIntoRuntime()
                     instance = graph
                 }
             }

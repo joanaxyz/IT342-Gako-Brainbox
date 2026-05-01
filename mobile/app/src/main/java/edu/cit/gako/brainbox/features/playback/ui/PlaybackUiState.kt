@@ -13,7 +13,6 @@ data class PlaybackUiState(
     val isVisible: Boolean = false,
     val isPlaying: Boolean = false,
     val canResume: Boolean = false,
-    val isOfflineOnly: Boolean = false,
     val status: BrainBoxAudioPlaybackStatus = BrainBoxAudioPlaybackStatus.IDLE,
     val speechRate: Float = 1.0f,
     val currentChunkIndex: Int = 0,
@@ -65,7 +64,6 @@ fun BrainBoxAudioSnapshot.toPlaybackUiState(): PlaybackUiState {
         canResume = status == BrainBoxAudioPlaybackStatus.PAUSED ||
             status == BrainBoxAudioPlaybackStatus.READY ||
             status == BrainBoxAudioPlaybackStatus.ENDED,
-        isOfflineOnly = request?.offlineOnly == true,
         status = status,
         speechRate = rate,
         currentChunkIndex = currentChunkIndex,

@@ -37,9 +37,7 @@ data class HomeData(
     val playbackQueue: List<NotebookSummary> = emptyList(),
     val playbackPlaylistUuid: String? = null,
     val playbackPlaylistTitle: String? = null,
-    val playbackPlaylistCurrentIndex: Int = 0,
-    val syncNotice: String? = null,
-    val syncedAtLabel: String? = null
+    val playbackPlaylistCurrentIndex: Int = 0
 )
 
 data class HomeBundle(
@@ -68,6 +66,5 @@ data class AppState(
     val playbackPlaylistTitle: String? = null,
     val playbackPlaylistCurrentIndex: Int = 0,
     val isPlaybackLooping: Boolean = false,
-    val isPlaybackShuffling: Boolean = false,
-    val offlineSyncState: OfflineSyncState = OfflineSyncState()
+    val isPlaybackShuffling: Boolean = false
 )

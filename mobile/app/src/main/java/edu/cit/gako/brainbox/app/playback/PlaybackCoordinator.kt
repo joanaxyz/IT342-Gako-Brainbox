@@ -2,21 +2,17 @@ package edu.cit.gako.brainbox.app.playback
 
 import android.content.Context
 import edu.cit.gako.brainbox.app.AppState
-import edu.cit.gako.brainbox.app.HomeData
 import edu.cit.gako.brainbox.app.HomeTab
-import edu.cit.gako.brainbox.app.infrastructure.BrainBoxLocalInfrastructure
-import edu.cit.gako.brainbox.features.auth.data.AuthRepository
 import edu.cit.gako.brainbox.features.notebook.data.NotebookRepository
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookDetail
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
 import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioClient
+import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioResumePoint
 import edu.cit.gako.brainbox.features.playback.model.BrainBoxAudioPlaybackStatus
 import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioStore
+import edu.cit.gako.brainbox.features.playback.model.BrainBoxTtsRequest
 import edu.cit.gako.brainbox.features.playback.tts.buildNotebookTtsRequest
 import edu.cit.gako.brainbox.features.playback.ui.toPlaybackUiState
-import edu.cit.gako.brainbox.platform.local.model.AppPlayerPreferences
-import edu.cit.gako.brainbox.platform.local.model.BrainBoxNotebookDocument
-import edu.cit.gako.brainbox.platform.local.toDocument
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,9 +27,7 @@ private data class PlaylistPlaybackContext(
 internal class PlaybackCoordinator(
     appContext: Context,
     private val scope: CoroutineScope,
-    private val authRepository: AuthRepository,
     private val notebookRepository: NotebookRepository,
-    private val localInfrastructure: BrainBoxLocalInfrastructure,
     private val audioStore: BrainBoxAudioStore,
     private val getState: () -> AppState,
     private val setState: (AppState) -> Unit,
@@ -54,40 +48,6 @@ internal class PlaybackCoordinator(
         hasPreparedAudioService = true
         runCatching { audioClient.prepare() }
             .onFailure { hasPreparedAudioService = false }
-    }
-
-    fun applyLocalPlaybackQueue(
-        homeData: HomeData,
-        preferences: AppPlayerPreferences?
-    ): HomeData {
-        val ownerKey = queuePersistenceOwnerKey()
-        val playlistUuid = preferences
-            ?.takeIf { it.playbackQueueOwnerKey == ownerKey }
-            ?.playbackQueuePlaylistUuid
-            ?: return homeData
-
-        val playlist = homeData.playlists.firstOrNull { it.uuid == playlistUuid }
-        if (playlist == null) {
-            val state = getState()
-            return if (state.playbackPlaylistUuid == playlistUuid && state.playbackQueue.isNotEmpty()) {
-                homeData.copy(
-                    playbackQueue = state.playbackQueue,
-                    playbackPlaylistUuid = state.playbackPlaylistUuid,
-                    playbackPlaylistTitle = state.playbackPlaylistTitle,
-                    playbackPlaylistCurrentIndex = state.playbackPlaylistCurrentIndex
-                )
-            } else {
-                homeData
-            }
-        }
-        val currentIndex = normalizeQueueIndex(preferences.playbackQueueCurrentIndex, playlist.queue.size)
-
-        return homeData.copy(
-            playbackQueue = playlist.queue,
-            playbackPlaylistUuid = playlist.uuid,
-            playbackPlaylistTitle = playlist.title,
-            playbackPlaylistCurrentIndex = currentIndex
-        )
     }
 
     fun installPlaylistPlaybackContext(
@@ -173,7 +133,6 @@ internal class PlaybackCoordinator(
         val state = getState()
         val nextShuffle = !state.isPlaybackShuffling
         setState(state.copy(isPlaybackShuffling = nextShuffle))
-        persistPlaybackQueueSnapshot(shuffle = nextShuffle)
     }
 
     private fun observePlaybackState() {
@@ -213,8 +172,7 @@ internal class PlaybackCoordinator(
         queue: List<NotebookSummary>,
         playlistUuid: String? = getState().playbackPlaylistUuid,
         playlistTitle: String? = getState().playbackPlaylistTitle,
-        currentIndex: Int = getState().playbackPlaylistCurrentIndex,
-        persist: Boolean = true
+        currentIndex: Int = getState().playbackPlaylistCurrentIndex
     ) {
         val safeCurrentIndex = normalizeQueueIndex(currentIndex, queue.size)
         val state = getState()
@@ -232,39 +190,6 @@ internal class PlaybackCoordinator(
                 )
             )
         )
-
-        if (persist) {
-            persistPlaybackQueueSnapshot(
-                playlistUuid = playlistUuid,
-                playlistTitle = playlistTitle,
-                currentIndex = safeCurrentIndex
-            )
-        }
-    }
-
-    private fun persistPlaybackQueueSnapshot(
-        playlistUuid: String? = getState().playbackPlaylistUuid,
-        playlistTitle: String? = getState().playbackPlaylistTitle,
-        currentIndex: Int = getState().playbackPlaylistCurrentIndex,
-        shuffle: Boolean = getState().isPlaybackShuffling
-    ) {
-        scope.launch {
-            localInfrastructure.preferencesStore.setPlaybackQueueSnapshot(
-                ownerKey = queuePersistenceOwnerKey(),
-                playlistUuid = playlistUuid,
-                playlistTitle = playlistTitle,
-                currentIndex = currentIndex,
-                shuffle = shuffle
-            )
-        }
-    }
-
-    private fun queuePersistenceOwnerKey(): String? {
-        val state = getState()
-        val ownerKey = authRepository.sessionUsername()
-            .ifBlank { state.user?.username.orEmpty() }
-            .ifBlank { state.user?.email.orEmpty() }
-        return ownerKey.takeIf { it.isNotBlank() }
     }
 
     private fun advanceQueuePlayback(openListenTab: Boolean, direction: Int = 1) {
@@ -344,9 +269,12 @@ internal class PlaybackCoordinator(
                 return@launch
             }
 
-            val (detail, offlineOnly) = resolvedNotebook
+            val detail = resolvedNotebook
+            runCatching { notebookRepository.markNotebookReviewed(detail.uuid) }
             withContext(Dispatchers.Default) {
-                audioClient.play(buildNotebookTtsRequest(detail, detail.content, offlineOnly))
+                val request = buildNotebookTtsRequest(detail, detail.content)
+                    .withResumePoint(audioStore.resumePointFor(detail.uuid))
+                audioClient.play(request)
             }
             playlistContext?.let { context ->
                 persistPlaylistCurrentIndex(context, detail.uuid)
@@ -354,16 +282,21 @@ internal class PlaybackCoordinator(
         }
     }
 
-    private suspend fun resolveNotebookForPlayback(uuid: String): Pair<NotebookDetail, Boolean>? {
-        runCatching { notebookRepository.getNotebook(uuid) }
-            .onSuccess { detail -> return detail to false }
+    private suspend fun resolveNotebookForPlayback(uuid: String): NotebookDetail? =
+        runCatching { notebookRepository.getNotebook(uuid) }.getOrNull()
 
-        val localNotebook = localInfrastructure.database.notebookDao()
-            .getNotebook(uuid)
-            ?.toDocument()
-            ?.toNotebookDetail()
+    private fun BrainBoxTtsRequest.withResumePoint(resumePoint: BrainBoxAudioResumePoint?): BrainBoxTtsRequest {
+        if (resumePoint == null || resumePoint.notebookId != notebookId || chunks.isEmpty()) {
+            return this
+        }
 
-        return localNotebook?.let { it to true }
+        val chunkIndex = resumePoint.currentChunkIndex.coerceIn(0, chunks.lastIndex)
+        val chunk = chunks[chunkIndex]
+        return copy(
+            startChunkIndex = chunkIndex,
+            startCharOffset = resumePoint.currentCharOffset.coerceIn(chunk.startCharIndex, chunk.endCharIndex),
+            speechRate = resumePoint.speechRate.coerceIn(0.25f, 3.0f)
+        )
     }
 
     private fun buildPlaylistPlaybackContext(
@@ -452,17 +385,3 @@ internal fun resolveQueueTargetIndex(
     return normalizeQueueIndex(safeCurrentIndex + direction, queueSize)
 }
 
-private fun BrainBoxNotebookDocument.toNotebookDetail(): NotebookDetail {
-    return NotebookDetail(
-        uuid = uuid,
-        title = title,
-        content = contentHtml,
-        wordCount = wordCount,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        lastReviewedAt = lastReviewedAt,
-        version = version,
-        categoryId = categoryId,
-        categoryName = categoryName
-    )
-}

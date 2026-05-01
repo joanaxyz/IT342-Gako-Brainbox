@@ -31,7 +31,6 @@ import edu.cit.gako.brainbox.shared.study.StudyNotebookCardModel
 import edu.cit.gako.brainbox.shared.ui.OutlinedActionButton
 import edu.cit.gako.brainbox.shared.ui.SectionHeader
 import edu.cit.gako.brainbox.shared.study.StudyCard
-import edu.cit.gako.brainbox.shared.ui.SyncNoticeBanner
 import edu.cit.gako.brainbox.shared.ui.TokenBadge
 import edu.cit.gako.brainbox.shared.ui.joinMeta
 import edu.cit.gako.brainbox.shared.ui.theme.Border
@@ -74,10 +73,6 @@ internal fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         item {
-            if (!homeData.syncNotice.isNullOrBlank()) {
-                SyncNoticeBanner(homeData.syncNotice, homeData.syncedAtLabel)
-                Spacer(modifier = Modifier.height(16.dp))
-            }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),

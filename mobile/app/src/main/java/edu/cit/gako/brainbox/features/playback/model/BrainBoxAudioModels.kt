@@ -16,8 +16,7 @@ data class BrainBoxTtsRequest(
     val languageTag: String? = null,
     val voiceName: String? = null,
     val startChunkIndex: Int = 0,
-    val startCharOffset: Int = 0,
-    val offlineOnly: Boolean = false
+    val startCharOffset: Int = 0
 ) {
     val playbackText: String
         get() = fullText.ifBlank {
@@ -45,7 +44,6 @@ data class BrainBoxAudioSnapshot(
     val currentCharOffset: Int = 0,
     val currentChunkElapsedMs: Long = 0L,
     val speechRate: Float = 1.0f,
-    val offlineVoiceAvailable: Boolean = true,
     val errorMessage: String? = null,
     val updatedAtEpochMs: Long = 0L
 ) {

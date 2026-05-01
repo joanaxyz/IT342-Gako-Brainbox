@@ -16,7 +16,6 @@ object BrainBoxAudioCodec {
             request.speechRate.toString(),
             request.startChunkIndex.toString(),
             request.startCharOffset.toString(),
-            request.offlineOnly.toString(),
             encodeText(request.playbackText)
         ).joinToString(FIELD_SEPARATOR)
 
@@ -47,7 +46,8 @@ object BrainBoxAudioCodec {
         if (lines.isEmpty()) return null
 
         val header = lines.first().split(FIELD_SEPARATOR)
-        if (header.size < 8) return null
+        if (header.size < 7) return null
+        val textIndex = if (header.size >= 9 && (header[7] == "true" || header[7] == "false")) 8 else 7
 
         val chunks = lines.drop(1).mapNotNull { line ->
             val parts = line.split(FIELD_SEPARATOR)
@@ -68,8 +68,7 @@ object BrainBoxAudioCodec {
             speechRate = header[4].toFloatOrNull() ?: 1.0f,
             startChunkIndex = header[5].toIntOrNull() ?: 0,
             startCharOffset = header[6].toIntOrNull() ?: 0,
-            offlineOnly = header[7].toBooleanStrictOrNull() ?: false,
-            fullText = header.getOrNull(8)?.let(::decodeText).orEmpty(),
+            fullText = header.getOrNull(textIndex)?.let(::decodeText).orEmpty(),
             chunks = chunks
         )
     }

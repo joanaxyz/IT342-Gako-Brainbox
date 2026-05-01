@@ -2,9 +2,6 @@ package edu.cit.gako.brainbox.features.notebook.data.dto
 
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
-import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckDetail
-import edu.cit.gako.brainbox.features.home.playlists.data.dto.PlaylistSummary
-import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizDetail
 
 data class NotebookSummary(
     @SerializedName("uuid") val uuid: String,
@@ -64,28 +61,6 @@ data class NotebookVersionItem(
     @SerializedName("id") val id: Long,
     @SerializedName("content") val content: String? = null,
     @SerializedName("version") val version: String? = null
-)
-
-data class OfflineNotebookBundleRequest(
-    @SerializedName("notebookUuids") val notebookUuids: List<String>
-)
-
-data class PlaylistReference(
-    @SerializedName("uuid") val uuid: String,
-    @SerializedName("title") val title: String,
-    @SerializedName("notebookUuid") val notebookUuid: String? = null
-)
-
-data class OfflineNotebookBundleItem(
-    @SerializedName("notebook") val notebook: NotebookDetail,
-    @SerializedName("quizzes") val quizzes: List<QuizDetail> = emptyList(),
-    @SerializedName("flashcards") val flashcards: List<FlashcardDeckDetail> = emptyList(),
-    @SerializedName("playlists") val playlists: List<PlaylistSummary> = emptyList()
-)
-
-data class OfflineNotebookBundle(
-    @SerializedName("notebooks") val notebooks: List<OfflineNotebookBundleItem> = emptyList(),
-    @SerializedName("missingUuids") val missingUuids: List<String> = emptyList()
 )
 
 data class ConflictDetailsEnvelope(

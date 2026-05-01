@@ -425,7 +425,6 @@ private fun BrainBoxAudioSnapshot.toHostAudioStatePayload(): JSONObject {
         put("totalChars", totalCharCount)
         put("speechRate", speechRate)
         put("fullText", fullText)
-        put("isOfflineOnly", activeRequest?.offlineOnly == true)
         put("errorMessage", errorMessage ?: JSONObject.NULL)
         put("updatedAtEpochMs", updatedAtEpochMs)
     }
@@ -456,8 +455,7 @@ private fun String.toHostNotebookAudioRequest(): BrainBoxTtsRequest? {
                 notebookId = notebookUuid,
                 notebookTitle = title,
                 chunks = webChunks,
-                fullText = webFullText,
-                offlineOnly = false
+                fullText = webFullText
             )
         } else {
             buildNotebookTtsRequest(
@@ -466,8 +464,7 @@ private fun String.toHostNotebookAudioRequest(): BrainBoxTtsRequest? {
                     title = title,
                     content = content
                 ),
-                html = content,
-                offlineOnly = false
+                html = content
             )
         }
         val totalLength = baseRequest.playbackText.length

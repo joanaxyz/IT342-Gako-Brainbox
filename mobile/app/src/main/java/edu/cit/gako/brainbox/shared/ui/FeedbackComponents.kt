@@ -23,7 +23,7 @@ import edu.cit.gako.brainbox.shared.ui.theme.Ink
 import edu.cit.gako.brainbox.shared.ui.theme.Ink3
 
 @Composable
-internal fun SyncNoticeBanner(
+internal fun NoticeBanner(
     message: String?,
     meta: String? = null,
     modifier: Modifier = Modifier

@@ -70,7 +70,6 @@ import edu.cit.gako.brainbox.features.playback.model.BrainBoxAudioPlaybackStatus
 import edu.cit.gako.brainbox.features.playback.ui.PlaybackUiState
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
 import edu.cit.gako.brainbox.features.home.playlists.data.dto.PlaylistSummary
-import edu.cit.gako.brainbox.shared.ui.SyncNoticeBanner
 import edu.cit.gako.brainbox.shared.ui.theme.Accent
 import edu.cit.gako.brainbox.shared.ui.theme.AccentBg
 import edu.cit.gako.brainbox.shared.ui.theme.Border

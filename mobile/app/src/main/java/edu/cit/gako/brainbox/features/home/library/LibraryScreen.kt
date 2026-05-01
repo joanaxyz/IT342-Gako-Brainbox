@@ -39,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,9 +64,8 @@ import edu.cit.gako.brainbox.shared.ui.BrandedSearchField
 import edu.cit.gako.brainbox.shared.ui.EmptyStateCard
 import edu.cit.gako.brainbox.shared.study.NotebookCard
 import edu.cit.gako.brainbox.shared.study.StudyNotebookCardModel
-import edu.cit.gako.brainbox.shared.ui.OfflinePackActionButton
+import edu.cit.gako.brainbox.shared.ui.NoticeBanner
 import edu.cit.gako.brainbox.shared.ui.SimpleHomePage
-import edu.cit.gako.brainbox.shared.ui.SyncNoticeBanner
 import edu.cit.gako.brainbox.shared.ui.theme.Accent
 import edu.cit.gako.brainbox.shared.ui.theme.AccentBg
 import edu.cit.gako.brainbox.shared.ui.theme.Border
@@ -96,13 +94,10 @@ internal data class CategoryDeleteTarget(
 internal fun LibraryScreen(
     repository: LibraryRepository,
     notebooks: List<NotebookSummary>,
-    syncNotice: String?,
-    syncedAtLabel: String?,
     contentPadding: PaddingValues,
     onOpenNotebook: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val offlineNotebookUuids by repository.observeActiveOfflineNotebookUuids().collectAsState(initial = emptySet())
 
     var localNotebooks by remember(notebooks) { mutableStateOf(notebooks) }
     var localCategories by remember(notebooks) { mutableStateOf(categoriesFromNotebooks(notebooks)) }
@@ -115,7 +110,6 @@ internal fun LibraryScreen(
     var categorySortAsc by rememberSaveable { mutableStateOf(true) }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
     var categoryLoadMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    var activeOfflineNotebookUuid by rememberSaveable { mutableStateOf<String?>(null) }
     var movingNotebookUuid by rememberSaveable { mutableStateOf<String?>(null) }
     var categoryBusy by rememberSaveable { mutableStateOf(false) }
     var temporaryCategoryId by rememberSaveable { mutableStateOf(-1L) }
@@ -328,11 +322,6 @@ internal fun LibraryScreen(
         scope.launch {
             runCatching { repository.deleteCategory(target.category.id, deleteNotebooks) }
                 .onSuccess {
-                    if (deleteNotebooks) {
-                        affectedNotebooks.forEach { notebook ->
-                            repository.removeOfflinePackAssets(notebook.uuid)
-                        }
-                    }
                     val movedCopy = if (!deleteNotebooks && affectedNotebooks.isNotEmpty()) {
                         " ${formatCount(affectedNotebooks.size, "notebook")} moved to Uncategorized."
                     } else {
@@ -352,16 +341,14 @@ internal fun LibraryScreen(
     SimpleHomePage(
         title = "Library",
         description = "Create categories, sort notebooks into them, and keep everything easy to find.",
-        syncNotice = syncNotice,
-        syncedAtLabel = syncedAtLabel,
         contentPadding = contentPadding
     ) {
         message?.let {
-            SyncNoticeBanner(it, "Library changes sync with your web workspace.")
+            NoticeBanner(it, "Library changes are saved to your web workspace.")
             Spacer(modifier = Modifier.height(16.dp))
         }
         categoryLoadMessage?.let {
-            SyncNoticeBanner(it, "Category actions need a live connection.")
+            NoticeBanner(it, "Category actions need a server connection.")
             Spacer(modifier = Modifier.height(16.dp))
         }
 
@@ -437,8 +424,6 @@ internal fun LibraryScreen(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 displayNotebooks.forEach { notebook ->
-                    val isOffline = notebook.uuid in offlineNotebookUuids
-                    val isWorking = activeOfflineNotebookUuid == notebook.uuid
                     val isMoving = movingNotebookUuid == notebook.uuid
                     NotebookCard(
                         notebook = notebook.toStudyNotebookCardModel(),
@@ -446,39 +431,8 @@ internal fun LibraryScreen(
                         footer = {
                             LibraryNotebookFooter(
                                 notebook = notebook,
-                                isOffline = isOffline,
-                                isWorking = isWorking,
                                 isMoving = isMoving,
-                                onMove = { moveNotebookTarget = notebook },
-                                onOfflineClick = {
-                                    scope.launch {
-                                        activeOfflineNotebookUuid = notebook.uuid
-                                        if (isOffline) {
-                                            repository.removeOfflinePackAssets(notebook.uuid)
-                                            message = "\"${notebook.title}\" was removed from offline storage."
-                                        } else {
-                                            repository.downloadOfflinePack(notebook.uuid).onSuccess { result ->
-                                                val details = buildList {
-                                                    if (result.quizCount > 0) add("${result.quizCount} quizzes")
-                                                    if (result.flashcardCount > 0) add("${result.flashcardCount} flashcards")
-                                                }
-                                                message = when {
-                                                    details.isEmpty() && result.audioPrepared ->
-                                                        "\"${result.notebookTitle}\" is now available offline with audio ready."
-                                                    details.isEmpty() ->
-                                                        "\"${result.notebookTitle}\" is now available offline, but audio could not be prepared yet."
-                                                    result.audioPrepared ->
-                                                        "\"${result.notebookTitle}\" is now available offline with ${details.joinToString(" and ")} and audio ready."
-                                                    else ->
-                                                        "\"${result.notebookTitle}\" is now available offline with ${details.joinToString(" and ")}, but audio could not be prepared yet."
-                                                }
-                                            }.onFailure {
-                                                message = "We couldn't download that notebook for offline use right now."
-                                            }
-                                        }
-                                        activeOfflineNotebookUuid = null
-                                    }
-                                }
+                                onMove = { moveNotebookTarget = notebook }
                             )
                         }
                     ) {

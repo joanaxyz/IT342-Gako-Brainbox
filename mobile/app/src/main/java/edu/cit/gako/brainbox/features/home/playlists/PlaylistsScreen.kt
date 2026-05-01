@@ -77,7 +77,6 @@ import edu.cit.gako.brainbox.features.playback.model.BrainBoxAudioPlaybackStatus
 import edu.cit.gako.brainbox.features.playback.ui.PlaybackUiState
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
 import edu.cit.gako.brainbox.features.home.playlists.data.dto.PlaylistSummary
-import edu.cit.gako.brainbox.shared.ui.SyncNoticeBanner
 import edu.cit.gako.brainbox.shared.ui.theme.Accent
 import edu.cit.gako.brainbox.shared.ui.theme.AccentBg
 import edu.cit.gako.brainbox.shared.ui.theme.Border
@@ -116,8 +115,6 @@ internal fun PlaylistsScreen(
     notebooks: List<NotebookSummary>,
     playlists: List<PlaylistSummary>,
     playbackState: PlaybackUiState,
-    syncNotice: String?,
-    syncedAtLabel: String?,
     contentPadding: PaddingValues,
     onPlayNotebook: (NotebookSummary) -> Unit,
     onFeatureRequest: (String) -> Unit
@@ -305,15 +302,6 @@ internal fun PlaylistsScreen(
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (!syncNotice.isNullOrBlank()) {
-            item {
-                SyncNoticeBanner(
-                    message = syncNotice,
-                    meta = syncedAtLabel
-                )
-            }
-        }
-
         item {
             PlaylistSelector(
                 playlists = playlistChips,

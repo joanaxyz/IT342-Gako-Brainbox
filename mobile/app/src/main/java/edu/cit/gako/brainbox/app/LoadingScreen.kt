@@ -157,7 +157,7 @@ internal fun LoadingScreen() {
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Syncing notebooks, quizzes, and decks.",
+                text = "Loading your BrainBox workspace.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Ink3,
                 textAlign = TextAlign.Center

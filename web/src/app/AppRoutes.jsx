@@ -7,21 +7,22 @@ import ProtectedRoute from '../auth/shared/components/ProtectedRoute';
 import HomeLayout from '../home/shared/layouts/HomeLayout';
 import EditorLayout from '../notebook/editor/layouts/EditorLayout';
 import SuspenseLayout from './SuspenseLayout';
+import RouteErrorFallback from './RouteErrorFallback';
+import QuizzesPage from '../home/quizzes/Quizzes';
+import FlashcardsPage from '../home/flashcards/Flashcards';
 
 const RegisterPage = lazy(() => import('../auth/register/Register'));
 const LoginPage = lazy(() => import('../auth/login/Login'));
 const ForgotPasswordPage = lazy(() => import('../auth/forgot-password/ForgotPassword'));
 const DashboardPage = lazy(() => import('../home/dashboard/Dashboard'));
 const LibraryPage = lazy(() => import('../home/library/Library'));
-const QuizzesPage = lazy(() => import('../home/quizzes/Quizzes'));
-const FlashcardsPage = lazy(() => import('../home/flashcards/Flashcards'));
 const ProfilePage = lazy(() => import('../home/profile/Profile'));
 const PlaylistsPage = lazy(() => import('../home/playlists/Playlists'));
 const NoteEditorPage = lazy(() => import('../notebook/editor/NoteEditor'));
 
 export const appRouter = createBrowserRouter(
   createRoutesFromElements(
-    <Route element={<App />}>
+    <Route element={<App />} errorElement={<RouteErrorFallback />}>
       <Route element={<SuspenseLayout />}>
         <Route element={<AuthLayout />}>
           <Route path="/register" element={<RegisterPage />} />

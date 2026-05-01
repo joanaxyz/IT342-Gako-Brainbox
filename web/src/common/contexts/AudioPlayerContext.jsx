@@ -861,7 +861,9 @@ export const AudioPlayerProvider = ({ children }) => {
       markNotebookReviewed(notebook.uuid).catch(() => {});
     }
 
-    if (canUseHostAudio()) {
+    const useHostAudio = canUseHostAudio();
+
+    if (useHostAudio) {
       const didStartHostAudio = playHostNotebookAudio({
         notebookUuid: notebook.uuid,
         notebookTitle: notebook.title || 'Notebook',
@@ -894,13 +896,13 @@ export const AudioPlayerProvider = ({ children }) => {
     );
   }, [
     clearResumeMarker,
-    markNotebookReviewed,
     readResumeMarker,
     resetBoundaryTracking,
     resolvePlaybackSource,
     speakChunk,
     stopKeepAlive,
     updatePlaybackPosition,
+    markNotebookReviewed,
     waitForSynthToSettle,
   ]);
 
