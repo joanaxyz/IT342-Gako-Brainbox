@@ -27,6 +27,13 @@ class StudyAttemptClientMutationIdTest {
                 override suspend fun createQuizEnvelope(request: QuizCreateRequest): ApiEnvelope<QuizDetail> =
                     unused()
 
+                override suspend fun updateQuizEnvelope(
+                    uuid: String,
+                    request: QuizCreateRequest
+                ): ApiEnvelope<QuizDetail> = unused()
+
+                override suspend fun deleteQuizEnvelope(uuid: String): ApiEnvelope<Unit> = unused()
+
                 override suspend fun getQuizEnvelope(uuid: String): ApiEnvelope<QuizDetail> = unused()
 
                 override suspend fun recordQuizAttemptEnvelope(
@@ -66,6 +73,13 @@ class StudyAttemptClientMutationIdTest {
                 override suspend fun createFlashcardEnvelope(
                     request: FlashcardDeckCreateRequest
                 ): ApiEnvelope<FlashcardDeckDetail> = unused()
+
+                override suspend fun updateFlashcardEnvelope(
+                    uuid: String,
+                    request: FlashcardDeckCreateRequest
+                ): ApiEnvelope<FlashcardDeckDetail> = unused()
+
+                override suspend fun deleteFlashcardEnvelope(uuid: String): ApiEnvelope<Unit> = unused()
 
                 override suspend fun recordFlashcardAttemptEnvelope(
                     uuid: String,

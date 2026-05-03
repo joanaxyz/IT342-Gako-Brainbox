@@ -44,7 +44,9 @@ class MainActivity : ComponentActivity() {
                 val homeDependencies = remember(appGraph) {
                     HomeDependencies(
                         libraryRepository = appGraph.libraryRepository,
-                        playlistRepository = appGraph.playlistRepository
+                        playlistRepository = appGraph.playlistRepository,
+                        quizRepository = appGraph.quizRepository,
+                        flashcardRepository = appGraph.flashcardRepository
                     )
                 }
                 BrainBoxApp(

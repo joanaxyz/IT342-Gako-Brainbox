@@ -120,15 +120,19 @@ internal fun HomeScene(
                     onOpenNotebook = onOpenNotebook
                 )
                 HomeTab.QUIZZES -> QuizzesScreen(
+                    repository = dependencies.quizRepository,
                     quizzes = state.homeData.quizzes,
                     notebooks = state.homeData.notebooks,
                     contentPadding = contentPadding,
+                    onFeatureRequest = onFeatureRequest,
                     onOpenQuiz = onOpenQuiz
                 )
                 HomeTab.FLASHCARDS -> FlashcardsScreen(
+                    repository = dependencies.flashcardRepository,
                     flashcards = state.homeData.flashcards,
                     notebooks = state.homeData.notebooks,
                     contentPadding = contentPadding,
+                    onFeatureRequest = onFeatureRequest,
                     onOpenFlashcardDeck = onOpenFlashcardDeck
                 )
                 HomeTab.PLAYLISTS -> PlaylistsScreen(

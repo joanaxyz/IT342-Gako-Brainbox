@@ -5,6 +5,7 @@ import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckCrea
 import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckDetail
 import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckSummary
 import edu.cit.gako.brainbox.platform.network.requireData
+import edu.cit.gako.brainbox.platform.network.requireSuccess
 import java.util.UUID
 
 class FlashcardRepository(
@@ -23,6 +24,16 @@ class FlashcardRepository(
     suspend fun createFlashcardDeck(request: FlashcardDeckCreateRequest): FlashcardDeckDetail {
         return apiService.createFlashcardEnvelope(request)
             .requireData("We couldn't create that flashcard deck yet.")
+    }
+
+    suspend fun updateFlashcardDeck(uuid: String, request: FlashcardDeckCreateRequest): FlashcardDeckDetail {
+        return apiService.updateFlashcardEnvelope(uuid, request)
+            .requireData("We couldn't save that flashcard deck yet.")
+    }
+
+    suspend fun deleteFlashcardDeck(uuid: String) {
+        apiService.deleteFlashcardEnvelope(uuid)
+            .requireSuccess("We couldn't delete that flashcard deck yet.")
     }
 
     suspend fun recordFlashcardAttempt(

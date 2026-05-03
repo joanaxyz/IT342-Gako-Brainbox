@@ -5,6 +5,7 @@ import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizCreateRequest
 import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizDetail
 import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizSummary
 import edu.cit.gako.brainbox.platform.network.requireData
+import edu.cit.gako.brainbox.platform.network.requireSuccess
 import java.util.UUID
 
 class QuizRepository(
@@ -18,6 +19,16 @@ class QuizRepository(
     suspend fun createQuiz(request: QuizCreateRequest): QuizDetail {
         return apiService.createQuizEnvelope(request)
             .requireData("We couldn't create that quiz yet.")
+    }
+
+    suspend fun updateQuiz(uuid: String, request: QuizCreateRequest): QuizDetail {
+        return apiService.updateQuizEnvelope(uuid, request)
+            .requireData("We couldn't save that quiz yet.")
+    }
+
+    suspend fun deleteQuiz(uuid: String) {
+        apiService.deleteQuizEnvelope(uuid)
+            .requireSuccess("We couldn't delete that quiz yet.")
     }
 
     suspend fun getQuiz(uuid: String): QuizDetail {
