@@ -50,16 +50,20 @@ const useEditorNavigation = ({ hasUnsavedDocumentChanges, handleSaveNotebook, ad
   const handleBackHome = useCallback(() => {
     if (isSavingBeforeExit) return;
 
-    if (!isAndroidHost()) {
-      navigate('/dashboard');
-      return;
-    }
-
-    const exitEditor = async () => {
-      if (!hasUnsavedDocumentChanges()) {
+    const exitToHome = () => {
+      if (isAndroidHost()) {
         if (!closeHostEditor()) {
           navigate('/dashboard');
         }
+        return;
+      }
+
+      navigate('/dashboard');
+    };
+
+    const exitEditor = async () => {
+      if (!hasUnsavedDocumentChanges()) {
+        exitToHome();
         return;
       }
 
@@ -73,9 +77,7 @@ const useEditorNavigation = ({ hasUnsavedDocumentChanges, handleSaveNotebook, ad
           return;
         }
 
-        if (!closeHostEditor()) {
-          navigate('/dashboard');
-        }
+        exitToHome();
       } finally {
         if (isMountedRef.current) {
           setIsSavingBeforeExit(false);
