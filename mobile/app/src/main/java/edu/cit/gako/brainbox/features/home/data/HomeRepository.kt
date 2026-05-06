@@ -5,6 +5,7 @@ import edu.cit.gako.brainbox.app.HomeData
 import edu.cit.gako.brainbox.features.auth.data.AuthRepository
 import edu.cit.gako.brainbox.features.home.flashcards.data.FlashcardRepository
 import edu.cit.gako.brainbox.features.notebook.data.NotebookRepository
+import edu.cit.gako.brainbox.features.playback.data.PlaybackQueueRepository
 import edu.cit.gako.brainbox.features.home.playlists.data.PlaylistRepository
 import edu.cit.gako.brainbox.features.home.quizzes.data.QuizRepository
 import edu.cit.gako.brainbox.platform.network.SessionManager
@@ -17,6 +18,7 @@ class HomeRepository(
     private val notebookRepository: NotebookRepository,
     private val quizRepository: QuizRepository,
     private val flashcardRepository: FlashcardRepository,
+    private val playbackQueueRepository: PlaybackQueueRepository,
     private val playlistRepository: PlaylistRepository,
     private val sessionManager: SessionManager
 ) {
@@ -39,6 +41,9 @@ class HomeRepository(
         val flashcardsDeferred = async {
             loadSection { flashcardRepository.getFlashcards() }
         }
+        val playbackQueueDeferred = async {
+            loadSection { playbackQueueRepository.getQueueState() }
+        }
         val playlistsDeferred = async {
             loadSection { playlistRepository.getPlaylists() }
         }
@@ -49,6 +54,7 @@ class HomeRepository(
         val reviewedResult = reviewedDeferred.await()
         val quizzesResult = quizzesDeferred.await()
         val flashcardsResult = flashcardsDeferred.await()
+        val playbackQueueResult = playbackQueueDeferred.await()
         val playlistsResult = playlistsDeferred.await()
 
         val allFailed = listOf(
@@ -58,6 +64,7 @@ class HomeRepository(
             reviewedResult,
             quizzesResult,
             flashcardsResult,
+            playbackQueueResult,
             playlistsResult
         ).all { it.isFailure }
 
@@ -84,6 +91,7 @@ class HomeRepository(
         val flashcards = flashcardsResult.getOrElse {
             emptyList()
         }
+        val playbackQueue = playbackQueueResult.getOrNull()
         val playlists = playlistsResult.getOrElse {
             emptyList()
         }
@@ -97,7 +105,11 @@ class HomeRepository(
                 recentlyReviewed = recentlyReviewed,
                 quizzes = quizzes,
                 flashcards = flashcards,
-                playlists = playlists
+                playlists = playlists,
+                playbackQueue = playbackQueue?.items.orEmpty(),
+                playbackPlaylistUuid = playbackQueue?.playlistUuid,
+                playbackPlaylistTitle = playbackQueue?.playlistTitle,
+                playbackPlaylistCurrentIndex = playbackQueue?.currentIndex ?: 0
             )
         )
     }

@@ -50,6 +50,7 @@ class BrainBoxAppGraph private constructor(context: Context) {
             notebookRepository = notebookRepository,
             quizRepository = quizRepository,
             flashcardRepository = flashcardRepository,
+            playbackQueueRepository = playbackQueueRepository,
             playlistRepository = playlistRepository,
             sessionManager = sessionManager
         )
