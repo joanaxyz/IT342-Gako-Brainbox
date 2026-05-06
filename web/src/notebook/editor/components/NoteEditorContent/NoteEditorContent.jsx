@@ -265,13 +265,23 @@ const NoteEditorContent = forwardRef(({
     }
 
     const { selection } = editor.state;
+    const emptyParagraphRange = selection.$from.depth > 0
+      ? {
+          from: selection.$from.before(),
+          to: selection.$from.after(),
+        }
+      : null;
     const isEmptyParagraph = selection.empty
       && selection.$from.parent.type.name === 'paragraph'
       && selection.$from.parent.textContent.trim().length === 0;
     const shouldInsertBlock = kind === 'block' || (kind === 'auto' && isEmptyParagraph);
     const range = {
-      from: selection.from,
-      to: selection.to,
+      from: shouldInsertBlock && isEmptyParagraph && emptyParagraphRange
+        ? emptyParagraphRange.from
+        : selection.from,
+      to: shouldInsertBlock && isEmptyParagraph && emptyParagraphRange
+        ? emptyParagraphRange.to
+        : selection.to,
     };
 
     if (shouldInsertBlock) {
