@@ -274,6 +274,10 @@ const NoteEditorContent = forwardRef(({
     const isEmptyParagraph = selection.empty
       && selection.$from.parent.type.name === 'paragraph'
       && selection.$from.parent.textContent.trim().length === 0;
+    const isOnlyRootParagraph = isEmptyParagraph
+      && editor.state.doc.childCount === 1
+      && editor.state.doc.firstChild?.type.name === 'paragraph'
+      && editor.state.doc.firstChild.textContent.trim().length === 0;
     const shouldInsertBlock = kind === 'block' || (kind === 'auto' && isEmptyParagraph);
     const range = {
       from: shouldInsertBlock && isEmptyParagraph && emptyParagraphRange
@@ -285,7 +289,11 @@ const NoteEditorContent = forwardRef(({
     };
 
     if (shouldInsertBlock) {
-      editor.chain().focus().insertBlockMath({ latex: '', range }).run();
+      editor.chain().focus().insertBlockMath({
+        latex: '',
+        range,
+        moveSelectionAfterInsert: isOnlyRootParagraph,
+      }).run();
       return;
     }
 
