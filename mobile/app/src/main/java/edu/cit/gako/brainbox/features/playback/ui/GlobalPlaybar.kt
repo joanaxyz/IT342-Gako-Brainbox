@@ -626,7 +626,7 @@ internal fun CollapsedPlaybar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = title.ifBlank { "Playlist ready" },
+                text = title.ifBlank { "Playback ready" },
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = Ink,
