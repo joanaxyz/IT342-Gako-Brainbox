@@ -1,0 +1,17 @@
+{
+    "initial":  {
+                    "state":  "PAUSED",
+                    "stateCode":  2,
+                    "positionMs":  21655,
+                    "chunk":  "Chunk 2",
+                    "title":  "Mobile Audio Regression Seed 1778153089155"
+                },
+    "resumeElapsedMs":  764,
+    "resumed":  {
+                    "state":  "PLAYING",
+                    "stateCode":  3,
+                    "positionMs":  2,
+                    "chunk":  "Chunk 3",
+                    "title":  "Mobile Audio Regression Seed 1778153089155"
+                }
+}
