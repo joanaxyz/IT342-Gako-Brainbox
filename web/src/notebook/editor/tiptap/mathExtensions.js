@@ -2,6 +2,7 @@ import 'katex/dist/katex.min.css';
 import { initVirtualKeyboardInCurrentBrowsingContext } from 'mathlive';
 import 'mathlive/fonts.css';
 import { InputRule, mergeAttributes, Node } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 import katex from 'katex';
 
 if (typeof window !== 'undefined') {
@@ -10,7 +11,11 @@ if (typeof window !== 'undefined') {
 
 const focusSoon = (element) => {
   customElements.whenDefined('math-field').then(() => {
-    window.requestAnimationFrame(() => {
+    let attempts = 0;
+
+    const tryFocus = () => {
+      attempts += 1;
+
       window.requestAnimationFrame(() => {
         if (!element?.isConnected) {
           return;
@@ -21,7 +26,15 @@ const focusSoon = (element) => {
         } catch {
           // MathLive can throw during early lifecycle focus; let the user focus manually.
         }
+
+        if (attempts < 6 && document.activeElement !== element) {
+          window.setTimeout(tryFocus, 40);
+        }
       });
+    };
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(tryFocus);
     });
   });
 };
@@ -440,6 +453,14 @@ const createMathNodeView = ({
       if (!isEditing) sync();
       return true;
     },
+    stopEvent(event) {
+      const target = event?.target;
+      return target instanceof window.Node && wrapper.contains(target);
+    },
+    ignoreMutation(mutation) {
+      const target = mutation?.target;
+      return target instanceof window.Node && wrapper.contains(target);
+    },
     destroy() {
       preview.removeEventListener('click', openEditor);
       if (isEditing) getEquationToolbar().hide();
@@ -585,15 +606,23 @@ export const BlockMath = Node.create({
     return {
       insertBlockMath:
         (options) =>
-        ({ commands, editor }) => {
+        ({ editor, tr, dispatch }) => {
           const latex = options?.latex ?? '';
           const from = options?.range?.from ?? options?.pos ?? editor.state.selection.from;
           const to = options?.range?.to ?? editor.state.selection.to ?? from;
+          const mathNode = this.type.create({ latex });
 
-          return commands.insertContentAt({ from, to }, {
-            type: this.name,
-            attrs: { latex },
-          });
+          tr.replaceRangeWith(from, to, mathNode);
+          if (options?.moveSelectionAfterInsert) {
+            const afterNodePos = Math.min(from + mathNode.nodeSize, tr.doc.content.size);
+            tr.setSelection(TextSelection.near(tr.doc.resolve(afterNodePos), 1));
+          }
+
+          if (dispatch) {
+            dispatch(tr.scrollIntoView());
+          }
+
+          return true;
         },
       deleteBlockMath:
         (options) =>
