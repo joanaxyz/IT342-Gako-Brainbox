@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-05-07T16:51:12.068Z",
+  "testEnvironment": "playwright",
+  "browsers": [
+    "chromium",
+    "firefox",
+    "webkit"
+  ],
+  "mobile": [
+    "Mobile Chrome",
+    "Mobile Safari"
+  ],
+  "screenshots": "test-results/screenshots",
+  "videos": "test-results/videos",
+  "traces": "test-results/traces"
+}
