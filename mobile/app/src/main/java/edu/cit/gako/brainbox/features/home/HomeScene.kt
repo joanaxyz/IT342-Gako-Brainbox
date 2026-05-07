@@ -194,7 +194,7 @@ internal fun HomeScene(
                     CollapsedPlaybar(
                         playbackState = state.playbackState,
                         title = state.playbackState.notebookTitle.ifBlank {
-                            state.playbackPlaylistTitle ?: "Playlist ready"
+                            state.playbackPlaylistTitle ?: "Playback ready"
                         },
                         onExpand = { isPlaybarExpanded = true },
                         onPlayPause = {
