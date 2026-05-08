@@ -1,5 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { login, snap } from './helpers.mjs';
+import { login, openAiSidebar, openFirstLibraryNotebook, snap } from './helpers.mjs';
+
+async function openNotebookAiSidebar(page) {
+  const editorPage = await openFirstLibraryNotebook(page);
+  const sidebar = await openAiSidebar(editorPage);
+  return { editorPage, sidebar };
+}
+
+async function selectAiTool(editorPage, label) {
+  const rail = editorPage.locator('.editor-ai-rail');
+  await rail.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).click();
+}
 
 test.describe('NOTEBOOK — AI Features (Detailed)', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,217 +18,113 @@ test.describe('NOTEBOOK — AI Features (Detailed)', () => {
   });
 
   test('WEB-NB-AI-001: AI Sidebar opens with default Chat tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    // Open AI sidebar via sparkle button
-    const aiBtn = page.locator('button[title*="AI"], button[aria-label*="AI"], .editor-ai-toggle').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    await snap(page, 'WEB-NB-AI-001_ai-sidebar-open');
-    
-    // Verify AI tools are visible
-    await expect(page.locator('text=Chat').first()).toBeVisible();
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await expect(sidebar.locator('textarea')).toHaveAttribute('placeholder', /ask anything/i);
+    await snap(editorPage, 'WEB-NB-AI-001');
   });
 
-  test('WEB-NB-AI-002: AI Sidebar — Chat with AI', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    // Open AI sidebar
-    const aiBtn = page.locator('button[title*="AI"], button[aria-label*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    // Select Chat tool if not already selected
-    const chatTool = page.locator('.ai-sidebar-tool, [data-tool="chat"]').filter({ hasText: 'Chat' }).first();
-    if (await chatTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await chatTool.click();
-      await page.waitForTimeout(1000);
-    }
-    
-    await snap(page, 'WEB-NB-AI-002_chat-tool-active');
+  test('WEB-NB-AI-002: AI Sidebar — Chat composer ready', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+    const composer = sidebar.locator('textarea');
+    const sendButton = sidebar.locator('.ai-send-btn');
+
+    await composer.fill('Help me outline this note.');
+
+    await expect(composer).toHaveValue('Help me outline this note.');
+    await expect(sendButton).toBeEnabled();
+    await snap(editorPage, 'WEB-NB-AI-002');
   });
 
-  test('WEB-NB-AI-003: AI Sidebar — Simplify tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const simplifyTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /simplify/i }).first();
-    if (await simplifyTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await simplifyTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-003_simplify-tool');
+  test('WEB-NB-AI-003: AI Sidebar — Improve tool', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await selectAiTool(editorPage, 'Improve');
+
+    await expect(sidebar.locator('.ai-active-tool-bar')).toContainText('Improve');
+    await snap(editorPage, 'WEB-NB-AI-003');
   });
 
   test('WEB-NB-AI-004: AI Sidebar — Expand tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const expandTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /expand/i }).first();
-    if (await expandTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await expandTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-004_expand-tool');
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await selectAiTool(editorPage, 'Expand');
+
+    await expect(sidebar.locator('.ai-active-tool-bar')).toContainText('Expand');
+    await snap(editorPage, 'WEB-NB-AI-004');
   });
 
-  test('WEB-NB-AI-005: AI Sidebar — Grammar tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const grammarTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /grammar/i }).first();
-    if (await grammarTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await grammarTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-005_grammar-tool');
+  test('WEB-NB-AI-005: AI Sidebar — Summarize tool', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await selectAiTool(editorPage, 'Summarize');
+
+    await expect(sidebar.locator('.ai-active-tool-bar')).toContainText('Summarize');
+    await snap(editorPage, 'WEB-NB-AI-005');
   });
 
-  test('WEB-NB-AI-006: AI Sidebar — Tone Shift tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const toneTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /tone/i }).first();
-    if (await toneTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await toneTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-006_tone-tool');
+  test('WEB-NB-AI-006: AI Sidebar — Explain tool', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await selectAiTool(editorPage, 'Explain');
+
+    await expect(sidebar.locator('.ai-active-tool-bar')).toContainText('Explain');
+    await snap(editorPage, 'WEB-NB-AI-006');
   });
 
-  test('WEB-NB-AI-007: AI Sidebar — Brainstorm tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const brainstormTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /brainstorm/i }).first();
-    if (await brainstormTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await brainstormTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-007_brainstorm-tool');
+  test('WEB-NB-AI-007: AI Sidebar — Quiz tool', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await selectAiTool(editorPage, 'Quiz');
+
+    await expect(sidebar.locator('.ai-active-tool-bar')).toContainText('Quiz');
+    await snap(editorPage, 'WEB-NB-AI-007');
   });
 
-  test('WEB-NB-AI-008: AI Sidebar — Summarize tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const summarizeTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /summarize/i }).first();
-    if (await summarizeTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await summarizeTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-008_summarize-tool');
+  test('WEB-NB-AI-008: AI Sidebar — Flashcards tool', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await selectAiTool(editorPage, 'Flashcards');
+
+    await expect(sidebar.locator('.ai-active-tool-bar')).toContainText('Flashcards');
+    await snap(editorPage, 'WEB-NB-AI-008');
   });
 
-  test('WEB-NB-AI-009: AI Sidebar — Flashcards tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const flashcardsTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /flashcard/i }).first();
-    if (await flashcardsTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await flashcardsTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-009_flashcards-tool');
+  test('WEB-NB-AI-009: AI Sidebar — Tool help', async ({ page }) => {
+    const { editorPage, sidebar } = await openNotebookAiSidebar(page);
+
+    await editorPage.locator('.editor-ai-rail').getByRole('button', { name: /how to use ai tools/i }).click();
+
+    await expect(sidebar).toContainText('How to use the rail');
+    await snap(editorPage, 'WEB-NB-AI-009');
   });
 
-  test('WEB-NB-AI-010: AI Sidebar — Quiz tool', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    const quizTool = page.locator('.ai-sidebar-tool, [data-tool]').filter({ hasText: /quiz/i }).first();
-    if (await quizTool.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await quizTool.click();
-      await page.waitForTimeout(1000);
-    }
-    await snap(page, 'WEB-NB-AI-010_quiz-tool');
+  test('WEB-NB-AI-010: AI Sidebar — Settings panel', async ({ page }) => {
+    const { editorPage } = await openNotebookAiSidebar(page);
+
+    await editorPage.getByRole('button', { name: /ai provider settings/i }).click();
+
+    await expect(editorPage.locator('.settings-panel')).toBeVisible({ timeout: 10_000 });
+    await expect(editorPage.locator('.settings-panel')).toContainText('AI Provider');
+    await snap(editorPage, 'WEB-NB-AI-010');
   });
 
-  test('WEB-NB-AI-011: AI Proposal Overlay (if triggered)', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    // Open AI sidebar
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    
-    await snap(page, 'WEB-NB-AI-011_ai-sidebar-overview');
+  test('WEB-NB-AI-011: AI Sidebar — History action', async ({ page }) => {
+    const { editorPage } = await openNotebookAiSidebar(page);
+
+    await editorPage.getByRole('button', { name: /open chat history/i }).click();
+
+    await expect(editorPage.locator('[aria-label="Chat history"]')).toBeVisible({ timeout: 10_000 });
+    await snap(editorPage, 'WEB-NB-AI-011');
   });
 
   test('WEB-NB-AI-012: AI Sidebar closes', async ({ page }) => {
-    await page.goto('/library');
-    await page.waitForTimeout(3000);
-    await page.locator('.lib-row').first().locator('text=Open').click();
-    await page.waitForTimeout(4000);
-    
-    const aiBtn = page.locator('button[title*="AI"]').first();
-    await aiBtn.click();
-    await page.waitForTimeout(2000);
-    await snap(page, 'WEB-NB-AI-012a_ai-sidebar-open');
-    
-    // Click close button
-    const closeBtn = page.locator('.ai-sidebar-close, button[aria-label*="close"]').first();
-    if (await closeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await closeBtn.click();
-      await page.waitForTimeout(1000);
-      await snap(page, 'WEB-NB-AI-012b_ai-sidebar-closed');
-    }
+    const { editorPage } = await openNotebookAiSidebar(page);
+
+    await editorPage.locator('.editor-navbar').getByRole('button', { name: /close ai assistant/i }).click();
+
+    await expect(editorPage.locator('.editor-ai-shell')).toHaveClass(/is-closed/);
+    await expect(editorPage.locator('.editor-navbar').getByRole('button', { name: /open ai assistant/i })).toBeVisible();
+    await snap(editorPage, 'WEB-NB-AI-012');
   });
 });

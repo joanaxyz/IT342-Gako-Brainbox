@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, snap } from './helpers.mjs';
+import { login, openFirstLibraryNotebook, snap } from './helpers.mjs';
 
 test.describe('LIBRARY', () => {
   test.beforeEach(async ({ page }) => {
@@ -37,19 +37,9 @@ test.describe('LIBRARY', () => {
   });
 
   test('WEB-LIB-004: Open notebook from library', async ({ page }) => {
-    // First deselect any selection, then click Open on the first row
-    const openBtn = page.locator('.lib-row').first().locator('text=Open').first();
-    if (await openBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await openBtn.click();
-      await page.waitForTimeout(3000);
-      // Check if we navigated to notebook or if it selected the row
-      const url = page.url();
-      if (url.includes('/notebook/')) {
-        await snap(page, 'WEB-LIB-004_notebook-opened');
-      } else {
-        await snap(page, 'WEB-LIB-004_notebook-selected');
-      }
-    }
+    const editorPage = await openFirstLibraryNotebook(page);
+    await expect(editorPage.locator('.editor-layout, .ProseMirror').first()).toBeVisible({ timeout: 10_000 });
+    await snap(editorPage, 'WEB-LIB-004');
   });
 });
 
