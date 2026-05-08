@@ -187,19 +187,25 @@ internal fun CodeInputRow(value: String, onValueChange: (String) -> Unit, length
         onValueChange = { incoming -> onValueChange(incoming.filter { it.isDigit() }.take(length)) },
         modifier = Modifier
             .fillMaxWidth()
-            .focusRequester(focusRequester)
-            .height(1.dp), // Make field clickable but invisible
+            .height(80.dp)
+            .focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         textStyle = TextStyle(color = Color.Transparent, fontSize = 1.sp),
         cursorBrush = SolidColor(Color.Transparent),
         decorationBox = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp), // Ensure the row has height
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 repeat(length) { index ->
                     val digit = value.getOrNull(index)?.toString().orEmpty()
                     val isActive = index == value.length
                     Surface(
                         modifier = Modifier
                             .weight(1f)
+                            .height(62.dp) // Explicit height for each box
                             .clickable { focusRequester.requestFocus() },
                         shape = RoundedCornerShape(18.dp),
                         color = if (isActive) Cream.copy(alpha = 0.9f) else Cream,

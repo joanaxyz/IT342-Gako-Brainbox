@@ -339,21 +339,19 @@ private fun VerifyCodePane(
     onBack: () -> Unit
 ) {
     var code by rememberSaveable { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
-    
-    // Auto-focus when the pane appears
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
 
     AuthHeader(
         title = "Enter your code",
         subtitle = "We sent a code to $email."
     )
 
-    CodeInputRow(value = code, onValueChange = { code = it })
-    PrimaryActionButton("Verify Code", isBusy) {
-        onSubmit(code)
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        BrandedTextField("Enter 6-digit code", code, { 
+            if (it.length <= 6) code = it.filter { it.isDigit() }
+        }, "Enter the 6-digit code sent to your email")
+        PrimaryActionButton("Verify Code", isBusy) {
+            onSubmit(code)
+        }
     }
     InlinePrompt("Need a new code?", "Go back", onBack)
 }
@@ -366,15 +364,45 @@ private fun ResetPasswordPane(
     onBack: () -> Unit
 ) {
     var password by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var passwordError by rememberSaveable { mutableStateOf<String?>(null) }
 
     AuthHeader(
         title = "Set a new password",
         subtitle = "You're resetting the password for $email."
     )
 
-    BrandedTextField("New password", password, { password = it }, "Enter a new password", isPassword = true)
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        BrandedTextField("New password", password, { 
+            password = it
+            passwordError = null
+        }, "Enter a new password", isPassword = true)
+        BrandedTextField("Confirm password", confirmPassword, { 
+            confirmPassword = it
+            passwordError = null
+        }, "Confirm your new password", isPassword = true)
+        
+        // Show error if passwords don't match
+        passwordError?.let { error ->
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+    }
+    
     PrimaryActionButton("Save Password", isBusy) {
-        onSubmit(password)
+        when {
+            password.isBlank() -> return@PrimaryActionButton
+            confirmPassword.isBlank() -> return@PrimaryActionButton
+            password != confirmPassword -> {
+                passwordError = "Passwords do not match"
+                return@PrimaryActionButton
+            }
+            else -> onSubmit(password)
+        }
     }
     InlinePrompt("Need to verify again?", "Back", onBack)
 }
