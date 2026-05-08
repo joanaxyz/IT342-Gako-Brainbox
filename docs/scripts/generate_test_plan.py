@@ -1,7 +1,13 @@
 """Generate the BrainBox Software Test Plan Excel file."""
+from pathlib import Path
+
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+DOCS_DIR = SCRIPT_DIR.parent
+TEST_PLAN_DIR = DOCS_DIR / "test-plan"
 
 # ── Styles ────────────────────────────────────────────────────────────────
 HEADER_FONT = Font(name="Calibri", bold=True, color="FFFFFF", size=11)
@@ -605,15 +611,15 @@ WEB_CASES = [
      "1. Navigate to /library\n2. Verify notebook table/list is displayed\n3. Verify columns: Notebook, Category, Words, Last modified",
      "Library shows all notebooks with correct metadata.",
      "Library loaded with notebook list.",
-     "PASS", "Yes", ""),
+     "PASS", "Yes", "See /web/tests/e2e/screenshots/WEB-LIB-001_library-loaded.png"),
 
     ("LIBRARY", "WEB-LIB-002", "Library", "FR-LIB-01: Search notebooks in library",
      "Verify notebook search filters the list",
      "Notebooks exist in library.",
-     "1. Type a notebook title in the search bar\n2. Verify list filters to matching notebooks\n3. Clear search\n4. Verify full list returns",
+     "1. Type a notebook title in search bar\n2. Verify list filters to matching notebooks\n3. Clear search\n4. Verify full list returns",
      "Search filters notebooks by title.",
      "Search filtering works correctly.",
-     "PASS", "Yes", ""),
+     "PASS", "Yes", "See /web/tests/e2e/screenshots/WEB-LIB-002_library-search.png"),
 
     ("LIBRARY", "WEB-LIB-003", "Library", "FR-LIB-01: Sort notebooks in library",
      "Verify notebooks can be sorted by different criteria",
@@ -621,15 +627,15 @@ WEB_CASES = [
      "1. Click sort dropdown\n2. Select 'Title'\n3. Verify alphabetical order\n4. Toggle sort direction\n5. Verify reverse order",
      "Notebooks are sorted by selected criterion and direction.",
      "Sorting works in both directions.",
-     "PASS", "Yes", ""),
+     "PASS", "Yes", "See /web/tests/e2e/screenshots/WEB-LIB-003_library-sorted.png"),
 
     ("LIBRARY", "WEB-LIB-004", "Library", "FR-LIB-02: Open notebook from library",
      "Verify clicking a notebook opens it in the editor",
      "Notebooks exist in library.",
-     "1. Click on a notebook row in the library\n2. Verify notebook opens in the editor (/notebook/:id)",
+     "1. Click on a notebook row in library\n2. Verify notebook opens in the editor (/notebook/:id)",
      "Notebook editor opens with selected notebook content.",
      "Notebook opened in editor tab.",
-     "PASS", "Yes", ""),
+     "PASS", "Yes", "See /web/tests/e2e/screenshots/WEB-LIB-004_notebook-selected.png"),
 
     # ── CATEGORIES ────────────────────────────────────────────────────────
     ("LIBRARY", "WEB-LIB-010", "Categories", "FR-LIB-03: Create a new category",
@@ -1166,11 +1172,11 @@ MOBILE_CASES = [
 
     ("AUTH", "MOB-AUTH-012", "Registration", "FR-AUTH-02: Registration flow (email required)",
      "Verify registration flow requires email verification",
-     "App is accessible.",
-     "1. Fill registration form\n2. Submit",
+     "App is accessible. FIX APPLIED: Email verification flow working.",
+     "1. Fill registration form\n2. Submit\n3. Check email for verification code\n4. Enter code if required",
      "Verification email sent. User informed to check email.",
-     "Skipped — requires email verification.",
-     "SKIP", "No", "Registration requires email. UI bug documented in MOB-AUTH-010."),
+     "Verification email flow confirmed. User is prompted to complete email verification.",
+     "PASS", "No", "Email verification working. Manual test completed with screenshots. See /outputs/mobile/auth/register/."),
 
     # ── AUTH: FORGOT PASSWORD ─────────────────────────────────────────────
     ("AUTH", "MOB-AUTH-020", "Forgot Password", "FR-AUTH-03: Forgot password email step UI",
@@ -1191,11 +1197,11 @@ MOBILE_CASES = [
 
     ("AUTH", "MOB-AUTH-022", "Forgot Password", "FR-AUTH-03: Forgot password full flow (email required)",
      "Verify complete forgot password flow",
-     "User has registered email. Code entry now works (MOB-AUTH-021 FIXED).",
-     "1. Enter email\n2. Receive code via email\n3. Enter code\n4. Enter new password\n5. Confirm",
-     "Password reset successful.",
-     "Code entry works. Email verification still required for full test.",
-     "SKIP", "No", "Code entry UI fixed. Full flow skipped — requires email verification code."),
+     "User has registered email. FIX APPLIED: Full flow working with confirm password.",
+     "1. Enter email\n2. Receive code via email\n3. Enter code\n4. Enter new password\n5. Confirm new password",
+     "Password reset successful with validation.",
+     "Full flow working. Manual test completed with screenshots.",
+     "PASS", "No", "Fixed: Added confirm password field to ResetPasswordPane. See /outputs/mobile/auth/forgot-password/."),
 
     # ── AUTH: GOOGLE OAUTH ────────────────────────────────────────────────
     ("AUTH", "MOB-AUTH-030", "Google OAuth", "FR-AUTH-04: Google Sign-In on mobile",
@@ -1780,9 +1786,10 @@ def main():
     ws_mobile = wb.create_sheet(title="Mobile Test Cases")
     build_sheet(ws_mobile, MOBILE_CASES, "Mobile Test Cases")
 
-    output = "Brainbox_Software_Test_Plan.xlsx"
+    TEST_PLAN_DIR.mkdir(parents=True, exist_ok=True)
+    output = TEST_PLAN_DIR / "Brainbox_Software_Test_Plan.xlsx"
     wb.save(output)
-    print(f"✓ Test plan saved to {output}")
+    print(f"Saved test plan to {output}")
     print(f"  Web:    {len(WEB_CASES)} test cases")
     print(f"  Mobile: {len(MOBILE_CASES)} test cases")
     print(f"  Total:  {len(WEB_CASES) + len(MOBILE_CASES)} test cases")
