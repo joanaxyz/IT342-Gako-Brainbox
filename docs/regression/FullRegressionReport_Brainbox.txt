@@ -56,39 +56,39 @@ During refactoring, the following design patterns were implemented:
 4.1 Backend Structure
 --------------------
 backend/src/main/java/edu/cit/gako/brainbox/
-├── modules/                    # Feature modules (Vertical Slices)
-│   ├── auth/                  # Authentication feature
-│   ├── ai/                    # AI-powered features
-│   ├── notebook/              # Notebook management
-│   ├── flashcard/             # Flashcard system
-│   ├── quiz/                  # Quiz functionality
-│   ├── playlist/              # Playlist management
-│   ├── playbackqueue/         # Audio playback queue
-│   ├── category/              # Category management
-│   └── user/                  # User management
-├── platform/                  # Cross-cutting concerns
-├── shared/                    # Shared utilities
-└── BrainboxApiApplication.java
++-- modules/                    # Feature modules (Vertical Slices)
+�   +-- auth/                  # Authentication feature
+�   +-- ai/                    # AI-powered features
+�   +-- notebook/              # Notebook management
+�   +-- flashcard/             # Flashcard system
+�   +-- quiz/                  # Quiz functionality
+�   +-- playlist/              # Playlist management
+�   +-- playbackqueue/         # Audio playback queue
+�   +-- category/              # Category management
+�   +-- user/                  # User management
++-- platform/                  # Cross-cutting concerns
++-- shared/                    # Shared utilities
++-- BrainboxApiApplication.java
 
 4.2 Web Frontend Structure
 ---------------------------
 web/src/
-├── auth/                      # Authentication components
-├── ai/                        # AI features
-├── notebook/                  # Notebook functionality
-├── common/                    # Shared components
-├── home/                      # Home dashboard
-└── app/                       # Application core
++-- auth/                      # Authentication components
++-- ai/                        # AI features
++-- notebook/                  # Notebook functionality
++-- common/                    # Shared components
++-- home/                      # Home dashboard
++-- app/                       # Application core
 
 4.3 Mobile Structure
 --------------------
 mobile/app/src/main/java/edu/cit/gako/brainbox/
-├── features/                  # Feature-based organization
-│   ├── auth/                  # Authentication
-│   ├── notebook/              # Notebook features
-│   ├── flashcard/             # Flashcard features
-│   └── quiz/                  # Quiz features
-└── ...
++-- features/                  # Feature-based organization
+�   +-- auth/                  # Authentication
+�   +-- notebook/              # Notebook features
+�   +-- flashcard/             # Flashcard features
+�   +-- quiz/                  # Quiz features
++-- ...
 
 5. TEST PLAN DOCUMENTATION
 ==========================

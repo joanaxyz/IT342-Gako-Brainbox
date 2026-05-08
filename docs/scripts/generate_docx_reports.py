@@ -24,8 +24,11 @@ SUCCESS_FILL = "E9F7EF"
 BORDER = "C7D5E0"
 TEXT = RGBColor(40, 40, 40)
 MUTED = RGBColor(95, 99, 104)
-DOCS_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+DOCS_DIR = SCRIPT_DIR.parent
 ROOT_DIR = DOCS_DIR.parent
+REGRESSION_DIR = DOCS_DIR / "regression"
+SUBMITTER_NAME = "Joana Carla D. Gako"
 
 
 @dataclass
@@ -383,7 +386,7 @@ def add_title_page(document: Document, title: str, subtitle: str, meta_items: It
     document.add_paragraph()
     line = document.add_paragraph()
     line.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = line.add_run("BrainBox Quality Assurance Documentation")
+    run = line.add_run(f"Prepared by {SUBMITTER_NAME}")
     run.italic = True
     run.font.name = "Aptos"
     run.font.size = Pt(10)
@@ -644,7 +647,12 @@ def configure_document(document: Document) -> None:
 
 
 def read_text(path: Path) -> list[str]:
-    return path.read_text(encoding="utf-8").splitlines()
+    for encoding in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return path.read_text(encoding=encoding).splitlines()
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeDecodeError("text", b"", 0, 1, f"Unable to decode {path}")
 
 
 def parse_key_value_lines(lines: list[str], start_index: int) -> tuple[list[tuple[str, str]], int]:
@@ -949,7 +957,7 @@ def parse_regression_report(path: Path) -> dict:
     final_assessment = lines[lines.index("The Vertical Slice Architecture refactoring has been successfully completed and validated through comprehensive regression testing. The system demonstrates improved maintainability, feature isolation, and code organization while maintaining full functional compatibility.")].strip()
 
     report_status_items: list[tuple[str, str]] = []
-    for marker in ("Report Status: Complete", "Next Review Date: June 2026", "Approved By: Quality Assurance Team"):
+    for marker in ("Report Status: Complete", "Next Review Date: June 2026", f"Approved By: {SUBMITTER_NAME}"):
         key, value = marker.split(":", 1)
         report_status_items.append((key.strip(), value.strip()))
 
@@ -1181,10 +1189,11 @@ def create_regression_docx(source_path: Path, output_path: Path) -> None:
 
 
 def main() -> None:
-    automated_source = DOCS_DIR / "AutomatedTestEvidence_Brainbox.txt"
-    regression_source = DOCS_DIR / "FullRegressionReport_Brainbox.txt"
-    automated_output = DOCS_DIR / "AutomatedTestEvidence_Brainbox.docx"
-    regression_output = DOCS_DIR / "FullRegressionReport_Brainbox.docx"
+    REGRESSION_DIR.mkdir(parents=True, exist_ok=True)
+    automated_source = REGRESSION_DIR / "AutomatedTestEvidence_Brainbox.txt"
+    regression_source = REGRESSION_DIR / "FullRegressionReport_Brainbox.txt"
+    automated_output = REGRESSION_DIR / "AutomatedTestEvidence_Brainbox.docx"
+    regression_output = REGRESSION_DIR / "FullRegressionReport_Brainbox.docx"
 
     create_automated_docx(automated_source, automated_output)
     create_regression_docx(regression_source, regression_output)

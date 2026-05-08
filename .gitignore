@@ -18,6 +18,8 @@ Thumbs.db
 # OS / temp
 tmp/
 temp/
+__pycache__/
+docs/rendered-*/
 
 # AI tool artifacts
 .zencoder/
