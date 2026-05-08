@@ -1,6 +1,7 @@
 package edu.cit.gako.brainbox.shared.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,8 +26,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -177,10 +181,14 @@ internal fun InlinePrompt(text: String, action: String, onAction: () -> Unit) {
 
 @Composable
 internal fun CodeInputRow(value: String, onValueChange: (String) -> Unit, length: Int = 6) {
+    val focusRequester = remember { FocusRequester() }
     BasicTextField(
         value = value,
         onValueChange = { incoming -> onValueChange(incoming.filter { it.isDigit() }.take(length)) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .height(1.dp), // Make field clickable but invisible
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         textStyle = TextStyle(color = Color.Transparent, fontSize = 1.sp),
         cursorBrush = SolidColor(Color.Transparent),
@@ -188,11 +196,21 @@ internal fun CodeInputRow(value: String, onValueChange: (String) -> Unit, length
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(length) { index ->
                     val digit = value.getOrNull(index)?.toString().orEmpty()
+                    val isActive = index == value.length
                     Surface(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { focusRequester.requestFocus() },
                         shape = RoundedCornerShape(18.dp),
-                        color = Cream,
-                        border = BorderStroke(1.5.dp, if (digit.isEmpty()) Border else Accent.copy(alpha = 0.82f))
+                        color = if (isActive) Cream.copy(alpha = 0.9f) else Cream,
+                        border = BorderStroke(
+                            1.5.dp,
+                            when {
+                                isActive -> Accent
+                                digit.isNotEmpty() -> Accent.copy(alpha = 0.82f)
+                                else -> Border
+                            }
+                        )
                     ) {
                         Box(modifier = Modifier.height(62.dp), contentAlignment = Alignment.Center) {
                             Text(

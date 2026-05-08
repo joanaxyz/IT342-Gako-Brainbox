@@ -1,5 +1,6 @@
 package edu.cit.gako.brainbox.features.auth
 
+import android.util.Log
 import edu.cit.gako.brainbox.app.AppState
 import edu.cit.gako.brainbox.app.AuthStage
 import edu.cit.gako.brainbox.app.HomeTab
@@ -62,20 +63,33 @@ internal class AuthCoordinator(
 
     fun handleRegister(username: String, email: String, password: String) {
         scope.launch {
+            Log.d("AuthCoordinator", "handleRegister started for: $username")
             setState(getState().copy(isBusy = true))
 
             try {
                 authRepository.register(username, email, password)
-                setState(
-                    getState().copy(
-                        isBusy = false,
-                        authStage = AuthStage.LOGIN
-                    )
-                )
-                showMessage("Account created. Sign in to continue.")
-            } catch (_: Exception) {
+                Log.d("AuthCoordinator", "Registration API success, current authStage: ${getState().authStage}")
+                // Registration successful - redirect to login
+                handleAuthStageChange(AuthStage.LOGIN)
+                Log.d("AuthCoordinator", "After handleAuthStageChange(LOGIN), authStage: ${getState().authStage}")
                 setState(getState().copy(isBusy = false))
-                showMessage("We couldn't create that account yet. Check the details and try again.")
+                Log.d("AuthCoordinator", "Registration complete, redirected to LOGIN")
+                showMessage("Account created! Please sign in to continue.")
+            } catch (e: Exception) {
+                Log.e("AuthCoordinator", "Registration failed: ${e.message}", e)
+                setState(getState().copy(isBusy = false))
+                // Show specific error message based on exception
+                val errorMsg = e.message?.lowercase() ?: ""
+                when {
+                    errorMsg.contains("already") || errorMsg.contains("taken") || errorMsg.contains("exists") ->
+                        showMessage("This username or email is already registered. Try signing in instead.")
+                    errorMsg.contains("network") || errorMsg.contains("connection") || errorMsg.contains("timeout") ->
+                        showMessage("Network error. Check your connection and try again.")
+                    errorMsg.isNotBlank() ->
+                        showMessage("Registration failed: ${e.message}")
+                    else ->
+                        showMessage("We couldn't create that account. Please try again.")
+                }
             }
         }
     }

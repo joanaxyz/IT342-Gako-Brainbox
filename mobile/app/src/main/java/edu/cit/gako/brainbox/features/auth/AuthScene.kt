@@ -28,10 +28,15 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -108,11 +113,13 @@ internal fun AuthScene(
                         onForgotPassword = { onAuthStageChange(AuthStage.FORGOT_EMAIL) },
                         onRegister = { onAuthStageChange(AuthStage.REGISTER) }
                     )
-                    AuthStage.REGISTER -> RegisterPane(
-                        isBusy = state.isBusy,
-                        onSubmit = onRegister,
-                        onLogin = { onAuthStageChange(AuthStage.LOGIN) }
-                    )
+                    AuthStage.REGISTER -> key(state.authStage) {
+                        RegisterPane(
+                            isBusy = state.isBusy,
+                            onSubmit = onRegister,
+                            onLogin = { onAuthStageChange(AuthStage.LOGIN) }
+                        )
+                    }
                     AuthStage.FORGOT_EMAIL -> ForgotPasswordPane(
                         isBusy = state.isBusy,
                         onSubmit = onSendResetCode,
@@ -257,6 +264,8 @@ private fun RegisterPane(
     var username by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var passwordError by rememberSaveable { mutableStateOf<String?>(null) }
 
     AuthHeader(
         title = "Create your account",
@@ -266,11 +275,37 @@ private fun RegisterPane(
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         BrandedTextField("Username", username, { username = it }, "Choose a username")
         BrandedTextField("Email", email, { email = it }, "Enter your email")
-        BrandedTextField("Password", password, { password = it }, "Create a password", isPassword = true)
+        BrandedTextField("Password", password, { 
+            password = it
+            passwordError = null
+        }, "Create a password", isPassword = true)
+        BrandedTextField("Confirm Password", confirmPassword, { 
+            confirmPassword = it
+            passwordError = null
+        }, "Confirm your password", isPassword = true)
+        
+        // Show error if passwords don't match
+        passwordError?.let { error ->
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
     }
 
     PrimaryActionButton("Create Account", isBusy) {
-        onSubmit(username.trim(), email.trim(), password)
+        when {
+            username.isBlank() -> return@PrimaryActionButton
+            email.isBlank() -> return@PrimaryActionButton
+            password.isBlank() -> return@PrimaryActionButton
+            password != confirmPassword -> {
+                passwordError = "Passwords do not match"
+                return@PrimaryActionButton
+            }
+            else -> onSubmit(username.trim(), email.trim(), password)
+        }
     }
 
     InlinePrompt("Already have an account?", "Log in", onLogin)
@@ -304,6 +339,12 @@ private fun VerifyCodePane(
     onBack: () -> Unit
 ) {
     var code by rememberSaveable { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+    
+    // Auto-focus when the pane appears
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     AuthHeader(
         title = "Enter your code",
