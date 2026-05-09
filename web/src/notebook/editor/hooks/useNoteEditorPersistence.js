@@ -170,11 +170,6 @@ export const useNoteEditorPersistence = ({
         return response;
       })
       .finally(() => {
-        if (inFlightSaveRef.current?.requestId === requestId) {
-          inFlightSaveRef.current = null;
-          inFlightPromiseRef.current = null;
-        }
-
         const pendingContent = pendingSaveRef.current;
         if (
           activeNotebookUuidRef.current === notebookId
@@ -183,9 +178,18 @@ export const useNoteEditorPersistence = ({
           && pendingContent !== undefined
           && pendingContent !== lastSavedContentRef.current
         ) {
+          if (inFlightSaveRef.current?.requestId === requestId) {
+            inFlightSaveRef.current = null;
+            inFlightPromiseRef.current = null;
+          }
           pendingSaveRef.current = null;
           void runSaveRef.current?.(pendingContent);
           return;
+        }
+
+        if (inFlightSaveRef.current?.requestId === requestId) {
+          inFlightSaveRef.current = null;
+          inFlightPromiseRef.current = null;
         }
 
         if (activeNotebookUuidRef.current === notebookId) {
