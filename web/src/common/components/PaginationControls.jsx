@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ELLIPSIS, getVisiblePageTokens } from '../utils/pagination';
+import { ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { ELLIPSIS, getVisiblePageTokens, clampPage } from '../utils/pagination';
 import './PaginationControls.css';
 
 const PaginationControls = ({
@@ -15,9 +16,35 @@ const PaginationControls = ({
   totalItems,
   totalPages,
 }) => {
+  const [pageInput, setPageInput] = useState('');
+  const [showInput, setShowInput] = useState(false);
+
   if (!totalItems || totalItems <= pageSize) {
     return null;
   }
+
+  const handlePageInputChange = (value) => {
+    setPageInput(value);
+  };
+
+  const handlePageInputSubmit = () => {
+    const pageNum = parseInt(pageInput, 10);
+    if (!isNaN(pageNum)) {
+      const validPage = clampPage(pageNum, totalItems, pageSize);
+      onPageChange(validPage);
+      setPageInput('');
+      setShowInput(false);
+    }
+  };
+
+  const handlePageInputKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      handlePageInputSubmit();
+    } else if (event.key === 'Escape') {
+      setPageInput('');
+      setShowInput(false);
+    }
+  };
 
   const tokens = getVisiblePageTokens(currentPage, totalPages, compact ? 0 : siblingCount);
   const classes = [
@@ -62,6 +89,52 @@ const PaginationControls = ({
             )
           ))}
         </div>
+
+        {showInput ? (
+          <div className="pagination__goto">
+            <input
+              type="number"
+              className="pagination__input"
+              min="1"
+              max={totalPages}
+              value={pageInput}
+              onChange={(e) => handlePageInputChange(e.target.value)}
+              onKeyDown={handlePageInputKeyDown}
+              placeholder={`Page (1-${totalPages})`}
+              aria-label="Go to page"
+              autoFocus
+            />
+            <button
+              type="button"
+              className="pagination__input-submit"
+              onClick={handlePageInputSubmit}
+              aria-label="Go to page"
+            >
+              Go
+            </button>
+            <button
+              type="button"
+              className="pagination__input-cancel"
+              onClick={() => {
+                setPageInput('');
+                setShowInput(false);
+              }}
+              aria-label="Cancel"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="pagination__goto-icon"
+            onClick={() => setShowInput(!showInput)}
+            aria-label="Go to page"
+            title="Go to page"
+          >
+            <Zap size={15} />
+          </button>
+        )}
 
         <button
           type="button"

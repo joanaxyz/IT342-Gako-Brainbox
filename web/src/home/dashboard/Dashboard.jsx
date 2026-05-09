@@ -11,6 +11,11 @@ import ContinueLearningPlayer from './components/ContinueLearningPlayer';
 import NbCard from './components/NbCard';
 import { DashQuizCard, DashDeckCard, ProgressRow } from './components/DashStudyCards';
 import { IconBook, IconTrophy, IconBrain, IconCards } from './components/DashStatIcons';
+import ChartCarousel from './components/ChartCarousel';
+import ImprovedStudyChart from './components/ImprovedStudyChart';
+import MultiTrendChart from './components/MultiTrendChart';
+import TrendSelector from './components/TrendSelector';
+import StudyStreakCard from './components/StudyStreakCard';
 import './styles/dashboard.css';
 
 const STAT_ICONS = { book: IconBook, trophy: IconTrophy, brain: IconBrain, cards: IconCards };
@@ -35,6 +40,7 @@ const Dashboard = () => {
   const monthDay = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 
   const [showNewNotebookModal, setShowNewNotebookModal] = useState(false);
+  const [selectedTrend, setSelectedTrend] = useState('performance');
 
   const dashLoading = notebooksLoading
     || recentlyEditedLoading
@@ -122,33 +128,57 @@ const Dashboard = () => {
       />
 
       <div className="page-body page-body-wide home-tab-shell__content">
-        <div className="dash-stats-row mb-36">
-        {statsItems.map((item) => {
-          const Icon = STAT_ICONS[item.icon];
-          return (
-            <div
-              key={item.label}
-              className="dash-stat-card"
-              onClick={() => navigate(item.route)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  navigate(item.route);
-                }
-              }}
-            >
-              <div className="dash-stat-icon-wrap"><Icon /></div>
-              <div className="dash-stat-value">{dashLoading ? '—' : item.value}</div>
-              <div className="dash-stat-label">{item.label}</div>
+        {/* Enhanced Statistics Section */}
+        <div className="enhanced-stats-section mb-32">
+          <div className="stats-grid mb-24">
+            {/* Study Streak Card */}
+            <StudyStreakCard reviewData={recentlyReviewedNotebooks} editData={recentlyEditedNotebooks} />
+            
+            {/* Quick Stats Cards */}
+            {statsItems.map((item) => {
+              const Icon = STAT_ICONS[item.icon];
+              return (
+                <div
+                  key={item.label}
+                  className="dash-stat-card"
+                  onClick={() => navigate(item.route)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      navigate(item.route);
+                    }
+                  }}
+                >
+                  <div className="dash-stat-icon-wrap"><Icon /></div>
+                  <div className="dash-stat-value">{dashLoading ? '—' : item.value}</div>
+                  <div className="dash-stat-label">{item.label}</div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Progress Trends */}
+          <div className="progress-trends-section">
+            <div className="trends-sidebar">
+              <TrendSelector selectedTrend={selectedTrend} onTrendChange={setSelectedTrend} />
             </div>
-          );
-        })}
-      </div>
+            <div className="trends-main">
+              <MultiTrendChart 
+                trendType={selectedTrend} 
+                quizData={safeQuizzes} 
+                flashcardData={safeFlashcards}
+                notebooks={notebooks}
+                recentlyReviewed={recentlyReviewedNotebooks}
+                recentlyEdited={recentlyEditedNotebooks}
+              />
+            </div>
+          </div>
+        </div>
 
         {(dashLoading || recentlyReviewedNotebooks.length > 0) && (
         <>
-          <div className="section-label mb-12">Continue learning</div>
+          <div className="section-label mb-12">Recently reviewed</div>
           <div className="continue-learning-strip mb-36">
             {dashLoading
               ? [...Array(2)].map((_, index) => <StudyCardSkeleton key={index} />)
@@ -157,6 +187,29 @@ const Dashboard = () => {
               ))}
           </div>
         </>
+      )}
+
+        <div className="dash-section-header mb-12">
+        <span className="section-label">Recently edited</span>
+        <button className="dash-view-all" onClick={() => navigate('/library')}>
+          View all →
+        </button>
+      </div>
+        {dashLoading ? (
+        <div className="nb-grid mb-36">
+          {[...Array(4)].map((_, index) => <StudyCardSkeleton key={index} />)}
+        </div>
+      ) : recentlyEditedNotebooks.length > 0 ? (
+        <div className="nb-grid mb-36">
+          {recentlyEditedNotebooks.map((notebook) => <NbCard key={notebook.uuid} notebook={notebook} />)}
+        </div>
+      ) : (
+        <div className="dash-empty-panel mb-36">
+          <p className="dash-empty-panel-text">No notebooks yet.</p>
+          <button className="dash-empty-panel-link" onClick={() => setShowNewNotebookModal(true)}>
+            Create one →
+          </button>
+        </div>
       )}
 
         <div className="dash-section-header mb-12">
@@ -213,29 +266,7 @@ const Dashboard = () => {
         </div>
       )}
 
-        <div className="dash-section-header mb-12">
-        <span className="section-label">Recently edited</span>
-        <button className="dash-view-all" onClick={() => navigate('/library')}>
-          View all →
-        </button>
-      </div>
-        {dashLoading ? (
-        <div className="nb-grid mb-36">
-          {[...Array(4)].map((_, index) => <StudyCardSkeleton key={index} />)}
-        </div>
-      ) : recentlyEditedNotebooks.length > 0 ? (
-        <div className="nb-grid mb-36">
-          {recentlyEditedNotebooks.map((notebook) => <NbCard key={notebook.uuid} notebook={notebook} />)}
-        </div>
-      ) : (
-        <div className="dash-empty-panel mb-36">
-          <p className="dash-empty-panel-text">No notebooks yet.</p>
-          <button className="dash-empty-panel-link" onClick={() => setShowNewNotebookModal(true)}>
-            Create one →
-          </button>
-        </div>
-      )}
-
+        
         {showStudyProgress && (
         <>
           <div className="section-label mb-12">Study progress</div>

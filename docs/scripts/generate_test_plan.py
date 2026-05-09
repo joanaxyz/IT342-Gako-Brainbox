@@ -5,6 +5,8 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+from web_case_inventory import build_web_cases
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 DOCS_DIR = SCRIPT_DIR.parent
 TEST_PLAN_DIR = DOCS_DIR / "test-plan"
@@ -1691,6 +1693,10 @@ MOBILE_CASES = [
      "App recreates successfully. Login state may be lost (expected).",
      "PASS", "No", ""),
 ]
+
+# Use the live Playwright inventory as the authoritative web regression suite so the
+# spreadsheet stays aligned with the implemented product and refreshed screenshots.
+WEB_CASES = build_web_cases()
 
 
 def build_sheet(ws, cases, sheet_title):

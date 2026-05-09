@@ -599,6 +599,8 @@ def build_mobile_evidence_modules() -> list[AutomatedModule]:
     for title, case_rows in MOBILE_EVIDENCE_CASES:
         module = AutomatedModule(title=title)
         for label, test_id, case_title, screenshot, result, description, execution_time, validation in case_rows:
+            if not screenshot.exists():
+                continue
             module.cases.append(
                 AutomatedCase(
                     label=label,
@@ -611,7 +613,8 @@ def build_mobile_evidence_modules() -> list[AutomatedModule]:
                     validation=validation,
                 )
             )
-        modules.append(module)
+        if module.cases:
+            modules.append(module)
     return modules
 
 
@@ -835,18 +838,48 @@ def parse_regression_report(path: Path) -> dict:
     lines = read_text(path)
     project_info, _ = parse_key_value_lines(lines, lines.index("Project Name: BrainBox"))
 
-    overview_start = lines.index("BrainBox is an intelligent learning management system that combines note-taking, AI-powered content generation, flashcards, quizzes, and multimedia playback capabilities. The system supports web, mobile, and backend services with a focus on adaptive learning and collaborative features.")
-    overview = lines[overview_start].strip()
+    def find_index(pattern: str, start: int = 0) -> int:
+        for idx in range(start, len(lines)):
+            if re.match(pattern, lines[idx].strip()):
+                return idx
+        raise ValueError(f"Could not find pattern: {pattern}")
 
-    tech_stack_start = lines.index("- Backend: Spring Boot (Java), Maven, PostgreSQL")
-    tech_stack: list[str] = []
-    index = tech_stack_start
-    while index < len(lines) and lines[index].startswith("- "):
-        tech_stack.append(lines[index][2:].strip())
-        index += 1
+    def find_line_after(heading_pattern: str) -> str:
+        start = find_index(heading_pattern) + 1
+        for idx in range(start, len(lines)):
+            value = lines[idx].strip()
+            if value:
+                return value
+        raise ValueError(f"No content after heading: {heading_pattern}")
 
-    vertical_title = lines.index("3.1 Vertical Slice Architecture Implementation")
-    vertical_summary = lines[vertical_title + 2].strip()
+    def collect_bullets_after(heading_pattern: str) -> list[str]:
+        start = find_index(heading_pattern) + 1
+        bullets: list[str] = []
+        while start < len(lines):
+            probe = lines[start].strip()
+            if not probe:
+                start += 1
+                if bullets:
+                    break
+                continue
+            if not probe.startswith("- "):
+                if bullets:
+                    break
+                start += 1
+                continue
+            bullets.append(probe[2:].strip())
+            start += 1
+        return bullets
+
+    overview = find_line_after(r"^1\. PROJECT OVERVIEW$")
+    tech_stack = collect_bullets_after(r"^2\. TECHNICAL STACK$")
+
+    vertical_title = find_index(r"^3\.1 Vertical Slice Architecture Implementation$")
+    vertical_summary = next(
+        lines[idx].strip()
+        for idx in range(vertical_title + 1, len(lines))
+        if lines[idx].strip()
+    )
 
     key_changes_start = lines.index("Key Changes:") + 1
     key_changes: list[str] = []
@@ -890,32 +923,17 @@ def parse_regression_report(path: Path) -> dict:
             table_rows, _ = capture_table(lines, index + 1)
             coverage_tables.append((title, table_rows))
 
-    env_start = lines.index("- Browser: Chromium (Desktop Chrome profile)")
-    environment: list[str] = []
-    index = env_start
-    while index < len(lines) and lines[index].startswith("- "):
-        environment.append(lines[index][2:].strip())
-        index += 1
-
-    coverage_start = lines.index("- Total Test Cases: 94", env_start + 1)
-    automated_coverage: list[str] = []
-    index = coverage_start
-    while index < len(lines) and lines[index].startswith("- "):
-        automated_coverage.append(lines[index][2:].strip())
-        index += 1
+    environment = collect_bullets_after(r"^5\.2 Test Environment$")
+    automated_coverage = collect_bullets_after(r"^5\.3 Automated Test Coverage$")
 
     overall_results, _ = capture_table(lines, lines.index("Metric               Value") )
     module_results, _ = capture_table(lines, lines.index("Module              Total Tests    Passed    Failed    Pass Rate"))
 
-    perf_start = lines.index("- Average Test Execution Time: 7.9 seconds per test")
-    performance: list[str] = []
-    index = perf_start
-    while index < len(lines) and lines[index].startswith("- "):
-        performance.append(lines[index][2:].strip())
-        index += 1
+    performance = collect_bullets_after(r"^6\.3 Performance Observations$")
 
     issues: list[Issue] = []
-    index = lines.index("Issue 1: Mobile Authentication Flow")
+    issue_start = next((idx for idx, line in enumerate(lines) if line.strip().startswith("Issue ")), None)
+    index = issue_start if issue_start is not None else len(lines)
     while index < len(lines):
         line = lines[index].strip()
         if not line.startswith("Issue "):
@@ -940,26 +958,39 @@ def parse_regression_report(path: Path) -> dict:
                 )
             )
 
-    summary = lines[lines.index("The full regression testing for BrainBox Vertical Slice Architecture refactoring has been completed successfully. All 94 test cases passed with 100% success rate, demonstrating that refactoring maintained system integrity while improving code organization.")].strip()
+    summary = find_line_after(r"^9\. CONCLUSION$")
 
     findings: list[str] = []
-    index = lines.index("1. Vertical Slice Architecture successfully implemented without breaking existing functionality")
-    while index < len(lines) and re.match(r"^\d+\. ", lines[index]):
+    index = find_index(r"^9\.1 Key Findings$") + 1
+    while index < len(lines) and re.match(r"^\d+\. ", lines[index].strip()):
         findings.append(re.sub(r"^\d+\.\s*", "", lines[index]).strip())
         index += 1
 
     recommendations: list[str] = []
-    index = lines.index("1. Continue monitoring system performance in production")
-    while index < len(lines) and re.match(r"^\d+\. ", lines[index]):
+    index = find_index(r"^9\.2 Recommendations$") + 1
+    while index < len(lines) and re.match(r"^\d+\. ", lines[index].strip()):
         recommendations.append(re.sub(r"^\d+\.\s*", "", lines[index]).strip())
         index += 1
 
-    final_assessment = lines[lines.index("The Vertical Slice Architecture refactoring has been successfully completed and validated through comprehensive regression testing. The system demonstrates improved maintainability, feature isolation, and code organization while maintaining full functional compatibility.")].strip()
+    final_assessment = find_line_after(r"^9\.3 Final Assessment$")
 
     report_status_items: list[tuple[str, str]] = []
-    for marker in ("Report Status: Complete", "Next Review Date: June 2026", f"Approved By: {SUBMITTER_NAME}"):
-        key, value = marker.split(":", 1)
+    index = find_index(r"^9\.4 Report Status$") + 1
+    while index < len(lines):
+        probe = lines[index].strip()
+        if not probe:
+            if report_status_items:
+                break
+            index += 1
+            continue
+        if ":" not in probe:
+            if report_status_items:
+                break
+            index += 1
+            continue
+        key, value = probe.split(":", 1)
         report_status_items.append((key.strip(), value.strip()))
+        index += 1
 
     return {
         "project_info": project_info,

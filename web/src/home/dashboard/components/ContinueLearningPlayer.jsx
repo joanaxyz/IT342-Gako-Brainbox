@@ -10,7 +10,7 @@ const ContinueLearningCard = ({ notebook }) => {
         : 'Resume where you left off';
 
     return (
-        <Link {...getNotebookLinkProps(notebook.uuid)} className="cl-card">
+        <Link {...getNotebookLinkProps(notebook.uuid, { mode: 'review' })} className="cl-card">
             <div className="cl-card-header">
                 <div className="cl-badge">CL</div>
                 <div className="cl-card-meta">
@@ -22,7 +22,6 @@ const ContinueLearningCard = ({ notebook }) => {
             <div className="cl-card-divider" />
             <div className="cl-card-footer">
                 <span className="cl-card-words">{notebook.wordCount ?? 0} words</span>
-                <span className="cl-card-resume">Resume</span>
             </div>
         </Link>
     );

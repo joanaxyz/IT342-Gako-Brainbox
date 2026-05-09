@@ -2,18 +2,16 @@ import { formatUpdatedAt } from '../../../common/utils/date';
 import { openNotebookInNewTab } from '../../../notebook/shared/utils/notebookNavigation';
 
 const NbCard = ({ notebook }) => {
-  const handleEdit = (e) => {
-    e.stopPropagation();
+  const handleCardClick = () => {
     openNotebookInNewTab(notebook.uuid);
   };
 
-  const handleReview = (e) => {
-    e.stopPropagation();
-    openNotebookInNewTab(notebook.uuid, { mode: 'review' });
-  };
-
   return (
-    <div className="dash-card">
+    <div className="dash-card" onClick={handleCardClick} role="button" tabIndex={0} onKeyDown={(e) => {
+      if (e.key === 'Enter') {
+        handleCardClick();
+      }
+    }}>
       <div className="dash-card-header">
         <div className="dash-card-badge">NB</div>
         <div className="dash-card-meta">
@@ -24,8 +22,7 @@ const NbCard = ({ notebook }) => {
       <p className="dash-card-body">Edited {formatUpdatedAt(notebook.updatedAt)}</p>
       <div className="dash-card-divider" />
       <div className="dash-card-footer">
-        <button className="dash-card-action-ghost" onClick={handleEdit}>Edit</button>
-        <button className="dash-card-action" onClick={handleReview}>Review</button>
+        <span className="dash-card-words">{notebook.wordCount ?? 0} words</span>
       </div>
     </div>
   );

@@ -365,41 +365,6 @@
   color: var(--ink-2);
 }
 
-@media (max-width: 720px) {
-  .editor-navbar-hint {
-      display: none;
-    }
-}
-
-@media (max-width: 1280px) {
-  .editor-navbar {
-      height: auto;
-      min-height: 54px;
-      padding: 10px clamp(16px, 2.4vw, 24px);
-      flex-wrap: wrap;
-      align-items: flex-start;
-    }
-
-  .editor-navbar-center {
-      display: none;
-    }
-
-  .editor-navbar-left,
-    .editor-navbar-right {
-      flex: 1 1 100%;
-    }
-
-  .editor-navbar-right {
-      display: flex;
-      justify-content: flex-end;
-    }
-
-  .editor-navbar-actions {
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-}
-
 @media (max-width: 900px) {
   .editor-navbar-left {
       flex-wrap: wrap;

@@ -25,21 +25,8 @@ import { countWordsFromHtml } from '../../notebook/shared/utils/notebookPages';
 import '../dashboard/styles/dashboard.css';
 import './playlists.css';
 
-const PLAYLIST_GRADIENTS = [
-  'linear-gradient(135deg, #1c1917 0%, #57534e 100%)',
-  'linear-gradient(135deg, #9a3412 0%, #c2410c 100%)',
-  'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
-  'linear-gradient(135deg, #14532d 0%, #16a34a 100%)',
-  'linear-gradient(135deg, #4a1d96 0%, #7c3aed 100%)',
-  'linear-gradient(135deg, #831843 0%, #db2777 100%)',
-  'linear-gradient(135deg, #713f12 0%, #ca8a04 100%)',
-  'linear-gradient(135deg, #164e63 0%, #0891b2 100%)',
-];
-
-const EMPTY_STATE_GRADIENT = 'linear-gradient(135deg, #1c1917 0%, #3d3530 100%)';
-const PLAYLIST_PAGE_SIZE = 8;
-const PLAYLIST_LIBRARY_PAGE_SIZE = 8;
-const getPlaylistGradient = (index) => PLAYLIST_GRADIENTS[index % PLAYLIST_GRADIENTS.length];
+const PLAYLIST_PAGE_SIZE = 20;
+const PLAYLIST_LIBRARY_PAGE_SIZE = 10;
 const getNotebookWordCount = (notebook) =>
   notebook.wordCount ?? countWordsFromHtml(notebook.content || '');
 
@@ -106,23 +93,24 @@ const CreatePlaylistModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-const PlaylistSidebarItem = ({ playlist, isActive, gradient, onSelect, onDelete }) => (
+const PlaylistSidebarItem = ({ playlist, isActive, onSelect, onDelete }) => (
   <div className={`pl-sidebar-item${isActive ? ' is-active' : ''}`}>
     <button
       type="button"
       className="pl-sidebar-select"
       onClick={() => onSelect(playlist.uuid)}
     >
-      <div className="pl-sidebar-cover" style={{ background: gradient }}>
+      <div className="pl-sidebar-cover">
         <ListMusic size={17} />
       </div>
       <div className="pl-sidebar-item-copy">
         <span className="pl-sidebar-item-title">{playlist.title}</span>
-        <span className="pl-sidebar-item-meta">
-          {playlist.queue?.length || 0} notebook{playlist.queue?.length === 1 ? '' : 's'}
-        </span>
       </div>
     </button>
+
+    <span className="pl-sidebar-item-meta">
+      {playlist.queue?.length || 0}
+    </span>
 
     <button
       type="button"
@@ -364,9 +352,6 @@ const Playlists = () => {
   const selectedPlaylistIndex = selectedPlaylist
     ? playlists.findIndex((playlist) => playlist.uuid === selectedPlaylist.uuid)
     : -1;
-  const heroGradient = selectedPlaylist
-    ? getPlaylistGradient(Math.max(selectedPlaylistIndex, 0))
-    : EMPTY_STATE_GRADIENT;
 
   const handleSortChange = (nextSortBy) => {
     setSortBy(nextSortBy);
@@ -468,19 +453,18 @@ const Playlists = () => {
           </button>
         </div>
 
-        <p className="pl-sidebar-description">
-          Pick a playlist, add notebooks from your library, then reorder or remove them here.
-        </p>
-
-        <label className="pl-search-field pl-playlist-search" aria-label="Search playlists">
-          <Search size={16} />
-          <input
-            type="search"
-            value={playlistSearch}
-            onChange={(event) => setPlaylistSearch(event.target.value)}
-            placeholder="Search playlists"
-          />
-        </label>
+        <div className="pl-sidebar-toolbar">
+          <div className="input-wrap">
+            <span className="input-icon"><Search size={15} /></span>
+            <input
+              type="search"
+              className="search-input-field"
+              placeholder="Search playlists"
+              value={playlistSearch}
+              onChange={(event) => setPlaylistSearch(event.target.value)}
+            />
+          </div>
+        </div>
 
         <div className="pl-sidebar-list">
           {playlistsLoading ? (
@@ -510,9 +494,6 @@ const Playlists = () => {
               <PlaylistSidebarItem
                 key={playlist.uuid}
                 playlist={playlist}
-                gradient={getPlaylistGradient(
-                  Math.max(playlists.findIndex((item) => item.uuid === playlist.uuid), 0)
-                )}
                 isActive={playlist.uuid === selectedPlaylist?.uuid}
                 onSelect={setSelectedPlaylistUuid}
                 onDelete={setPlaylistToDelete}
@@ -530,6 +511,7 @@ const Playlists = () => {
             label="Playlist pagination"
             onPageChange={playlistPagination.setPage}
             pageSize={playlistPagination.pageSize}
+            siblingCount={0}
             startItem={playlistPagination.startItem}
             totalItems={playlistPagination.totalItems}
             totalPages={playlistPagination.totalPages}
@@ -538,7 +520,7 @@ const Playlists = () => {
       </aside>
 
       <main className="pl-main-panel">
-        <section className="pl-hero" style={{ background: heroGradient }}>
+        <section className="pl-hero">
           <div className="pl-hero-copy">
             <span className="pl-hero-label">
               {selectedPlaylist ? 'Selected playlist' : 'Playlist management'}
@@ -573,15 +555,16 @@ const Playlists = () => {
             </div>
 
             <div className="pl-library-controls">
-              <label className="pl-search-field" aria-label="Search notebooks">
-                <Search size={16} />
-                <input
-                  type="search"
-                  value={librarySearch}
-                  onChange={(event) => setLibrarySearch(event.target.value)}
-                  placeholder="Search notebooks"
-                />
-              </label>
+              <div className="input-wrap">
+                  <span className="input-icon"><Search size={15} /></span>
+                  <input
+                    type="search"
+                    className="search-input-field"
+                    placeholder="Search notebooks"
+                    value={librarySearch}
+                    onChange={(event) => setLibrarySearch(event.target.value)}
+                  />
+                </div>
 
               <div className="pl-library-sort">
                 <SortSelect
@@ -599,33 +582,35 @@ const Playlists = () => {
             </div>
 
             <div className="pl-panel-body">
-              {libraryNotebooks.length === 0 ? (
-                <div className="pl-empty-panel">
-                  <NotebookText size={22} />
-                  <p>
-                    {librarySearch
-                      ? `No notebooks matched "${librarySearch}".`
-                      : 'No notebooks available yet.'}
-                  </p>
-                  <span>
-                    {librarySearch
-                      ? 'Try a different title or category.'
-                      : 'Create notebooks in your library and they will show up here.'}
-                  </span>
-                </div>
-              ) : (
-                <div className="pl-list">
-                  {visibleLibraryNotebooks.map((notebook) => (
-                    <LibraryNotebookRow
-                      key={notebook.uuid}
-                      notebook={notebook}
-                      isInPlaylist={selectedNotebookIds.has(notebook.uuid)}
-                      hasSelectedPlaylist={Boolean(selectedPlaylist)}
-                      onAdd={handleAddNotebook}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="pl-panel-content">
+                {libraryNotebooks.length === 0 ? (
+                  <div className="pl-empty-panel">
+                    <NotebookText size={22} />
+                    <p>
+                      {librarySearch
+                        ? `No notebooks matched "${librarySearch}".`
+                        : 'No notebooks available yet.'}
+                    </p>
+                    <span>
+                      {librarySearch
+                        ? 'Try a different title or category.'
+                        : 'Create notebooks in your library and they will show up here.'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="pl-list">
+                    {visibleLibraryNotebooks.map((notebook) => (
+                      <LibraryNotebookRow
+                        key={notebook.uuid}
+                        notebook={notebook}
+                        isInPlaylist={selectedNotebookIds.has(notebook.uuid)}
+                        hasSelectedPlaylist={Boolean(selectedPlaylist)}
+                        onAdd={handleAddNotebook}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
               {libraryNotebooks.length > 0 && (
                 <PaginationControls
                   className="pl-panel-pagination"
@@ -653,41 +638,43 @@ const Playlists = () => {
             </div>
 
             <div className="pl-panel-body">
-              {!selectedPlaylist ? (
-                <div className="pl-empty-panel">
-                  <ListMusic size={22} />
-                  <p>No playlist selected.</p>
-                  <span>Create a playlist or choose one from the sidebar to start arranging its queue.</span>
-                </div>
-              ) : playlistQueue.length === 0 ? (
-                <div className="pl-empty-panel">
-                  <Plus size={22} />
-                  <p>This playlist is empty.</p>
-                  <span>Add notebooks from the library panel, then reorder them here.</span>
-                </div>
-              ) : (
-                <div className="pl-list">
-                  {playlistQueue.map((notebook, index) => {
-                    const isCurrentNotebook = currentNotebook?.uuid === notebook.uuid;
-                    const isCurrentPlayback = isCurrentNotebook && (isPlaying || isPreparing);
+              <div className="pl-panel-content">
+                {!selectedPlaylist ? (
+                  <div className="pl-empty-panel">
+                    <ListMusic size={22} />
+                    <p>No playlist selected.</p>
+                    <span>Create a playlist or choose one from the sidebar to start arranging its queue.</span>
+                  </div>
+                ) : playlistQueue.length === 0 ? (
+                  <div className="pl-empty-panel">
+                    <Plus size={22} />
+                    <p>This playlist is empty.</p>
+                    <span>Add notebooks from the library panel, then reorder them here.</span>
+                  </div>
+                ) : (
+                  <div className="pl-list">
+                    {playlistQueue.map((notebook, index) => {
+                      const isCurrentNotebook = currentNotebook?.uuid === notebook.uuid;
+                      const isCurrentPlayback = isCurrentNotebook && (isPlaying || isPreparing);
 
-                    return (
-                      <QueueNotebookRow
-                        key={notebook.uuid}
-                        notebook={notebook}
-                        index={index}
-                        total={playlistQueue.length}
-                        isActive={isCurrentNotebook}
-                        isPlaying={isCurrentPlayback}
-                        onPlay={() => handlePlayFromQueue(index)}
-                        onMoveUp={() => handleMoveNotebook(index, index - 1)}
-                        onMoveDown={() => handleMoveNotebook(index, index + 1)}
-                        onRemove={() => handleRemoveNotebook(notebook.uuid)}
-                      />
-                    );
-                  })}
-                </div>
-              )}
+                      return (
+                        <QueueNotebookRow
+                          key={notebook.uuid}
+                          notebook={notebook}
+                          index={index}
+                          total={playlistQueue.length}
+                          isActive={isCurrentNotebook}
+                          isPlaying={isCurrentPlayback}
+                          onPlay={() => handlePlayFromQueue(index)}
+                          onMoveUp={() => handleMoveNotebook(index, index - 1)}
+                          onMoveDown={() => handleMoveNotebook(index, index + 1)}
+                          onRemove={() => handleRemoveNotebook(notebook.uuid)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         </section>

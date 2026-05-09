@@ -399,7 +399,7 @@
   background-color: rgba(250, 248, 245, 0.99);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .review-body {
     --review-playback-height: 132px;
   }

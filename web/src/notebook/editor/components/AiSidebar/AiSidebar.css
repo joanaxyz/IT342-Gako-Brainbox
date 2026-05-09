@@ -1495,7 +1495,7 @@ a.ai-btn-create {
   flex-shrink: 0;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .ai-history-modal {
       right: 16px;
       left: 16px;
@@ -1846,13 +1846,13 @@ a.ai-btn-create {
   width: 100%;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .ai-sidebar-backdrop {
       display: none !important;
     }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .ai-sidebar-backdrop {
       display: none !important;
     }

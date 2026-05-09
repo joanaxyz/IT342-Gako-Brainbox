@@ -5,22 +5,22 @@ PROJECT INFORMATION
 ------------------
 Project Name: BrainBox
 Version: 1.0
-Test Execution Date: May 8, 2026
+Test Execution Date: May 09, 2026
 Report Prepared By: Quality Assurance Team
-Regression Test Period: April 2026 - May 2026
+Regression Test Period: May 2026
 
 1. PROJECT OVERVIEW
 ==================
 
-BrainBox is an intelligent learning management system that combines note-taking, AI-powered content generation, flashcards, quizzes, and multimedia playback capabilities. The system supports web, mobile, and backend services with a focus on adaptive learning and collaborative features.
+BrainBox is a study platform that combines authentication, notebooks, AI-assisted writing tools, quizzes, flashcards, playlists, playback, and profile management across web, backend, and mobile surfaces.
 
 2. TECHNICAL STACK
 ====================
 
 - Backend: Spring Boot (Java), Maven, PostgreSQL
-- Web Frontend: React, Vite, TailwindCSS
+- Web Frontend: React, Vite, custom CSS, Playwright
 - Mobile: Android (Kotlin)
-- Testing: Playwright, JUnit, Espresso
+- Testing: Playwright, JUnit, Kotlin unit tests
 - Architecture: Vertical Slice Architecture
 
 3. REFACTORING SUMMARY
@@ -28,20 +28,18 @@ BrainBox is an intelligent learning management system that combines note-taking,
 
 3.1 Vertical Slice Architecture Implementation
 
-The project has been successfully refactored from traditional layered architecture to Vertical Slice Architecture, organizing code by business features rather than technical layers.
+The project remains organized by business capabilities so regression coverage can be mapped directly to implemented user flows instead of generic technical layers.
 
 Key Changes:
-- Backend: Reorganized into feature modules under modules/ directory
-- Web Frontend: Restructured components by feature domains
-- Mobile: Organized Android app by feature slices
+- Regression coverage is now aligned to the real shipped feature set instead of legacy placeholder scenarios.
+- The web evidence suite is driven by the current Playwright inventory and refreshed screenshots.
+- Notebook editor and AI coverage explicitly track the implemented toolbar, export, history, and assistant surfaces.
 
 Benefits Achieved:
-- Improved maintainability and code locality
-- Enhanced feature isolation
-- Reduced cross-feature dependencies
-- Better testability per feature
+- Removed unsupported scenarios such as account lockout and flashcard shuffling from the web regression matrix.
+- Preserved one-to-one alignment between the Playwright suite, screenshots, regression report, and spreadsheet test plan.
+- Improved confidence that future regressions are reported against real product capabilities.
 
-3.2 Applied Design Patterns
 During refactoring, the following design patterns were implemented:
 - Strategy + Factory Method (Email Service)
 - Builder (Notebook Entity Construction)
@@ -57,38 +55,38 @@ During refactoring, the following design patterns were implemented:
 --------------------
 backend/src/main/java/edu/cit/gako/brainbox/
 +-- modules/                    # Feature modules (Vertical Slices)
-¦   +-- auth/                  # Authentication feature
-¦   +-- ai/                    # AI-powered features
-¦   +-- notebook/              # Notebook management
-¦   +-- flashcard/             # Flashcard system
-¦   +-- quiz/                  # Quiz functionality
-¦   +-- playlist/              # Playlist management
-¦   +-- playbackqueue/         # Audio playback queue
-¦   +-- category/              # Category management
-¦   +-- user/                  # User management
+Â¦   +-- auth/                  # Authentication feature
+Â¦   +-- ai/                    # AI-powered features
+Â¦   +-- notebook/              # Notebook management and versioning
+Â¦   +-- flashcard/             # Flashcard system
+Â¦   +-- quiz/                  # Quiz functionality
+Â¦   +-- playlist/              # Playlist management
+Â¦   +-- playbackqueue/         # Audio playback queue
+Â¦   +-- category/              # Category management
+Â¦   +-- user/                  # User management
 +-- platform/                  # Cross-cutting concerns
 +-- shared/                    # Shared utilities
-+-- BrainboxApiApplication.java
 
 4.2 Web Frontend Structure
 ---------------------------
 web/src/
-+-- auth/                      # Authentication components
-+-- ai/                        # AI features
-+-- notebook/                  # Notebook functionality
-+-- common/                    # Shared components
-+-- home/                      # Home dashboard
-+-- app/                       # Application core
++-- auth/                      # Authentication pages and flows
++-- ai/                        # AI configuration surfaces
++-- notebook/                  # Editor, AI assistant, review mode, exports, versions
++-- home/                      # Dashboard, library, quizzes, flashcards, playlists, profile
++-- common/                    # Shared UI, queue, player, notifications
++-- app/                       # Routing and shell
 
 4.3 Mobile Structure
 --------------------
 mobile/app/src/main/java/edu/cit/gako/brainbox/
 +-- features/                  # Feature-based organization
-¦   +-- auth/                  # Authentication
-¦   +-- notebook/              # Notebook features
-¦   +-- flashcard/             # Flashcard features
-¦   +-- quiz/                  # Quiz features
-+-- ...
+Â¦   +-- auth/                  # Authentication
+Â¦   +-- notebook/              # Notebook features
+Â¦   +-- flashcards/            # Flashcard features
+Â¦   +-- quizzes/               # Quiz features
+Â¦   +-- playback/              # Audio playback
++-- shared/                    # Shared UI and utilities
 
 5. TEST PLAN DOCUMENTATION
 ==========================
@@ -98,144 +96,136 @@ mobile/app/src/main/java/edu/cit/gako/brainbox/
 5.1.1 Authentication Module (WEB-AUTH)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-AUTH-001  User login with valid credentials        Successful authentication and dashboard access  PASS
-WEB-AUTH-002  User login with invalid credentials      Error message displayed                      PASS
-WEB-AUTH-003  User registration flow                   Account created successfully                  PASS
-WEB-AUTH-004  Password reset request                   Reset email sent                             PASS
-WEB-AUTH-005  Email verification process               Email verified successfully                  PASS
-WEB-AUTH-006  Logout functionality                      Session terminated                           PASS
-WEB-AUTH-010  Social login integration                 OAuth authentication works                   PASS
-WEB-AUTH-011  Remember me functionality                Persistent login across sessions             PASS
-WEB-AUTH-020  Session timeout handling                  Auto-logout after timeout                   PASS
-WEB-AUTH-021  Token refresh mechanism                   Access token refreshed seamlessly            PASS
-WEB-AUTH-030  Two-factor authentication                2FA code validation                        PASS
-WEB-AUTH-031  Backup code authentication                Backup codes work for recovery              PASS
-WEB-AUTH-040  Account lockout after failed attempts     Account locked after 5 failed attempts      PASS
-WEB-AUTH-041  Account unlock process                   Account unlocked via email/code             PASS
-WEB-AUTH-050  Profile security settings                 Security settings saved                     PASS
+WEB-AUTH-001  Login with valid credentials             The implemented BrainBox behavior c  PASSED
+WEB-AUTH-002  Login with invalid credentials           The implemented BrainBox behavior c  PASSED
+WEB-AUTH-003  Login with empty fields                  The implemented BrainBox behavior c  PASSED
+WEB-AUTH-004  Login form UI elements                   The required implemented UI control  PASSED
+WEB-AUTH-005  Forgot password link navigation          Navigation reaches the expected rou  PASSED
+WEB-AUTH-006  Sign up link navigation                  Navigation reaches the expected rou  PASSED
+WEB-AUTH-010  Registration page UI elements            The required implemented UI control  PASSED
+WEB-AUTH-011  Registration form fill (email verification required)  The implemented BrainBox behavior c  PASSED
+WEB-AUTH-020  Forgot password page UI                  The implemented BrainBox behavior c  PASSED
+WEB-AUTH-021  Forgot password email filled (email required)  The implemented BrainBox behavior c  PASSED
+WEB-AUTH-030  Google login button on login page        The implemented BrainBox behavior c  PASSED
+WEB-AUTH-031  Google signup button on register page    The implemented BrainBox behavior c  PASSED
+WEB-AUTH-040  Logout flow                              Logout behaves as implemented and t  PASSED
+WEB-AUTH-041  Logout confirmation modal UI             Logout behaves as implemented and t  PASSED
+WEB-AUTH-050  Unauthenticated redirect                 Navigation reaches the expected rou  PASSED
 
 5.1.2 Dashboard Module (WEB-DASH)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-DASH-001  Dashboard layout and navigation          All sections visible and accessible        PASS
-WEB-DASH-002  Quick access widgets                     Widgets display recent content             PASS
-WEB-DASH-003  Recent activity display                  Recent changes shown                       PASS
-WEB-DASH-004  Performance metrics dashboard             Analytics displayed correctly               PASS
+WEB-DASH-001  Dashboard loads with statistics          The page loads successfully and its  PASSED
+WEB-DASH-002  New notebook button                      The create flow opens correctly and  PASSED
+WEB-DASH-003  Dashboard view all links                 Navigation reaches the expected rou  PASSED
+WEB-DASH-004  Stat card navigation                     Navigation reaches the expected rou  PASSED
 
-5.1.3 Flashcards Module (WEB-FC)
+5.1.3 Library and Categories Module (WEB-LIB)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-FC-001   Create new flashcard                     Flashcard created with content            PASS
-WEB-FC-002   Edit flashcard content                    Changes saved successfully                PASS
-WEB-FC-003   Delete flashcard                         Flashcard removed from list               PASS
-WEB-FC-004   Flashcard navigation                    Navigate between cards smoothly           PASS
-WEB-FC-005   Flashcard study mode                     Study mode activates with timer           PASS
-WEB-FC-006   Shuffle flashcards                        Cards randomized order                   PASS
-WEB-FC-007   Progress tracking                        Study progress recorded                  PASS
-WEB-FC-008   Spaced repetition algorithm               Cards scheduled based on performance      PASS
+WEB-LIB-001   Library page loads with notebooks        The page loads successfully and its  PASSED
+WEB-LIB-002   Search notebooks                         The relevant search control accepts  PASSED
+WEB-LIB-003   Sort notebooks                           The sort control is usable and the   PASSED
+WEB-LIB-004   Open notebook from library               The implemented BrainBox behavior c  PASSED
+WEB-LIB-010   Create a new category                    The create flow opens correctly and  PASSED
+WEB-LIB-011   Filter notebooks by category             The selected filter updates the vis  PASSED
+WEB-LIB-014   Search categories                        The relevant search control accepts  PASSED
 
-5.1.4 Library Module (WEB-LIB)
+5.1.4 Notebook and Editor Module (WEB-NB)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-LIB-001   Library grid view                        Items displayed in grid layout          PASS
-WEB-LIB-002   Library list view                        Items displayed in list layout          PASS
-WEB-LIB-003   Search functionality                      Search returns relevant results         PASS
-WEB-LIB-004   Filter by category                       Filter works correctly                   PASS
-WEB-LIB-010   Import notebooks                        Imported successfully                    PASS
-WEB-LIB-011   Export notebooks                        Export file generated                   PASS
-WEB-LIB-014   Bulk operations                         Multiple items processed                 PASS
+WEB-NB-001    Create a new notebook                    The create flow opens correctly and  PASSED
+WEB-NB-002    Edit notebook content                    The edit surface is reachable and t  PASSED
+WEB-NB-004    Auto-save indicator                      The save-status control reflects un  PASSED
+WEB-NB-006    Navigate back from editor                The edit surface is reachable and t  PASSED
+WEB-NB-010    Editor formatting and insert tools       The editor exposes the implemented   PASSED
+WEB-NB-012    Review mode toggle                       Review mode turns on and the docume  PASSED
+WEB-NB-014    Export menu visible                      The export menu opens and exposes t  PASSED
+WEB-NB-015    Version history sidebar                  The version-history sidebar opens w  PASSED
 
-5.1.5 Navigation Module (WEB-NAV)
+5.1.5 Notebook AI Module (WEB-NB-AI)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-NAV-001   Sidebar navigation to all pages          All pages accessible via sidebar         PASS
+WEB-NB-AI-001  AI Sidebar opens with default Chat tool  The AI assistant opens successfully  PASSED
+WEB-NB-AI-002  AI Sidebar â€” Chat composer ready         The implemented BrainBox behavior c  PASSED
+WEB-NB-AI-003  AI Sidebar â€” Improve tool                The selected AI tool becomes active  PASSED
+WEB-NB-AI-004  AI Sidebar â€” Expand tool                 The selected AI tool becomes active  PASSED
+WEB-NB-AI-005  AI Sidebar â€” Summarize tool              The selected AI tool becomes active  PASSED
+WEB-NB-AI-006  AI Sidebar â€” Explain tool                The selected AI tool becomes active  PASSED
+WEB-NB-AI-007  AI Sidebar â€” Quiz tool                   The selected AI tool becomes active  PASSED
+WEB-NB-AI-008  AI Sidebar â€” Flashcards tool             The selected AI tool becomes active  PASSED
+WEB-NB-AI-009  AI Sidebar â€” Tool help                   The selected AI tool becomes active  PASSED
+WEB-NB-AI-010  AI Sidebar â€” Settings panel              The AI provider settings panel open  PASSED
+WEB-NB-AI-011  AI Sidebar â€” History action              The chat-history surface opens and   PASSED
+WEB-NB-AI-012  AI Sidebar closes                        The assistant closes cleanly and th  PASSED
 
-5.1.6 Notebook Module (WEB-NB)
+5.1.6 Quiz Module (WEB-QZ)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-NB-001   Create new notebook                      Notebook created with title             PASS
-WEB-NB-002   Edit notebook title                      Title updated successfully               PASS
-WEB-NB-004   Delete notebook                         Notebook removed permanently            PASS
-WEB-NB-006   Notebook sharing                        Share link generated                   PASS
-WEB-NB-010   Rich text editor                        Editor functions correctly               PASS
-WEB-NB-012   Auto-save functionality                  Content saved automatically             PASS
-WEB-NB-014   Version history                         Previous versions accessible           PASS
-WEB-NB-015   Collaborative editing                   Multiple users can edit                PASS
+WEB-QZ-001    Quizzes page loads                       The page loads successfully and its  PASSED
+WEB-QZ-002    Create quiz page                         The create flow opens correctly and  PASSED
+WEB-QZ-003    Search quizzes                           The relevant search control accepts  PASSED
+WEB-QZ-004    Sort quizzes                             The sort control is usable and the   PASSED
+WEB-QZ-005    Start quiz player                        The playback or study interaction r  PASSED
+WEB-QZ-006    Edit quiz accessible                     The edit surface is reachable and t  PASSED
+WEB-QZ-007    Select mode for bulk delete              The implemented BrainBox behavior c  PASSED
+WEB-QZ-008    Filter quizzes by pills                  The selected filter updates the vis  PASSED
 
-5.1.7 Notebook AI Module (WEB-NB-AI)
-Test ID        Test Case                               Expected Result                     Status
------------     -----------                             ---------------                     ------
-WEB-NB-AI-001  AI content generation                   Content generated based on prompt       PASS
-WEB-NB-AI-002  AI text completion                     Auto-completion suggestions work       PASS
-WEB-NB-AI-003  AI summarization                        Summary generated accurately            PASS
-WEB-NB-AI-004  AI question answering                   Questions answered correctly           PASS
-WEB-NB-AI-005  AI translation                          Text translated accurately              PASS
-WEB-NB-AI-006  AI grammar check                        Grammar errors identified              PASS
-WEB-NB-AI-007  AI citation suggestions                  Citations suggested appropriately       PASS
-WEB-NB-AI-008  AI research assistance                  Research sources provided              PASS
-WEB-NB-AI-009  AI image generation                     Images generated from prompts           PASS
-WEB-NB-AI-010  AI code generation                      Code snippets generated                PASS
-WEB-NB-AI-011  AI data analysis                        Data insights provided                  PASS
-WEB-NB-AI-012  AI presentation creation                 Presentations generated                PASS
-
-5.1.8 Playback Module (WEB-PB)
+5.1.7 Flashcard Module (WEB-FC)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-PB-001   Player bar visible in review mode         Player appears in review                 PASS
-WEB-PB-002   Playback controls - Play/Pause           Controls work correctly                   PASS
-WEB-PB-003   Playback progress bar                    Progress updates in real-time           PASS
-WEB-PB-004   Playback time display                    Time shown accurately                    PASS
-WEB-PB-005   Player bar collapsed/expanded toggle     Toggle works smoothly                    PASS
-WEB-PB-006   Playback from playlist                   Playlist plays sequentially              PASS
-WEB-PB-007   Skip forward/backward in playback        Skip functions work                     PASS
-WEB-PB-008   Playback speed control                   Speed adjustment works                  PASS
-WEB-PB-009   Queue panel in playlists                Queue displays current items             PASS
-WEB-PB-010   Audio settings / mute toggle             Audio controls function                  PASS
+WEB-FC-001    Flashcards page loads                    The page loads successfully and its  PASSED
+WEB-FC-002    Create deck page                         The create flow opens correctly and  PASSED
+WEB-FC-003    Search flashcard decks                   The relevant search control accepts  PASSED
+WEB-FC-004    Sort flashcard decks                     The sort control is usable and the   PASSED
+WEB-FC-005    Study deck player                        The playback or study interaction r  PASSED
+WEB-FC-006    Edit deck accessible                     The edit surface is reachable and t  PASSED
+WEB-FC-007    Select mode for bulk delete              The implemented BrainBox behavior c  PASSED
+WEB-FC-008    Filter decks by pills                    The selected filter updates the vis  PASSED
 
-5.1.9 Playlist Module (WEB-PL)
+5.1.8 Playlist Module (WEB-PL)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-PL-001   Create new playlist                      Playlist created with name              PASS
-WEB-PL-002   Add items to playlist                    Items added successfully                PASS
-WEB-PL-003   Remove items from playlist               Items removed correctly                 PASS
-WEB-PL-004   Playlist reorder                         Drag-and-drop reordering works           PASS
-WEB-PL-005   Playlist sharing                        Share functionality works                PASS
-WEB-PL-006   Playlist privacy settings                Privacy options applied                  PASS
-WEB-PL-007   Playlist statistics                      Stats displayed accurately                PASS
+WEB-PL-001    Playlists page loads                     The page loads successfully and its  PASSED
+WEB-PL-002    Create a playlist                        The create flow opens correctly and  PASSED
+WEB-PL-003    Add notebook to playlist queue           The playback or study interaction r  PASSED
+WEB-PL-004    Remove notebook from queue               The playback or study interaction r  PASSED
+WEB-PL-005    Reorder playlist queue                   The playback or study interaction r  PASSED
+WEB-PL-006    Delete a playlist                        The implemented BrainBox behavior c  PASSED
+WEB-PL-007    Search playlists                         The relevant search control accepts  PASSED
 
-5.1.10 Profile Module (WEB-PRF)
+5.1.9 Profile and Navigation Module (WEB-PRF / WEB-NAV)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-PRF-001   Profile information display              Profile data shown correctly              PASS
-WEB-PRF-002   Profile editing                         Changes saved successfully                PASS
-WEB-PRF-003   Profile picture upload                  Image uploaded and displayed             PASS
-WEB-PRF-004   Profile privacy settings                Privacy controls work                    PASS
+WEB-PRF-001   Profile page loads                       The page loads successfully and its  PASSED
+WEB-PRF-002   Edit profile action                      The edit surface is reachable and t  PASSED
+WEB-PRF-003   Change password action                   The implemented BrainBox behavior c  PASSED
+WEB-PRF-004   AI provider action                       The implemented BrainBox behavior c  PASSED
+WEB-NAV-001   Sidebar navigation to all pages          Navigation reaches the expected rou  PASSED
 
-5.1.11 Queue Module (WEB-Q)
+5.1.10 Playback and Queue Module (WEB-PB / WEB-Q)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-Q-001    Queue panel displays current playlist items  All items shown                          PASS
-WEB-Q-002    Current playing item highlighted in queue   Active item highlighted                   PASS
-WEB-Q-003    Queue item actions (play, remove)          Actions work correctly                    PASS
-WEB-Q-004    Queue reorder - move up/down                Reordering functions work                 PASS
-WEB-Q-005    Queue empty state                         Empty state displayed                    PASS
-WEB-Q-006    Add notebook to queue from library panel   Items added from library                 PASS
-WEB-Q-007    Queue progress indicator                   Progress shown for each item             PASS
-WEB-Q-008    Queue item info (title, duration)          Information displayed                    PASS
-WEB-Q-009    Clear queue / remove all                   Queue cleared successfully                PASS
-WEB-Q-010    Queue continues to next item               Auto-advance works                       PASS
-
-5.1.12 Quiz Module (WEB-QZ)
-Test ID      Test Case                               Expected Result                     Status
----------     -----------                             ---------------                     ------
-WEB-QZ-001   Create new quiz                         Quiz created with questions              PASS
-WEB-QZ-002   Quiz question types                      All question types supported            PASS
-WEB-QZ-003   Quiz timer                              Timer functions correctly                PASS
-WEB-QZ-004   Quiz scoring                            Scores calculated accurately             PASS
-WEB-QZ-005   Quiz results analysis                    Results analyzed and displayed           PASS
-WEB-QZ-006   Quiz sharing                            Share functionality works                PASS
-WEB-QZ-007   Quiz review mode                        Review mode shows correct answers        PASS
-WEB-QZ-008   Quiz statistics                         Statistics displayed                    PASS
+WEB-PB-001    Player bar visible in review mode        Review mode turns on and the docume  PASSED
+WEB-PB-002    Playback controls - Play/Pause           The playback or study interaction r  PASSED
+WEB-PB-003    Playback progress bar                    The playback or study interaction r  PASSED
+WEB-PB-004    Playback time display                    The playback or study interaction r  PASSED
+WEB-PB-005    Player bar collapsed/expanded toggle     The playback or study interaction r  PASSED
+WEB-PB-006    Playback from playlist                   The playback or study interaction r  PASSED
+WEB-PB-007    Skip forward/backward in playback        The playback or study interaction r  PASSED
+WEB-PB-008    Playback speed control                   The playback or study interaction r  PASSED
+WEB-PB-009    Queue panel in playlists                 The playback or study interaction r  PASSED
+WEB-PB-010    Audio settings / mute toggle             The implemented BrainBox behavior c  PASSED
+WEB-Q-001     Queue panel displays current playlist items  The playback or study interaction r  PASSED
+WEB-Q-002     Current playing item highlighted in queue  The playback or study interaction r  PASSED
+WEB-Q-003     Queue item actions (play, remove)        The playback or study interaction r  PASSED
+WEB-Q-004     Queue reorder - move up/down             The playback or study interaction r  PASSED
+WEB-Q-005     Queue empty state                        The playback or study interaction r  PASSED
+WEB-Q-006     Add notebook to queue from library panel  The playback or study interaction r  PASSED
+WEB-Q-007     Queue progress indicator                 The playback or study interaction r  PASSED
+WEB-Q-008     Queue item info (title, duration)        The playback or study interaction r  PASSED
+WEB-Q-009     Clear queue / remove all                 The playback or study interaction r  PASSED
+WEB-Q-010     Queue continues to next item             The playback or study interaction r  PASSED
 
 5.2 Test Environment
 -------------------
@@ -243,14 +233,15 @@ WEB-QZ-008   Quiz statistics                         Statistics displayed       
 - Operating System: Windows 11
 - Test Framework: Playwright v1.59.1
 - Base URL: http://127.0.0.1:4173
+- Backend URL: http://localhost:8080/api
 - Test Configuration: Single worker, no retries, 60s timeout
 
 5.3 Automated Test Coverage
 --------------------------
 - Total Test Cases: 94
-- Test Categories: 12 feature modules
-- Automation Coverage: 100%
-- Screenshot Coverage: All test cases with visual evidence
+- Test Categories: 10 feature groups
+- Automation Coverage: 100% of the web regression matrix
+- Screenshot Coverage: Every Playwright case captured refreshed visual evidence
 
 6. REGRESSION TEST RESULTS
 =========================
@@ -258,120 +249,90 @@ WEB-QZ-008   Quiz statistics                         Statistics displayed       
 6.1 Overall Test Results
 -----------------------
 Metric               Value
------                -----
+-------------------  -------------------------
 Total Test Cases     94
-Passed               94 (100%)
-Failed               0
-Skipped              0
-Execution Time       12.4 minutes
-Coverage             100%
+Tests Passed         94
+Tests Failed         0
+Pass Rate            100%
+Regression Status    PASS
 
-6.2 Module-wise Results
------------------------
+6.2 Module-Wise Results
+----------------------
 Module              Total Tests    Passed    Failed    Pass Rate
-------             ------------   -------    ------    ---------
-Authentication      15             15         0          100%
-Dashboard          4              4          0          100%
-Flashcards         8              8          0          100%
-Library            7              7          0          100%
-Navigation         1              1          0          100%
-Notebook           8              8          0          100%
-Notebook AI        12             12         0          100%
-Playback           10             10         0          100%
-Playlist           7              7          0          100%
-Profile            4              4          0          100%
-Queue              10             10         0          100%
-Quiz               8              8          0          100%
+------------------  -----------    ------    ------    ---------
+Authentication      15             15        0         100%
+Dashboard           4              4         0         100%
+Library and Categories  7              7         0         100%
+Notebook and Editor  8              8         0         100%
+Notebook AI         12             12        0         100%
+Quizzes             8              8         0         100%
+Flashcards          8              8         0         100%
+Playlists           7              7         0         100%
+Profile and Navigation  5              5         0         100%
+Playback and Queue  20             20        0         100%
 
-6.3 Performance Metrics
------------------------
+6.3 Performance Observations
+----------------------------
 - Average Test Execution Time: 7.9 seconds per test
-- Fastest Test: WEB-NB-012 (Auto-save functionality) - 29.2s
-- Slowest Test: WEB-FC-005 (Flashcard study mode) - 514.3s
-- Memory Usage: Stable throughout execution
-- CPU Usage: Within acceptable limits
+- All 94 web regression cases completed successfully against the live stack.
+- Screenshot generation completed for every case in web/tests/e2e/screenshots.
 
 7. ISSUES FOUND
-================
+===============
 
-7.1 Issues Identified During Regression Testing
+Issue 1: Legacy regression inventory drift
+Description: Historical regression documents referenced unsupported or no-longer-implemented web scenarios such as account lockout and flashcard shuffling.
+Severity: Medium
+Affected Test Cases: Documentation-only legacy cases outside the active Playwright suite
+Status: Fixed
 
-Issue 1: Mobile Authentication Flow
-- Description: Registration redirect and forgot password keyboard issues on mobile
-- Severity: Medium
-- Test Case Affected: WEB-AUTH-003, WEB-AUTH-004
-- Status: Fixed
-
-Issue 2: Mobile Playbar Label
-- Description: Playbar label not displaying correctly on mobile devices
-- Severity: Low
-- Test Case Affected: WEB-PB-004
-- Status: Fixed
-
-Issue 3: Web Equation Editor
-- Description: Empty notebook block equation editing issues
-- Severity: Medium
-- Test Case Affected: WEB-NB-010
-- Status: Fixed
-
-Issue 4: Loading Overlay Animation
-- Description: Loading overlay animation not smooth in web
-- Severity: Low
-- Test Case Affected: Multiple UI tests
-- Status: Fixed
+Issue 2: Notebook editor coverage needed clearer tool-level evidence
+Description: The existing editor case set passed, but the regression narrative did not clearly call out the implemented formatting, insert, export, and version-history toolset.
+Severity: Low
+Affected Test Cases: WEB-NB-010, WEB-NB-014, WEB-NB-015
+Status: Fixed
 
 8. FIXES APPLIED
-==================
+================
 
-8.1 Mobile Authentication Flow Fixes
-Commit Hash: d51af3a
-Test Case: WEB-AUTH-003, WEB-AUTH-004
-Fix Applied: Complete authentication flow fixes including registration redirect and forgot password keyboard handling
+8.1 Playwright inventory realignment
+Commit/Reference: Working tree update
+Related Tests: Full 94-case web suite
+Fix Applied: Rebased the regression matrix on the actual Playwright suite so unsupported web scenarios were removed from the report and spreadsheet.
 
-8.2 Mobile Playbar Label Fix
-Commit Hash: 9c27924
-Test Case: WEB-PB-004
-Fix Applied: Updated mobile playbar fallback label for better visibility
+8.2 Notebook editor evidence expansion
+Commit/Reference: Working tree update
+Related Tests: WEB-NB-010, WEB-NB-014, WEB-NB-015
+Fix Applied: Strengthened editor coverage to assert the visible formatting, insert, zoom, export, and version-history controls that the notebook experience currently exposes.
 
-8.3 Web Equation Editor Fix
-Commit Hash: aa7e56d
-Test Case: WEB-NB-010
-Fix Applied: Stabilized block equation insertion on empty lines
-
-8.4 Loading Overlay Animation Fix
-Commit Hash: 793429a
-Test Case: Multiple UI tests
-Fix Applied: Improved loading-overlay animation performance in web
-
-8.5 Regression Report Updates
-Commit Hash: cea29ba
-Test Case: All regression tests
-Fix Applied: Finalized live fix validation and report evidence
+8.3 Refreshed screenshot and evidence generation
+Commit/Reference: Working tree update
+Related Tests: Full 94-case web suite
+Fix Applied: Re-ran Playwright, regenerated the web screenshots, and rebuilt the regression evidence artifacts from the latest passing execution.
 
 9. CONCLUSION
-==============
+=============
 
-9.1 Regression Test Summary
-The full regression testing for BrainBox Vertical Slice Architecture refactoring has been completed successfully. All 94 test cases passed with 100% success rate, demonstrating that refactoring maintained system integrity while improving code organization.
+The full web regression suite completed successfully with 94/94 passing cases, and the supporting QA artifacts now describe only the behavior BrainBox actually implements.
 
-9.2 Key Findings
-1. Vertical Slice Architecture successfully implemented without breaking existing functionality
-2. All features remain fully operational after refactoring
-3. Performance maintained or improved across all modules
-4. Code maintainability significantly enhanced through feature-based organization
-5. Test coverage comprehensive with automated execution and visual evidence
+9.1 Key Findings
+----------------
+1. The live Playwright suite already covered the real web feature set well enough to serve as the authoritative regression inventory.
+2. The main QA gap was documentation drift, not failing automation.
+3. Notebook AI, playback, queue management, and editor tooling are now explicitly represented in the refreshed reports and spreadsheet.
 
-9.3 Recommendations
-1. Continue monitoring system performance in production
-2. Implement additional automated tests for edge cases
-3. Consider adding performance benchmarks for critical features
-4. Maintain vertical slice architecture for future feature development
+9.2 Recommendations
+-------------------
+1. Continue treating the Playwright suite as the source of truth for web regression coverage.
+2. Regenerate the regression text, DOCX, and spreadsheet artifacts immediately after any future suite change.
+3. Keep unsupported or backlog-only scenarios out of the passing regression matrix until the product actually ships them.
 
-9.4 Final Assessment
-The Vertical Slice Architecture refactoring has been successfully completed and validated through comprehensive regression testing. The system demonstrates improved maintainability, feature isolation, and code organization while maintaining full functional compatibility.
+9.3 Final Assessment
+--------------------
+The BrainBox regression artifacts are now synchronized with the live web application, the refreshed Playwright screenshots, and the implemented notebook, AI, playback, and study workflows.
 
+9.4 Report Status
+-----------------
 Report Status: Complete
 Next Review Date: June 2026
-Approved By: Quality Assurance Team
-
-End of Report
+Approved By: Joana Carla D. Gako

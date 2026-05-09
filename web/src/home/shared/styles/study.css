@@ -40,8 +40,8 @@
 }
 
 .remove-item-btn:hover:not(:disabled) {
-  color: var(--error-color);
-  background: #fef2f2;
+  color: var(--ink);
+  background: var(--cream-2);
 }
 
 .remove-item-btn:disabled {
@@ -91,8 +91,8 @@
 }
 
 .create-option-row.is-correct {
-  border-color: var(--success-color);
-  background: #f0fdf4;
+  border-color: var(--ink-2);
+  background: var(--cream-2);
 }
 
 .create-option-label {
@@ -151,21 +151,21 @@
 
 /* ── Difficulty chips ─────────────────────────────── */
 .chip-easy {
-  background: #f0fdf4;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  background: var(--cream-2);
+  color: var(--ink);
+  border: 1px solid var(--border-2);
 }
 
 .chip-medium {
-  background: #fff7ed;
-  color: var(--accent-dark);
-  border: 1px solid #fed7aa;
+  background: var(--cream-2);
+  color: var(--ink);
+  border: 1px solid var(--border-2);
 }
 
 .chip-hard {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: var(--cream-2);
+  color: var(--ink);
+  border: 1px solid var(--border-2);
 }
 
 /* ── Question type toggle (true/false vs mc) ──────── */
@@ -217,13 +217,13 @@
 }
 
 .quiz-breakdown-item.correct {
-  border-color: var(--success-color);
-  background: #f0fdf4;
+  border-color: var(--ink-2);
+  background: var(--cream-2);
 }
 
 .quiz-breakdown-item.incorrect {
-  border-color: var(--error-color);
-  background: #fef2f2;
+  border-color: var(--ink-2);
+  background: var(--cream-2);
 }
 
 .quiz-breakdown-q {
@@ -339,17 +339,7 @@
   justify-content: center;
   min-width: 22px;
   height: 20px;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0 6px;
-  margin-left: 6px;
-}
-
-.add-item-btn {
-  display: flex;
+  background: var(--cream-2);
   align-items: center;
   gap: 5px;
   background: none;
@@ -364,9 +354,9 @@
 }
 
 .add-item-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-bg);
+  border-color: var(--ink-2);
+  color: var(--ink);
+  background: var(--cream-2);
 }
 
 .card-item {
@@ -407,8 +397,8 @@
 }
 
 .remove-card-btn:hover {
-  color: var(--error-color);
-  background: #fef2f2;
+  color: var(--ink);
+  background: var(--cream-2);
 }
 
 /* Question options for quiz create */
@@ -427,7 +417,7 @@
 .option-radio {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent);
+  accent-color: var(--ink);
   flex-shrink: 0;
 }
 
@@ -460,8 +450,8 @@
 }
 
 .study-filter-mode-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--ink-2);
+  color: var(--ink);
 }
 
 .study-filter-mode-btn.active {
@@ -506,9 +496,9 @@
   gap: 12px;
   margin-bottom: 18px;
   padding: 12px 14px;
-  border: 1px solid rgba(194, 65, 12, 0.18);
+  border: 1px solid var(--border-2);
   border-radius: var(--r-lg);
-  background: var(--accent-bg);
+  background: var(--cream-2);
   flex-wrap: wrap;
 }
 
@@ -529,8 +519,8 @@
 }
 
 .study-card.is-selected {
-  border-color: rgba(194, 65, 12, 0.28);
-  box-shadow: 0 0 0 1px rgba(194, 65, 12, 0.08), var(--shadow-md);
+  border-color: var(--ink-2);
+  box-shadow: 0 0 0 1px rgba(28, 25, 23, 0.1), var(--shadow-md);
 }
 
 .study-select-btn {

@@ -1007,8 +1007,8 @@
 }
 
 .queue-next-remove:hover {
-  background: #fef2f2;
-  color: var(--error-color);
+  background: var(--cream-2);
+  color: var(--ink);
 }
 
 /* ── Empty state ─────────────────────────────────────── */
@@ -1085,8 +1085,8 @@
 }
 
 .queue-playlist-item-active {
-  background: linear-gradient(90deg, var(--accent-bg) 0%, rgba(255, 255, 255, 0.72) 100%);
-  border-color: rgba(154, 52, 18, 0.18);
+  background: linear-gradient(90deg, var(--cream-2) 0%, rgba(255, 255, 255, 0.72) 100%);
+  border-color: var(--ink-2);
 }
 
 .queue-playlist-item-active:hover {

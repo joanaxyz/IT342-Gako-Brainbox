@@ -66,10 +66,25 @@ test.describe('NOTEBOOK — CRUD & Editor', () => {
     await snap(editorPage, 'WEB-NB-006');
   });
 
-  test('WEB-NB-010: Rich text toolbar visible', async ({ page }) => {
+  test('WEB-NB-010: Editor formatting and insert tools', async ({ page }) => {
     const editorPage = await openFirstLibraryNotebook(page);
 
-    await expect(editorPage.locator('.editor-toolbar-shell .format-toolbar')).toBeVisible({ timeout: 10_000 });
+    const toolbar = editorPage.locator('.editor-toolbar-shell .format-toolbar');
+    await expect(toolbar).toBeVisible({ timeout: 10_000 });
+
+    await expect(editorPage.getByLabel('Expand search')).toBeVisible();
+    await editorPage.getByLabel('Expand search').click();
+    await expect(editorPage.getByLabel('Search toolbar commands')).toBeVisible();
+    await expect(editorPage.getByLabel('Font family')).toBeVisible();
+    await expect(editorPage.getByLabel('Font size')).toBeVisible();
+    await expect(editorPage.getByLabel('Heading 1')).toBeVisible();
+    await expect(editorPage.getByLabel('Bold')).toBeVisible();
+    await expect(editorPage.getByLabel('Task list')).toBeVisible();
+    await expect(editorPage.getByLabel('Insert table')).toBeVisible();
+    await expect(editorPage.getByLabel('Insert equation')).toBeVisible();
+    await expect(editorPage.getByLabel('Show ruled lines')).toBeVisible();
+    await expect(editorPage.getByRole('slider', { name: 'Zoom' })).toBeVisible();
+    await expect(editorPage.getByLabel('Add current selection as an AI highlight')).toBeVisible();
     await snap(editorPage, 'WEB-NB-010');
   });
 
@@ -89,7 +104,9 @@ test.describe('NOTEBOOK — CRUD & Editor', () => {
 
     await editorPage.getByRole('button', { name: /^Export$/i }).click();
     await expect(editorPage.locator('.export-menu-dropdown')).toBeVisible({ timeout: 10_000 });
+    await expect(editorPage.locator('.export-menu-dropdown')).toContainText('Print / Save as PDF');
     await expect(editorPage.locator('.export-menu-dropdown')).toContainText('Export as Word (.docx)');
+    await expect(editorPage.locator('.export-menu-dropdown')).toContainText('Export as Text (.txt)');
     await snap(editorPage, 'WEB-NB-014');
   });
 
@@ -97,7 +114,10 @@ test.describe('NOTEBOOK — CRUD & Editor', () => {
     const editorPage = await openFirstLibraryNotebook(page);
 
     await editorPage.getByRole('button', { name: /version history/i }).click();
-    await expect(editorPage.getByRole('dialog', { name: 'Version history' })).toBeVisible({ timeout: 10_000 });
+    const versionDialog = editorPage.getByRole('dialog', { name: 'Version history' });
+    await expect(versionDialog).toBeVisible({ timeout: 10_000 });
+    await expect(versionDialog.getByRole('combobox')).toBeVisible();
+    await expect(versionDialog).toContainText('All versions');
     await snap(editorPage, 'WEB-NB-015');
   });
 });

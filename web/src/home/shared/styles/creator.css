@@ -257,8 +257,8 @@
 }
 
 .creator-item-remove:hover:not(:disabled) {
-  color: var(--error-color);
-  background: #fef2f2;
+  color: var(--ink);
+  background: var(--cream-2);
 }
 
 .creator-item-remove:disabled {
@@ -461,14 +461,14 @@
 }
 
 .creator-option-row.is-correct {
-  border-color: var(--success-color);
-  background: #f0fdf4;
+  border-color: var(--ink-2);
+  background: var(--cream-2);
 }
 
 .creator-option-radio {
   width: 17px;
   height: 17px;
-  accent-color: var(--success-color);
+  accent-color: var(--ink);
   flex-shrink: 0;
   cursor: pointer;
 }

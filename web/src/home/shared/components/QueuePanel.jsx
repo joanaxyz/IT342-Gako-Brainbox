@@ -12,18 +12,6 @@ const MusicNote = () => (
   </svg>
 );
 
-const GRADIENTS = [
-  'linear-gradient(135deg, #1C1917 0%, #57534E 100%)',
-  'linear-gradient(135deg, #9A3412 0%, #C2410C 100%)',
-  'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
-  'linear-gradient(135deg, #14532d 0%, #16a34a 100%)',
-  'linear-gradient(135deg, #4a1d96 0%, #7c3aed 100%)',
-  'linear-gradient(135deg, #831843 0%, #db2777 100%)',
-  'linear-gradient(135deg, #713f12 0%, #ca8a04 100%)',
-  'linear-gradient(135deg, #164e63 0%, #0891b2 100%)',
-];
-const getGradient = (i) => GRADIENTS[i % GRADIENTS.length];
-
 const QueuePanel = () => {
   const {
     currentNotebook,
@@ -177,7 +165,7 @@ const QueuePanel = () => {
                       >
                         <div
                           className="queue-playlist-cover"
-                          style={{ background: getGradient(i) }}
+                          style={{ background: '#1c1917' }}
                         >
                           <MusicNote />
                         </div>

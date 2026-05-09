@@ -18,7 +18,8 @@ import './library.css';
 
 const UNCATEGORIZED_VALUE = 'uncategorized';
 const CREATE_CATEGORY_VALUE = '__create_category__';
-const NOTEBOOK_PAGE_SIZE = 12;
+const NOTEBOOK_PAGE_SIZE = 16;
+const CATEGORY_PAGE_SIZE = 20;
 
 const SearchIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -267,6 +268,12 @@ const Library = () => {
     deferredCategorySearch,
     sortedCategories,
   ]);
+
+  const categoryPagination = usePagination(filteredCategories, {
+    pageSize: CATEGORY_PAGE_SIZE,
+    resetKey: [deferredCategorySearch, categorySortBy, categorySortDirection].join('|'),
+  });
+  const visibleCategories = categoryPagination.pageItems;
 
   const selectedCategory = useMemo(
     () => sortedCategories.find((category) => String(category.id) === selectedCategoryId) ?? null,
@@ -656,7 +663,7 @@ const Library = () => {
             <div className="library-filter-copy">{categoryResultCopy}</div>
           </div>
 
-          <div className="library-category-list">
+          <div className="library-category-fixed">
             <CategoryFilterButton
               active={!selectionMode && selectedCategoryId === 'all'}
               count={notebooks.length}
@@ -671,25 +678,45 @@ const Library = () => {
               label="Uncategorized"
               onClick={() => !selectionMode && setSelectedCategoryId(UNCATEGORIZED_VALUE)}
             />
-            {filteredCategories.map((category) => (
-              <CategoryFilterButton
-                key={category.id}
-                active={!selectionMode && selectedCategoryId === String(category.id)}
-                count={categoryNotebookCounts[category.id] || 0}
-                icon={<FolderIcon />}
-                label={category.name}
-                selected={selectedCategoryIds.has(category.id)}
-                countLabel={selectionMode ? (selectedCategoryIds.has(category.id) ? 'Selected' : 'Select') : null}
-                onClick={() => {
-                  if (selectionMode) {
-                    toggleCategorySelection(category.id);
-                    return;
-                  }
+          </div>
 
-                  setSelectedCategoryId(String(category.id));
-                }}
+          <div className="library-category-scroll">
+            <div className="library-category-list">
+              {visibleCategories.map((category) => (
+                <CategoryFilterButton
+                  key={category.id}
+                  active={!selectionMode && selectedCategoryId === String(category.id)}
+                  count={categoryNotebookCounts[category.id] || 0}
+                  icon={<FolderIcon />}
+                  label={category.name}
+                  selected={selectedCategoryIds.has(category.id)}
+                  countLabel={selectionMode ? (selectedCategoryIds.has(category.id) ? 'Selected' : 'Select') : null}
+                  onClick={() => {
+                    if (selectionMode) {
+                      toggleCategorySelection(category.id);
+                      return;
+                    }
+
+                    setSelectedCategoryId(String(category.id));
+                  }}
+                />
+              ))}
+            </div>
+
+            {sortedCategories.length > 0 && categoryPagination.totalPages > 1 && (
+              <PaginationControls
+                className="library-category-pagination"
+                currentPage={categoryPagination.currentPage}
+                endItem={categoryPagination.endItem}
+                label="Category pagination"
+                onPageChange={categoryPagination.setPage}
+                pageSize={categoryPagination.pageSize}
+                siblingCount={0}
+                startItem={categoryPagination.startItem}
+                totalItems={categoryPagination.totalItems}
+                totalPages={categoryPagination.totalPages}
               />
-            ))}
+            )}
           </div>
 
           {sortedCategories.length === 0 && (
@@ -797,7 +824,7 @@ const Library = () => {
               <div className="lib-th-cell">Category</div>
               <div className="lib-th-cell">Words</div>
               <div className="lib-th-cell">Last modified</div>
-              <div className="lib-th-cell library-table-open-head">{selectionMode ? 'Select' : 'Open'}</div>
+              <div className="lib-th-cell library-table-open-head">{selectionMode ? 'Select' : ''}</div>
             </div>
 
             {notebooksLoading
@@ -878,7 +905,7 @@ const Library = () => {
                     </div>
 
                     <div className="lib-row-actions library-row-actions">
-                      {selectionMode ? (
+                      {selectionMode && (
                         <button
                           className={`library-open-button${notebookSelected ? ' selected' : ''}`}
                           onClick={(event) => {
@@ -888,18 +915,6 @@ const Library = () => {
                           onKeyDown={(event) => event.stopPropagation()}
                         >
                           {notebookSelected ? 'Selected' : 'Select'}
-                        </button>
-                      ) : (
-                        <button
-                          className="library-open-button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openNotebookInNewTab(notebook.uuid);
-                          }}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          Open
-                          <ArrowIcon />
                         </button>
                       )}
                     </div>
@@ -945,6 +960,7 @@ const Library = () => {
               label="Notebook pagination"
               onPageChange={notebookPagination.setPage}
               pageSize={notebookPagination.pageSize}
+              siblingCount={0}
               startItem={notebookPagination.startItem}
               totalItems={notebookPagination.totalItems}
               totalPages={notebookPagination.totalPages}
