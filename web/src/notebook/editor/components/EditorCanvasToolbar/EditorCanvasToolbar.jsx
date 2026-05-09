@@ -64,7 +64,7 @@ const EditorCanvasToolbar = ({
 
       {showAiSelectionControls && (
         <div className="editor-canvas-toolbar-end">
-          <span className="editor-canvas-group-label">AI highlights</span>
+          <span className="editor-canvas-group-label">AI selections</span>
           <div className="editor-canvas-ai-selection">
             <button
               type="button"
@@ -72,7 +72,7 @@ const EditorCanvasToolbar = ({
               onMouseDown={(event) => event.preventDefault()}
               onClick={onAddAiSelection}
               disabled={!onAddAiSelection || isAiSelectionDisabled}
-              aria-label="Add current selection as an AI highlight"
+              aria-label="Add current selection as an AI selection"
               title={hasTextSelection ? 'Save the current selection for AI editing' : 'Select text in the editor first'}
             >
               <Highlighter size={16} />
@@ -86,8 +86,8 @@ const EditorCanvasToolbar = ({
               className="editor-canvas-ai-btn editor-canvas-ai-btn--ghost"
               onClick={onClearAiSelections}
               disabled={!onClearAiSelections || isAiSelectionDisabled || aiSelectionCount === 0}
-              aria-label="Clear AI highlights"
-              title="Clear saved AI highlights"
+              aria-label="Clear AI selections"
+              title="Clear saved AI selections"
             >
               <Trash2 size={15} />
               <span>Clear</span>

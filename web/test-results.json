@@ -49,7 +49,7 @@
     "version": "1.59.1",
     "workers": 1,
     "webServer": {
-      "command": "\"C:\\Users\\Personal Computer\\AppData\\Local\\OpenAI\\Codex\\bin\\node.exe\" \"C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\node_modules\\vite\\bin\\vite.js\" --host 127.0.0.1 --port 4173",
+      "command": "\"c:\\Users\\Personal Computer\\AppData\\Local\\Programs\\cursor\\resources\\app\\resources\\helpers\\node.exe\" \"C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\node_modules\\vite\\bin\\vite.js\" --host 127.0.0.1 --port 4173",
       "url": "http://127.0.0.1:4173",
       "reuseExistingServer": true,
       "timeout": 120000
@@ -64,7 +64,7 @@
       "specs": [],
       "suites": [
         {
-          "title": "AUTH — Login",
+          "title": "AUTH ΓÇö Login",
           "file": "01-auth-login.spec.mjs",
           "line": 4,
           "column": 6,
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2254,
+                      "duration": 2412,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:34.194Z",
+                      "startTime": "2026-05-09T12:15:53.264Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -119,12 +119,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4017,
+                      "duration": 4175,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:36.583Z",
+                      "startTime": "2026-05-09T12:15:55.813Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -153,12 +153,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 995,
+                      "duration": 1006,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:40.619Z",
+                      "startTime": "2026-05-09T12:16:00.005Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -187,12 +187,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 964,
+                      "duration": 1723,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:41.632Z",
+                      "startTime": "2026-05-09T12:16:01.030Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -221,12 +221,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 986,
+                      "duration": 999,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:42.610Z",
+                      "startTime": "2026-05-09T12:16:02.769Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -255,12 +255,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 985,
+                      "duration": 936,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:43.610Z",
+                      "startTime": "2026-05-09T12:16:03.783Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -285,7 +285,7 @@
       "specs": [],
       "suites": [
         {
-          "title": "AUTH — Registration",
+          "title": "AUTH ΓÇö Registration",
           "file": "02-auth-register.spec.mjs",
           "line": 4,
           "column": 6,
@@ -306,12 +306,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 995,
+                      "duration": 1441,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:44.649Z",
+                      "startTime": "2026-05-09T12:16:04.764Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -340,12 +340,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1115,
+                      "duration": 999,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:45.662Z",
+                      "startTime": "2026-05-09T12:16:06.220Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -370,7 +370,7 @@
       "specs": [],
       "suites": [
         {
-          "title": "AUTH — Forgot Password",
+          "title": "AUTH ΓÇö Forgot Password",
           "file": "03-auth-forgot-password.spec.mjs",
           "line": 4,
           "column": 6,
@@ -391,12 +391,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 964,
+                      "duration": 986,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:46.817Z",
+                      "startTime": "2026-05-09T12:16:07.245Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -425,12 +425,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1084,
+                      "duration": 1041,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:47.796Z",
+                      "startTime": "2026-05-09T12:16:08.246Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -455,7 +455,7 @@
       "specs": [],
       "suites": [
         {
-          "title": "AUTH — Google OAuth UI",
+          "title": "AUTH ΓÇö Google OAuth UI",
           "file": "04-auth-oauth-logout.spec.mjs",
           "line": 4,
           "column": 6,
@@ -476,12 +476,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1007,
+                      "duration": 910,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:48.916Z",
+                      "startTime": "2026-05-09T12:16:09.327Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -510,12 +510,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 993,
+                      "duration": 1919,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:49.935Z",
+                      "startTime": "2026-05-09T12:16:10.251Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -531,7 +531,7 @@
           ]
         },
         {
-          "title": "AUTH — Logout",
+          "title": "AUTH ΓÇö Logout",
           "file": "04-auth-oauth-logout.spec.mjs",
           "line": 18,
           "column": 6,
@@ -552,12 +552,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 12743,
+                      "duration": 13152,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:28:50.940Z",
+                      "startTime": "2026-05-09T12:16:12.184Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -586,12 +586,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6926,
+                      "duration": 6922,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:03.701Z",
+                      "startTime": "2026-05-09T12:16:25.348Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -607,7 +607,7 @@
           ]
         },
         {
-          "title": "AUTH — Route Protection",
+          "title": "AUTH ΓÇö Route Protection",
           "file": "04-auth-oauth-logout.spec.mjs",
           "line": 48,
           "column": 6,
@@ -628,12 +628,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5019,
+                      "duration": 5348,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:10.645Z",
+                      "startTime": "2026-05-09T12:16:32.285Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -660,7 +660,7 @@
         {
           "title": "DASHBOARD",
           "file": "05-dashboard.spec.mjs",
-          "line": 4,
+          "line": 46,
           "column": 6,
           "specs": [
             {
@@ -679,12 +679,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5172,
+                      "duration": 3921,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:15.710Z",
+                      "startTime": "2026-05-09T12:16:37.674Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -694,7 +694,7 @@
               ],
               "id": "aee2ec91c0737003e68b-e39371e19d4229c30809",
               "file": "05-dashboard.spec.mjs",
-              "line": 9,
+              "line": 52,
               "column": 3
             },
             {
@@ -713,12 +713,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9684,
+                      "duration": 7876,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:20.901Z",
+                      "startTime": "2026-05-09T12:16:41.610Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -728,7 +728,7 @@
               ],
               "id": "aee2ec91c0737003e68b-6fc04607fc8b5b5a8d9f",
               "file": "05-dashboard.spec.mjs",
-              "line": 15,
+              "line": 59,
               "column": 3
             },
             {
@@ -747,12 +747,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6726,
+                      "duration": 4951,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:30.603Z",
+                      "startTime": "2026-05-09T12:16:49.505Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -762,7 +762,7 @@
               ],
               "id": "aee2ec91c0737003e68b-62bf68c66d11f5819ce3",
               "file": "05-dashboard.spec.mjs",
-              "line": 23,
+              "line": 68,
               "column": 3
             },
             {
@@ -781,12 +781,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4699,
+                      "duration": 4242,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:37.349Z",
+                      "startTime": "2026-05-09T12:16:54.477Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -796,7 +796,7 @@
               ],
               "id": "aee2ec91c0737003e68b-6fc8352c716f949ba42f",
               "file": "05-dashboard.spec.mjs",
-              "line": 35,
+              "line": 81,
               "column": 3
             }
           ]
@@ -832,12 +832,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5528,
+                      "duration": 5740,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:42.088Z",
+                      "startTime": "2026-05-09T12:16:58.772Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -866,12 +866,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7536,
+                      "duration": 7531,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:47.637Z",
+                      "startTime": "2026-05-09T12:17:04.533Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -900,12 +900,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6482,
+                      "duration": 6792,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:29:55.196Z",
+                      "startTime": "2026-05-09T12:17:12.082Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -934,12 +934,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 14274,
+                      "duration": 14131,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:30:01.692Z",
+                      "startTime": "2026-05-09T12:17:18.889Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -976,12 +976,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9942,
+                      "duration": 10984,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:30:15.982Z",
+                      "startTime": "2026-05-09T12:17:33.036Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1010,12 +1010,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6827,
+                      "duration": 6872,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:30:25.941Z",
+                      "startTime": "2026-05-09T12:17:44.036Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1044,12 +1044,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6016,
+                      "duration": 5214,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:30:32.785Z",
+                      "startTime": "2026-05-09T12:17:50.928Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1074,9 +1074,9 @@
       "specs": [],
       "suites": [
         {
-          "title": "NOTEBOOK — AI Features (Detailed)",
+          "title": "NOTEBOOK ΓÇö AI Features (Detailed)",
           "file": "07-notebook-ai.spec.mjs",
-          "line": 15,
+          "line": 124,
           "column": 6,
           "specs": [
             {
@@ -1095,12 +1095,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10664,
+                      "duration": 15049,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:30:38.856Z",
+                      "startTime": "2026-05-09T12:17:56.187Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1110,11 +1110,11 @@
               ],
               "id": "e6845713a70aecfeac07-81083339454c353b5647",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 20,
+              "line": 129,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-002: AI Sidebar — Chat composer ready",
+              "title": "WEB-NB-AI-002: Send prompt, generate note, accept AI changes",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1129,12 +1129,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10484,
+                      "duration": 19239,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:30:49.535Z",
+                      "startTime": "2026-05-09T12:18:11.251Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1142,13 +1142,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-b8703f5bf4b42d24e2b4",
+              "id": "e6845713a70aecfeac07-69279226ada9cab87c93",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 27,
+              "line": 136,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-003: AI Sidebar — Improve tool",
+              "title": "WEB-NB-AI-003: Select AI text, run Improve, accept changes",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1163,12 +1163,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10750,
+                      "duration": 22323,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:31:00.035Z",
+                      "startTime": "2026-05-09T12:18:30.507Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1176,14 +1176,14 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-f32d8ac29519a973eef4",
+              "id": "e6845713a70aecfeac07-525812f2ee9aacfb6c6f",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 39,
+              "line": 161,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-004: AI Sidebar — Expand tool",
-              "ok": true,
+              "title": "WEB-NB-AI-004: Select AI text, run Expand, accept changes",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -1196,27 +1196,62 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 11132,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 17046,
+                      "error": {
+                        "message": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /new notebook/i })\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"btn btn-primary\">ΓÇª</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 ├ù waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  24 ├ù retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n",
+                        "stack": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /new notebook/i })\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"btn btn-primary\">ΓÇª</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 ├ù waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  24 ├ù retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n\n    at createNotebookWithContent (C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\helpers.mjs:112:61)\n    at C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\07-notebook-ai.spec.mjs:194:34",
+                        "location": {
+                          "file": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\helpers.mjs",
+                          "column": 61,
+                          "line": 112
+                        },
+                        "snippet": "   at helpers.mjs:112\n\n  110 |   ].join(' ');\n  111 |\n> 112 |   await page.getByRole('button', { name: /new notebook/i }).click();\n      |                                                             ^\n  113 |   await page.locator('.modal input, .field-input').first().fill(title);\n  114 |\n  115 |   const editorPage = await openNotebookFromAction(page, async () => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\helpers.mjs",
+                            "column": 61,
+                            "line": 112
+                          },
+                          "message": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /new notebook/i })\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"btn btn-primary\">ΓÇª</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 ├ù waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  24 ├ù retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"loading-overlay active\">ΓÇª</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n\n\n   at helpers.mjs:112\n\n  110 |   ].join(' ');\n  111 |\n> 112 |   await page.getByRole('button', { name: /new notebook/i }).click();\n      |                                                             ^\n  113 |   await page.locator('.modal input, .field-input').first().fill(title);\n  114 |\n  115 |   const editorPage = await openNotebookFromAction(page, async () => {\n    at createNotebookWithContent (C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\helpers.mjs:112:61)\n    at C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\07-notebook-ai.spec.mjs:194:34"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:31:10.804Z",
+                      "startTime": "2026-05-09T12:18:52.849Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\test-results\\07-notebook-ai-NOTEBOOK-ΓÇö--a16fc-t-run-Expand-accept-changes-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\test-results\\07-notebook-ai-NOTEBOOK-ΓÇö--a16fc-t-run-Expand-accept-changes-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\helpers.mjs",
+                        "column": 61,
+                        "line": 112
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-0abc69f3f002bf1a0e0a",
+              "id": "e6845713a70aecfeac07-75134f5d65337e8d2107",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 48,
+              "line": 187,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-005: AI Sidebar — Summarize tool",
+              "title": "WEB-NB-AI-005: Select AI text, run Summarize",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1228,15 +1263,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10965,
+                      "duration": 15953,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:31:21.954Z",
+                      "startTime": "2026-05-09T12:19:11.015Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1244,13 +1279,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-d39d4836c672882a300f",
+              "id": "e6845713a70aecfeac07-2d600167f7de85d6d7f6",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 57,
+              "line": 210,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-006: AI Sidebar — Explain tool",
+              "title": "WEB-NB-AI-006: Select AI text, run Explain",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1262,15 +1297,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10879,
+                      "duration": 16081,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:31:32.938Z",
+                      "startTime": "2026-05-09T12:19:27.113Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1278,13 +1313,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-de845b9f98db06bdcf62",
+              "id": "e6845713a70aecfeac07-d49877ba788a1bddd9dd",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 66,
+              "line": 228,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-007: AI Sidebar — Quiz tool",
+              "title": "WEB-NB-AI-007: Quiz tool run and view quiz",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1296,15 +1331,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10770,
+                      "duration": 15454,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:31:43.837Z",
+                      "startTime": "2026-05-09T12:19:43.213Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1312,13 +1347,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-cfda328e6ad3e31b41f2",
+              "id": "e6845713a70aecfeac07-0409bafbc58de1f0cc2e",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 75,
+              "line": 246,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-008: AI Sidebar — Flashcards tool",
+              "title": "WEB-NB-AI-008: Flashcard tool run and view flashcard",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1330,15 +1365,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11127,
+                      "duration": 15867,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:31:54.625Z",
+                      "startTime": "2026-05-09T12:19:58.683Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1346,13 +1381,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-8cd202f1164f09a37ac9",
+              "id": "e6845713a70aecfeac07-de6c49e31e75f056411d",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 84,
+              "line": 294,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-009: AI Sidebar — Tool help",
+              "title": "WEB-NB-AI-009: AI tool instructions open from rail",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1364,15 +1399,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10972,
+                      "duration": 15601,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:32:05.770Z",
+                      "startTime": "2026-05-09T12:20:14.569Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1380,13 +1415,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-ed137e11a53cf3fcec12",
+              "id": "e6845713a70aecfeac07-099a571491eb9a2586fa",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 93,
+              "line": 339,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-010: AI Sidebar — Settings panel",
+              "title": "WEB-NB-AI-010: AI provider settings panel opens",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1398,15 +1433,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11160,
+                      "duration": 17488,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:32:16.761Z",
+                      "startTime": "2026-05-09T12:20:30.188Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1414,13 +1449,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-a2a9f7b15fd0609af04e",
+              "id": "e6845713a70aecfeac07-4c426cca8d4b3f5cbaf2",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 102,
+              "line": 347,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-011: AI Sidebar — History action",
+              "title": "WEB-NB-AI-011: Chat history opens and loads previous conversation",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1432,15 +1467,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11144,
+                      "duration": 16144,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:32:27.937Z",
+                      "startTime": "2026-05-09T12:20:47.693Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1448,13 +1483,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-ac50d3579e8cdc5e7cdf",
+              "id": "e6845713a70aecfeac07-61313456268f05e72927",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 112,
+              "line": 356,
               "column": 3
             },
             {
-              "title": "WEB-NB-AI-012: AI Sidebar closes",
+              "title": "WEB-NB-AI-012: AI sidebar closes from navbar button",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1466,15 +1501,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11281,
+                      "duration": 16283,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:32:39.101Z",
+                      "startTime": "2026-05-09T12:21:03.856Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1482,9 +1517,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "e6845713a70aecfeac07-83288b5abe9aa184ed35",
+              "id": "e6845713a70aecfeac07-b07af5560b7e0c66a846",
               "file": "07-notebook-ai.spec.mjs",
-              "line": 121,
+              "line": 371,
               "column": 3
             }
           ]
@@ -1499,7 +1534,7 @@
       "specs": [],
       "suites": [
         {
-          "title": "NOTEBOOK — CRUD & Editor",
+          "title": "NOTEBOOK ΓÇö CRUD & Editor",
           "file": "07-notebook.spec.mjs",
           "line": 6,
           "column": 6,
@@ -1517,15 +1552,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 12020,
+                      "duration": 12217,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:32:50.420Z",
+                      "startTime": "2026-05-09T12:21:20.176Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1551,15 +1586,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 12024,
+                      "duration": 15532,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:33:02.460Z",
+                      "startTime": "2026-05-09T12:21:32.411Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1573,7 +1608,7 @@
               "column": 3
             },
             {
-              "title": "WEB-NB-004: Auto-save indicator",
+              "title": "WEB-NB-003: Auto-save indicator",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1585,15 +1620,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11088,
+                      "duration": 15782,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:33:14.502Z",
+                      "startTime": "2026-05-09T12:21:47.961Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1601,13 +1636,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "c0a3b8203d9795453fb1-5c178cae5b636343850e",
+              "id": "c0a3b8203d9795453fb1-ed09c180b28362f80664",
               "file": "07-notebook.spec.mjs",
               "line": 45,
               "column": 3
             },
             {
-              "title": "WEB-NB-006: Navigate back from editor",
+              "title": "WEB-NB-004: Navigator panel opens and can be collapsed",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1619,15 +1654,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11719,
+                      "duration": 15971,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:33:25.608Z",
+                      "startTime": "2026-05-09T12:22:03.759Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1635,13 +1670,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "c0a3b8203d9795453fb1-d3bc9e4862109fca1fa6",
+              "id": "c0a3b8203d9795453fb1-21a276471c56b5344bac",
               "file": "07-notebook.spec.mjs",
               "line": 59,
               "column": 3
             },
             {
-              "title": "WEB-NB-010: Editor formatting and insert tools",
+              "title": "WEB-NB-005: Navigate back from editor",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1653,15 +1688,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11124,
+                      "duration": 23525,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:33:37.348Z",
+                      "startTime": "2026-05-09T12:22:19.745Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1669,13 +1704,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "c0a3b8203d9795453fb1-f0c42caf73c15ada7992",
+              "id": "c0a3b8203d9795453fb1-7eb45997f4d18d5cf9ac",
               "file": "07-notebook.spec.mjs",
-              "line": 69,
+              "line": 71,
               "column": 3
             },
             {
-              "title": "WEB-NB-012: Review mode toggle",
+              "title": "WEB-NB-006: Editor formatting and insert tools",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1687,15 +1722,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10620,
+                      "duration": 16615,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:33:48.491Z",
+                      "startTime": "2026-05-09T12:22:43.288Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1703,13 +1738,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "c0a3b8203d9795453fb1-4081d10c7b796f6923e9",
+              "id": "c0a3b8203d9795453fb1-56da817f74e6e2194a93",
               "file": "07-notebook.spec.mjs",
-              "line": 91,
+              "line": 81,
               "column": 3
             },
             {
-              "title": "WEB-NB-014: Export menu visible",
+              "title": "WEB-NB-007: Review mode toggle",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1721,15 +1756,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10879,
+                      "duration": 16104,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:33:59.128Z",
+                      "startTime": "2026-05-09T12:22:59.920Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1737,13 +1772,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "c0a3b8203d9795453fb1-e3cadf5c1dcbd6af76a1",
+              "id": "c0a3b8203d9795453fb1-0b46726c8f7074123052",
               "file": "07-notebook.spec.mjs",
-              "line": 102,
+              "line": 128,
               "column": 3
             },
             {
-              "title": "WEB-NB-015: Version history sidebar",
+              "title": "WEB-NB-008: Review mode playbar visible",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1755,15 +1790,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10065,
+                      "duration": 15714,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:34:10.025Z",
+                      "startTime": "2026-05-09T12:23:16.036Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1771,9 +1806,77 @@
                   "status": "expected"
                 }
               ],
-              "id": "c0a3b8203d9795453fb1-1a0c01008a81cc51e11c",
+              "id": "c0a3b8203d9795453fb1-8c8f16331e704b209e16",
               "file": "07-notebook.spec.mjs",
-              "line": 113,
+              "line": 139,
+              "column": 3
+            },
+            {
+              "title": "WEB-NB-009: Export menu visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16253,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-09T12:23:31.766Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c0a3b8203d9795453fb1-f7665a202f3a15cae9a5",
+              "file": "07-notebook.spec.mjs",
+              "line": 150,
+              "column": 3
+            },
+            {
+              "title": "WEB-NB-010: Version history sidebar and version preview controls",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16392,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-09T12:23:48.038Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c0a3b8203d9795453fb1-3d15d37d708da0a3cbc3",
+              "file": "07-notebook.spec.mjs",
+              "line": 161,
               "column": 3
             }
           ]
@@ -1806,15 +1909,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5343,
+                      "duration": 6210,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:34:20.147Z",
+                      "startTime": "2026-05-09T12:24:04.472Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1840,15 +1943,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8301,
+                      "duration": 9312,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:34:25.506Z",
+                      "startTime": "2026-05-09T12:24:10.697Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1874,15 +1977,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6569,
+                      "duration": 6308,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:34:33.824Z",
+                      "startTime": "2026-05-09T12:24:20.030Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1908,15 +2011,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6218,
+                      "duration": 6099,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:34:40.410Z",
+                      "startTime": "2026-05-09T12:24:26.352Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1942,15 +2045,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 14421,
+                      "duration": 14973,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:34:46.644Z",
+                      "startTime": "2026-05-09T12:24:32.467Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1976,15 +2079,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5361,
+                      "duration": 5247,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:01.083Z",
+                      "startTime": "2026-05-09T12:24:47.455Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2010,15 +2113,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6375,
+                      "duration": 5180,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:06.461Z",
+                      "startTime": "2026-05-09T12:24:52.716Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2044,15 +2147,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6570,
+                      "duration": 7573,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:12.858Z",
+                      "startTime": "2026-05-09T12:24:57.912Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2095,15 +2198,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5371,
+                      "duration": 5317,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:19.473Z",
+                      "startTime": "2026-05-09T12:25:05.526Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2129,15 +2232,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8300,
+                      "duration": 11052,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:24.858Z",
+                      "startTime": "2026-05-09T12:25:10.860Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2163,15 +2266,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6470,
+                      "duration": 6439,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:33.177Z",
+                      "startTime": "2026-05-09T12:25:21.926Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2197,15 +2300,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6331,
+                      "duration": 5239,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:39.663Z",
+                      "startTime": "2026-05-09T12:25:28.382Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2231,15 +2334,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11837,
+                      "duration": 5485,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:46.009Z",
+                      "startTime": "2026-05-09T12:25:33.636Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2265,15 +2368,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5583,
+                      "duration": 5178,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:35:57.861Z",
+                      "startTime": "2026-05-09T12:25:39.138Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2299,15 +2402,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6496,
+                      "duration": 5194,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:03.459Z",
+                      "startTime": "2026-05-09T12:25:44.332Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2333,15 +2436,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6418,
+                      "duration": 5184,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:09.974Z",
+                      "startTime": "2026-05-09T12:25:49.541Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2384,15 +2487,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5117,
+                      "duration": 8865,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:16.441Z",
+                      "startTime": "2026-05-09T12:25:54.763Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2418,15 +2521,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9605,
+                      "duration": 9429,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:21.574Z",
+                      "startTime": "2026-05-09T12:26:03.646Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2452,15 +2555,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5467,
+                      "duration": 5766,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:31.194Z",
+                      "startTime": "2026-05-09T12:26:13.095Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2486,15 +2589,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5342,
+                      "duration": 5065,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:36.679Z",
+                      "startTime": "2026-05-09T12:26:18.880Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2520,15 +2623,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5489,
+                      "duration": 5413,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:42.037Z",
+                      "startTime": "2026-05-09T12:26:23.961Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2554,15 +2657,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5424,
+                      "duration": 5527,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:47.546Z",
+                      "startTime": "2026-05-09T12:26:29.391Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2588,15 +2691,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7074,
+                      "duration": 5187,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:36:53.003Z",
+                      "startTime": "2026-05-09T12:26:34.935Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2639,15 +2742,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5536,
+                      "duration": 6979,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:00.128Z",
+                      "startTime": "2026-05-09T12:26:40.160Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2673,15 +2776,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5638,
+                      "duration": 5354,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:05.682Z",
+                      "startTime": "2026-05-09T12:26:47.155Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2707,15 +2810,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7758,
+                      "duration": 5334,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:11.337Z",
+                      "startTime": "2026-05-09T12:26:52.525Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2741,15 +2844,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7523,
+                      "duration": 5715,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:19.115Z",
+                      "startTime": "2026-05-09T12:26:57.877Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2783,15 +2886,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 16841,
+                      "duration": 15882,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:26.653Z",
+                      "startTime": "2026-05-09T12:27:03.611Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2818,7 +2921,7 @@
         {
           "title": "PLAYBACK - Text-to-Speech (TTS) & Audio Player",
           "file": "12-playback-queue.spec.mjs",
-          "line": 122,
+          "line": 125,
           "column": 6,
           "specs": [
             {
@@ -2834,15 +2937,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10322,
+                      "duration": 18318,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:43.552Z",
+                      "startTime": "2026-05-09T12:27:19.545Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2852,7 +2955,7 @@
               ],
               "id": "f486b386f7291afa1350-406eae57d7802c2792da",
               "file": "12-playback-queue.spec.mjs",
-              "line": 127,
+              "line": 130,
               "column": 3
             },
             {
@@ -2868,15 +2971,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 12131,
+                      "duration": 17922,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:37:53.892Z",
+                      "startTime": "2026-05-09T12:27:37.883Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2886,7 +2989,7 @@
               ],
               "id": "f486b386f7291afa1350-33ff2b2dc64edb2b109a",
               "file": "12-playback-queue.spec.mjs",
-              "line": 134,
+              "line": 137,
               "column": 3
             },
             {
@@ -2902,15 +3005,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10415,
+                      "duration": 16481,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:38:06.041Z",
+                      "startTime": "2026-05-09T12:27:55.828Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2920,7 +3023,7 @@
               ],
               "id": "f486b386f7291afa1350-98339ec8bdf0aeb968bd",
               "file": "12-playback-queue.spec.mjs",
-              "line": 144,
+              "line": 147,
               "column": 3
             },
             {
@@ -2936,15 +3039,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10630,
+                      "duration": 15552,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:38:16.478Z",
+                      "startTime": "2026-05-09T12:28:12.325Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2954,7 +3057,7 @@
               ],
               "id": "f486b386f7291afa1350-69cd1a355ac5c3eed1ed",
               "file": "12-playback-queue.spec.mjs",
-              "line": 151,
+              "line": 154,
               "column": 3
             },
             {
@@ -2970,15 +3073,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10314,
+                      "duration": 14937,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:38:27.125Z",
+                      "startTime": "2026-05-09T12:28:27.892Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2988,7 +3091,7 @@
               ],
               "id": "f486b386f7291afa1350-3389ce52d682d15fc2e5",
               "file": "12-playback-queue.spec.mjs",
-              "line": 158,
+              "line": 161,
               "column": 3
             },
             {
@@ -3004,15 +3107,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9628,
+                      "duration": 10809,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:38:37.456Z",
+                      "startTime": "2026-05-09T12:28:42.847Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3022,7 +3125,7 @@
               ],
               "id": "f486b386f7291afa1350-c0843af716ff54a26d52",
               "file": "12-playback-queue.spec.mjs",
-              "line": 165,
+              "line": 168,
               "column": 3
             },
             {
@@ -3038,15 +3141,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10661,
+                      "duration": 15798,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:38:47.099Z",
+                      "startTime": "2026-05-09T12:28:53.674Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3056,7 +3159,7 @@
               ],
               "id": "f486b386f7291afa1350-7ffd5b0e3b6f6ecffbab",
               "file": "12-playback-queue.spec.mjs",
-              "line": 173,
+              "line": 176,
               "column": 3
             },
             {
@@ -3072,15 +3175,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10594,
+                      "duration": 15145,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:38:57.779Z",
+                      "startTime": "2026-05-09T12:29:09.488Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3090,7 +3193,7 @@
               ],
               "id": "f486b386f7291afa1350-6b51ce65e15b50b9be5f",
               "file": "12-playback-queue.spec.mjs",
-              "line": 180,
+              "line": 183,
               "column": 3
             },
             {
@@ -3106,15 +3209,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10419,
+                      "duration": 11212,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:39:08.391Z",
+                      "startTime": "2026-05-09T12:29:24.651Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3124,7 +3227,7 @@
               ],
               "id": "f486b386f7291afa1350-fecd175f8f0eac95bc0f",
               "file": "12-playback-queue.spec.mjs",
-              "line": 187,
+              "line": 190,
               "column": 3
             },
             {
@@ -3140,15 +3243,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10726,
+                      "duration": 16128,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:39:18.833Z",
+                      "startTime": "2026-05-09T12:29:35.880Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3158,7 +3261,7 @@
               ],
               "id": "f486b386f7291afa1350-b0edc66948a99c5a96b9",
               "file": "12-playback-queue.spec.mjs",
-              "line": 196,
+              "line": 199,
               "column": 3
             }
           ]
@@ -3166,7 +3269,7 @@
         {
           "title": "QUEUE - Playlist Queue Management",
           "file": "12-playback-queue.spec.mjs",
-          "line": 207,
+          "line": 210,
           "column": 6,
           "specs": [
             {
@@ -3182,15 +3285,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7913,
+                      "duration": 5682,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:39:29.592Z",
+                      "startTime": "2026-05-09T12:29:52.028Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3200,7 +3303,7 @@
               ],
               "id": "f486b386f7291afa1350-773f944da35352ae6341",
               "file": "12-playback-queue.spec.mjs",
-              "line": 214,
+              "line": 217,
               "column": 3
             },
             {
@@ -3216,15 +3319,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10415,
+                      "duration": 10615,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:39:37.523Z",
+                      "startTime": "2026-05-09T12:29:57.726Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3234,12 +3337,12 @@
               ],
               "id": "f486b386f7291afa1350-adeb8805983395b8ccbc",
               "file": "12-playback-queue.spec.mjs",
-              "line": 221,
+              "line": 224,
               "column": 3
             },
             {
               "title": "WEB-Q-003: Queue item actions (play, remove)",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -3250,25 +3353,60 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 8274,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 15210,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.pl-queue-row .pl-queue-actions').first()\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.pl-queue-row .pl-queue-actions').first()\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.pl-queue-row .pl-queue-actions').first()\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.pl-queue-row .pl-queue-actions').first()\u001b[22m\n\n    at C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\12-playback-queue.spec.mjs:235:75",
+                        "location": {
+                          "file": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\12-playback-queue.spec.mjs",
+                          "column": 75,
+                          "line": 235
+                        },
+                        "snippet": "  233 |     await ensureSelectedPlaylistHasNotebooks(page, 1);\n  234 |\n> 235 |     await expect(page.locator('.pl-queue-row .pl-queue-actions').first()).toBeVisible({ timeout: 10_000 });\n      |                                                                           ^\n  236 |     await snap(page, 'WEB-Q-003');\n  237 |   });\n  238 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\12-playback-queue.spec.mjs",
+                            "column": 75,
+                            "line": 235
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.pl-queue-row .pl-queue-actions').first()\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.pl-queue-row .pl-queue-actions').first()\u001b[22m\n\n\n  233 |     await ensureSelectedPlaylistHasNotebooks(page, 1);\n  234 |\n> 235 |     await expect(page.locator('.pl-queue-row .pl-queue-actions').first()).toBeVisible({ timeout: 10_000 });\n      |                                                                           ^\n  236 |     await snap(page, 'WEB-Q-003');\n  237 |   });\n  238 |\n    at C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\12-playback-queue.spec.mjs:235:75"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:39:47.955Z",
+                      "startTime": "2026-05-09T12:30:08.357Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\test-results\\12-playback-queue-QUEUE----aca42-e-item-actions-play-remove--chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\test-results\\12-playback-queue-QUEUE----aca42-e-item-actions-play-remove--chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Personal Computer\\Documents\\backups\\brainbox\\web\\tests\\e2e\\12-playback-queue.spec.mjs",
+                        "column": 75,
+                        "line": 235
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
               "id": "f486b386f7291afa1350-c023f8a162e0d934298d",
               "file": "12-playback-queue.spec.mjs",
-              "line": 229,
+              "line": 232,
               "column": 3
             },
             {
@@ -3284,15 +3422,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9179,
+                      "duration": 9860,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:39:56.242Z",
+                      "startTime": "2026-05-09T12:30:24.693Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3302,7 +3440,7 @@
               ],
               "id": "f486b386f7291afa1350-243c180b21f9bc58ff1a",
               "file": "12-playback-queue.spec.mjs",
-              "line": 236,
+              "line": 239,
               "column": 3
             },
             {
@@ -3318,15 +3456,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8261,
+                      "duration": 9221,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:40:05.437Z",
+                      "startTime": "2026-05-09T12:30:34.696Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3336,7 +3474,7 @@
               ],
               "id": "f486b386f7291afa1350-6d47761de9926ae0c7d6",
               "file": "12-playback-queue.spec.mjs",
-              "line": 248,
+              "line": 251,
               "column": 3
             },
             {
@@ -3352,15 +3490,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8683,
+                      "duration": 10833,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:40:13.712Z",
+                      "startTime": "2026-05-09T12:30:43.938Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3370,7 +3508,7 @@
               ],
               "id": "f486b386f7291afa1350-f0a7c9a438ec3511d4ba",
               "file": "12-playback-queue.spec.mjs",
-              "line": 255,
+              "line": 258,
               "column": 3
             },
             {
@@ -3386,15 +3524,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11275,
+                      "duration": 10804,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:40:22.412Z",
+                      "startTime": "2026-05-09T12:30:54.787Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3404,7 +3542,7 @@
               ],
               "id": "f486b386f7291afa1350-29ea98590e34715247d2",
               "file": "12-playback-queue.spec.mjs",
-              "line": 265,
+              "line": 268,
               "column": 3
             },
             {
@@ -3420,15 +3558,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8275,
+                      "duration": 8954,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:40:33.710Z",
+                      "startTime": "2026-05-09T12:31:05.609Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3438,7 +3576,7 @@
               ],
               "id": "f486b386f7291afa1350-2a466a554dc913d44d62",
               "file": "12-playback-queue.spec.mjs",
-              "line": 274,
+              "line": 277,
               "column": 3
             },
             {
@@ -3454,15 +3592,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8259,
+                      "duration": 9957,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:40:42.001Z",
+                      "startTime": "2026-05-09T12:31:14.580Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3472,7 +3610,7 @@
               ],
               "id": "f486b386f7291afa1350-909e020b802c36f73263",
               "file": "12-playback-queue.spec.mjs",
-              "line": 282,
+              "line": 285,
               "column": 3
             },
             {
@@ -3488,15 +3626,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10130,
+                      "duration": 10554,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-09T02:40:50.276Z",
+                      "startTime": "2026-05-09T12:31:24.555Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3506,7 +3644,7 @@
               ],
               "id": "f486b386f7291afa1350-245ca555ef45bef38bc1",
               "file": "12-playback-queue.spec.mjs",
-              "line": 289,
+              "line": 292,
               "column": 3
             }
           ]
@@ -3516,11 +3654,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-09T02:28:31.951Z",
-    "duration": 749505.949,
+    "startTime": "2026-05-09T12:15:50.716Z",
+    "duration": 944730.726,
     "expected": 94,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 2,
     "flaky": 0
   }
 }

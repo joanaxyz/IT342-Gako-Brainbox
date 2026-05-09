@@ -749,10 +749,8 @@ def create_automated_docx(source_path: Path, output_path: Path) -> None:
     project_info, test_env, test_summary, log_lines, modules = parse_automated_report(source_path)
     assets = collect_regression_assets()
     modules.extend(build_mobile_evidence_modules())
-    missing = [case.screenshot for module in modules for case in module.cases if not case.screenshot.exists()]
-    if missing:
-        names = "\n".join(str(path) for path in missing[:10])
-        raise FileNotFoundError(f"Missing screenshot files:\n{names}")
+    # Do not fail doc generation when some evidence screenshots are not available.
+    # Keep the case in the report and render a textual placeholder instead.
 
     doc = Document()
     configure_document(doc)
@@ -799,10 +797,18 @@ def create_automated_docx(source_path: Path, output_path: Path) -> None:
             ]
             add_info_table(doc, meta_rows, widths=(2.0, 4.5))
 
-            pic = doc.add_picture(str(case.screenshot), width=Inches(fit_image(case.screenshot, 6.1, 8.1)))
-            pic_paragraph = doc.paragraphs[-1]
-            pic_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            pic_paragraph.space_after = Pt(3)
+            if case.screenshot.exists():
+                pic = doc.add_picture(str(case.screenshot), width=Inches(fit_image(case.screenshot, 6.1, 8.1)))
+                pic_paragraph = doc.paragraphs[-1]
+                pic_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                pic_paragraph.space_after = Pt(3)
+            else:
+                missing_note = doc.add_paragraph(
+                    f"Screenshot not available: {case.screenshot.relative_to(ROOT_DIR)}"
+                )
+                missing_note.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                style_paragraph(missing_note, size=9, color=MUTED)
+                missing_note.paragraph_format.space_after = Pt(3)
 
             caption = doc.add_paragraph()
             caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -927,7 +933,17 @@ def parse_regression_report(path: Path) -> dict:
     automated_coverage = collect_bullets_after(r"^5\.3 Automated Test Coverage$")
 
     overall_results, _ = capture_table(lines, lines.index("Metric               Value") )
-    module_results, _ = capture_table(lines, lines.index("Module              Total Tests    Passed    Failed    Pass Rate"))
+    module_header_index = next(
+        (
+            idx
+            for idx, text in enumerate(lines)
+            if text.startswith("Module              Total Tests")
+        ),
+        None,
+    )
+    if module_header_index is None:
+        raise ValueError("Could not find module results table in regression report")
+    module_results, _ = capture_table(lines, module_header_index)
 
     performance = collect_bullets_after(r"^6\.3 Performance Observations$")
 

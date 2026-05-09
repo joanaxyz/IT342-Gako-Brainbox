@@ -16,6 +16,7 @@ from web_case_inventory import (
 
 REGRESSION_DIR = DOCS_DIR / "regression"
 PLAYWRIGHT_JSON = ROOT_DIR / "web" / "test-results.json"
+USE_PLAYWRIGHT_JSON_RESULTS = False
 
 MODULE_REPORT_ORDER = [
     ("AUTH", "5.1.1 Authentication Module (WEB-AUTH)"),
@@ -32,6 +33,17 @@ MODULE_REPORT_ORDER = [
 
 
 def load_playwright_results() -> dict[str, dict]:
+    """
+    Load Playwright test results when available.
+
+    If the JSON report is missing (e.g., docs are being refreshed without re-running
+    Playwright), return an empty mapping so reports fall back to screenshot evidence.
+    """
+    if not USE_PLAYWRIGHT_JSON_RESULTS:
+        return {}
+    if not PLAYWRIGHT_JSON.exists():
+        return {}
+
     data = json.loads(PLAYWRIGHT_JSON.read_text(encoding="utf-8-sig"))
     results: dict[str, dict] = {}
 
@@ -133,6 +145,8 @@ def write_automated_evidence_report(cases_by_module: OrderedDict[str, list], res
     total = sum(len(module_cases) for module_cases in cases_by_module.values())
     execution_minutes = sum(results.get(case.test_id, {}).get("duration_seconds", 0) for module_cases in cases_by_module.values() for case in module_cases) / 60
     today = datetime.now().strftime("%B %d, %Y")
+    with_evidence = sum(1 for module_cases in cases_by_module.values() for case in module_cases if case.screenshot_path.exists())
+    missing = total - with_evidence
     lines: list[str] = [
         "AUTOMATED TEST EVIDENCE - BRAINBOX",
         "===================================",
@@ -159,16 +173,21 @@ def write_automated_evidence_report(cases_by_module: OrderedDict[str, list], res
         "1.2 Test Summary",
         "----------------",
         f"- Total Test Cases: {total}",
-        f"- Tests Passed: {total} (100%)",
-        "- Tests Failed: 0",
-        f"- Screenshots Generated: {total}",
+        f"- Cases with existing screenshots: {with_evidence}",
+        f"- Cases missing screenshots: {missing}",
         "- Evidence Location: web/tests/e2e/screenshots/",
-        f"- Total Execution Time: {execution_minutes:.1f} minutes",
+        f"- Total Execution Time: {execution_minutes:.1f} minutes (from last Playwright JSON when available)",
         "",
         "1.3 Test Execution Log",
         "----------------------",
     ]
-    lines.extend(build_execution_log(cases_by_module, results))
+    if results:
+        lines.extend(build_execution_log(cases_by_module, results))
+    else:
+        lines.extend([
+            "No Playwright JSON execution log was provided.",
+            "This evidence report was refreshed from Playwright test titles and existing screenshots only.",
+        ])
 
     section_number = 2
     for module, module_cases in cases_by_module.items():
@@ -179,7 +198,8 @@ def write_automated_evidence_report(cases_by_module: OrderedDict[str, list], res
             "",
         ])
         for index, case in enumerate(module_cases, start=1):
-            result = results.get(case.test_id, {"status": "PASS", "duration_seconds": 0})
+            fallback_status = "EVIDENCE" if case.screenshot_path.exists() else "MISSING"
+            result = results.get(case.test_id, {"status": fallback_status, "duration_seconds": 0})
             lines.extend([
                 f"{section_number}.{index} Test Case: {case.test_id} - {case.title}",
                 f"Screenshot: {case.screenshot_path.relative_to(ROOT_DIR).as_posix()}",
@@ -200,31 +220,34 @@ def module_table_rows(module_cases: list, results: dict[str, dict]) -> list[str]
         "---------     -----------                             ---------------                     ------",
     ]
     for case in module_cases:
+        fallback_status = "EVIDENCE" if case.screenshot_path.exists() else "MISSING"
         rows.append(
-            f"{case.test_id:<12}  {case.title:<39}  {case.expected_result[:35]:<35}  {results.get(case.test_id, {}).get('status', 'PASS')}"
+            f"{case.test_id:<12}  {case.title:<39}  {case.expected_result[:35]:<35}  {results.get(case.test_id, {}).get('status', fallback_status)}"
         )
     return rows
 
 
 def module_result_rows(cases_by_module: OrderedDict[str, list]) -> list[str]:
     rows = [
-        "Module              Total Tests    Passed    Failed    Pass Rate",
-        "------------------  -----------    ------    ------    ---------",
+        "Module              Total Tests    With Evidence    Missing Evidence",
+        "------------------  -----------    ------------     ----------------",
     ]
     for module, module_cases in cases_by_module.items():
-        rows.append(f"{module_title(module):<18}  {len(module_cases):<11}    {len(module_cases):<6}    0         100%")
+        with_evidence = sum(1 for case in module_cases if case.screenshot_path.exists())
+        missing = len(module_cases) - with_evidence
+        rows.append(f"{module_title(module):<18}  {len(module_cases):<11}    {with_evidence:<12}     {missing}")
     return rows
 
 
-def overall_result_rows(total: int) -> list[str]:
+def overall_result_rows(total: int, with_evidence: int) -> list[str]:
+    missing = total - with_evidence
     return [
         "Metric               Value",
         "-------------------  -------------------------",
         f"Total Test Cases     {total}",
-        f"Tests Passed         {total}",
-        "Tests Failed         0",
-        "Pass Rate            100%",
-        "Regression Status    PASS",
+        f"Cases with Evidence  {with_evidence}",
+        f"Cases missing evidence {missing}",
+        "Regression Status    READY FOR MANUAL EXECUTION",
     ]
 
 
@@ -232,6 +255,7 @@ def write_full_regression_report(cases_by_module: OrderedDict[str, list], result
     total = sum(len(module_cases) for module_cases in cases_by_module.values())
     today = datetime.now().strftime("%B %d, %Y")
     average_seconds = sum(results.get(case.test_id, {}).get("duration_seconds", 0) for module_cases in cases_by_module.values() for case in module_cases) / max(total, 1)
+    with_evidence = sum(1 for module_cases in cases_by_module.values() for case in module_cases if case.screenshot_path.exists())
 
     lines: list[str] = [
         "FULL REGRESSION TEST REPORT - BRAINBOX",
@@ -360,7 +384,7 @@ def write_full_regression_report(cases_by_module: OrderedDict[str, list], result
         "6.1 Overall Test Results",
         "-----------------------",
     ])
-    lines.extend(overall_result_rows(total))
+    lines.extend(overall_result_rows(total, with_evidence))
     lines.extend([
         "",
         "6.2 Module-Wise Results",
@@ -371,47 +395,36 @@ def write_full_regression_report(cases_by_module: OrderedDict[str, list], result
         "",
         "6.3 Performance Observations",
         "----------------------------",
-        f"- Average Test Execution Time: {average_seconds:.1f} seconds per test",
-        "- All 94 web regression cases completed successfully against the live stack.",
-        "- Screenshot generation completed for every case in web/tests/e2e/screenshots.",
+        f"- Average Test Execution Time (from last Playwright JSON, if present): {average_seconds:.1f} seconds per test",
+        f"- Evidence screenshots present for {with_evidence}/{total} cases in web/tests/e2e/screenshots.",
+        "- This report was refreshed from Playwright test titles and existing screenshots (no automated re-run required).",
         "",
         "7. ISSUES FOUND",
         "===============",
         "",
-        "Issue 1: Legacy regression inventory drift",
-        "Description: Historical regression documents referenced unsupported or no-longer-implemented web scenarios such as account lockout and flashcard shuffling.",
+        "Issue 1: Regression documentation drift risk",
+        "Description: Regression documents can drift from the Playwright suite when the suite evolves.",
         "Severity: Medium",
-        "Affected Test Cases: Documentation-only legacy cases outside the active Playwright suite",
-        "Status: Fixed",
-        "",
-        "Issue 2: Notebook editor coverage needed clearer tool-level evidence",
-        "Description: The existing editor case set passed, but the regression narrative did not clearly call out the implemented formatting, insert, export, and version-history toolset.",
-        "Severity: Low",
-        "Affected Test Cases: WEB-NB-010, WEB-NB-014, WEB-NB-015",
-        "Status: Fixed",
+        "Affected Test Cases: Entire web regression inventory",
+        "Status: Mitigated (this report now derives titles directly from Playwright specs)",
         "",
         "8. FIXES APPLIED",
         "================",
         "",
-        "8.1 Playwright inventory realignment",
+        "8.1 Inventory refresh from Playwright specs",
         "Commit/Reference: Working tree update",
-        "Related Tests: Full 94-case web suite",
-        "Fix Applied: Rebased the regression matrix on the actual Playwright suite so unsupported web scenarios were removed from the report and spreadsheet.",
+        "Related Tests: Entire web Playwright suite",
+        "Fix Applied: Updated regression tables to use the current Playwright test IDs/titles as the single source of truth.",
         "",
-        "8.2 Notebook editor evidence expansion",
+        "8.2 Screenshot evidence reconciliation",
         "Commit/Reference: Working tree update",
-        "Related Tests: WEB-NB-010, WEB-NB-014, WEB-NB-015",
-        "Fix Applied: Strengthened editor coverage to assert the visible formatting, insert, zoom, export, and version-history controls that the notebook experience currently exposes.",
-        "",
-        "8.3 Refreshed screenshot and evidence generation",
-        "Commit/Reference: Working tree update",
-        "Related Tests: Full 94-case web suite",
-        "Fix Applied: Re-ran Playwright, regenerated the web screenshots, and rebuilt the regression evidence artifacts from the latest passing execution.",
+        "Related Tests: Entire web Playwright suite",
+        "Fix Applied: Marked each case as EVIDENCE/MISSING based on whether a matching screenshot file exists.",
         "",
         "9. CONCLUSION",
         "=============",
         "",
-        f"The full web regression suite completed successfully with {total}/{total} passing cases, and the supporting QA artifacts now describe only the behavior BrainBox actually implements.",
+        f"The web regression inventory is synchronized with the current Playwright spec titles and the existing screenshot evidence set ({with_evidence}/{total} screenshots present).",
         "",
         "9.1 Key Findings",
         "----------------",

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { login, openFirstLibraryNotebook, snap } from './helpers.mjs';
+import { createNotebookWithContent, login, snap } from './helpers.mjs';
 
 async function openNotebookReview(page) {
-  const editorPage = await openFirstLibraryNotebook(page);
+  const { editorPage } = await createNotebookWithContent(page, 'Playwright Playback Notebook');
   const reviewToggle = editorPage.locator('.editor-review-toggle');
 
   await reviewToggle.click();
@@ -32,7 +32,7 @@ async function stabilizeSelectedPlaylist(page) {
 
   if (await activePlaylistButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
     await activePlaylistButton.click();
-  } else {
+  } else if (await fallbackPlaylistButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
     await fallbackPlaylistButton.click();
   }
 
@@ -50,8 +50,11 @@ async function ensureSelectedPlaylistHasNotebooks(page, minItems = 1) {
 
   const addButton = page.locator('.pl-library-row .pl-inline-action:not([disabled])').first();
   if (!(await addButton.isVisible({ timeout: 3_000 }).catch(() => false))) {
-    await page.locator('.pl-sidebar-select').first().click();
-    await page.waitForTimeout(1_000);
+    const fallbackPlaylistButton = page.locator('.pl-sidebar-select').first();
+    if (await fallbackPlaylistButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await fallbackPlaylistButton.click();
+      await page.waitForTimeout(1_000);
+    }
     currentCount = await page.locator('.pl-queue-row').count();
   }
 

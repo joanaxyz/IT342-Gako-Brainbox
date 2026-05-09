@@ -1,15 +1,96 @@
 import { test, expect } from '@playwright/test';
-import { login, snap } from './helpers.mjs';
+import { login, snap, waitForNoLoadingArtifacts } from './helpers.mjs';
+
+async function mockFlashcardsData(page) {
+  const nowIso = new Date().toISOString();
+  const notebooks = [
+    { uuid: 'pw-nb-1', title: 'Physics Notes', updatedAt: nowIso, wordCount: 420, categoryId: 'cat-science', categoryName: 'Science' },
+    { uuid: 'pw-nb-2', title: 'History Notes', updatedAt: nowIso, wordCount: 360, categoryId: 'cat-humanities', categoryName: 'Humanities' },
+  ];
+  const flashcards = [
+    {
+      uuid: 'pw-fc-1',
+      title: 'Physics Deck',
+      notebookUuid: 'pw-nb-1',
+      notebookTitle: 'Physics Notes',
+      cardCount: 12,
+      attempts: 3,
+      bestMastery: 76,
+      updatedAt: nowIso,
+      cards: [
+        { front: 'What is velocity?', back: 'Speed with direction.' },
+        { front: 'Unit of acceleration?', back: 'm/s^2' },
+      ],
+    },
+    {
+      uuid: 'pw-fc-2',
+      title: 'History Deck',
+      notebookUuid: 'pw-nb-2',
+      notebookTitle: 'History Notes',
+      cardCount: 8,
+      attempts: 1,
+      bestMastery: 62,
+      updatedAt: new Date(Date.now() - 60_000).toISOString(),
+      cards: [
+        { front: 'When did WW2 end?', back: '1945' },
+      ],
+    },
+    {
+      uuid: 'pw-fc-3',
+      title: 'Biology Standalone Deck',
+      notebookUuid: null,
+      notebookTitle: '',
+      cardCount: 6,
+      attempts: 0,
+      bestMastery: null,
+      updatedAt: new Date(Date.now() - 120_000).toISOString(),
+      cards: [
+        { front: 'Powerhouse of the cell?', back: 'Mitochondria' },
+      ],
+    },
+  ];
+
+  await page.route('**/notebooks', async (route) => {
+    const req = route.request();
+    if (req.method() === 'GET' && ['fetch', 'xhr'].includes(req.resourceType())) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: notebooks }) });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.route('**/flashcards', async (route) => {
+    const req = route.request();
+    if (req.method() === 'GET' && ['fetch', 'xhr'].includes(req.resourceType())) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: flashcards }) });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.route('**/flashcards/*', async (route) => {
+    const req = route.request();
+    if (req.method() === 'GET' && ['fetch', 'xhr'].includes(req.resourceType())) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: flashcards[0] }) });
+      return;
+    }
+    await route.fallback();
+  });
+}
 
 test.describe('FLASHCARDS', () => {
   test.beforeEach(async ({ page }) => {
+    await mockFlashcardsData(page);
     await login(page);
     await page.goto('/flashcards');
-    await page.waitForTimeout(3000);
+    await waitForNoLoadingArtifacts(page, page.locator('.page-body-full, .home-content').first());
+    await expect(page.locator('.study-card').first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('WEB-FC-001: Flashcards page loads', async ({ page }) => {
     await expect(page.locator('h1, h2, .page-title').filter({ hasText: /flashcard/i }).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.study-card')).toHaveCount(3);
+    await waitForNoLoadingArtifacts(page);
     await snap(page, 'WEB-FC-001_flashcards-page');
   });
 
@@ -17,79 +98,65 @@ test.describe('FLASHCARDS', () => {
     const createBtn = page.locator('button:has-text("New deck"), button:has-text("Create deck")').first();
     await expect(createBtn).toBeVisible();
     await createBtn.click();
-    await page.waitForTimeout(3000);
+    await waitForNoLoadingArtifacts(page);
+    await expect(page.locator('input[placeholder="Deck title..."]')).toBeVisible({ timeout: 10_000 });
     await snap(page, 'WEB-FC-002_create-deck');
   });
 
   test('WEB-FC-003: Search flashcard decks', async ({ page }) => {
     const searchInput = page.locator('input[type="search"], input[placeholder*="Search"]').first();
-    if (await searchInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await searchInput.fill('test');
-      await page.waitForTimeout(1000);
-      await snap(page, 'WEB-FC-003_flashcard-search');
-      await searchInput.clear();
-    } else {
-      await snap(page, 'WEB-FC-003_flashcards-no-search');
-    }
+    await expect(searchInput).toBeVisible({ timeout: 10_000 });
+    await searchInput.fill('Physics');
+    await waitForNoLoadingArtifacts(page);
+    await expect(page.locator('.study-card')).toHaveCount(1);
+    await expect(page.locator('.sc-title').first()).toContainText('Physics Deck');
+    await snap(page, 'WEB-FC-003_flashcard-search');
   });
 
   test('WEB-FC-004: Sort flashcard decks', async ({ page }) => {
-    const sortSelect = page.locator('select').first();
-    if (await sortSelect.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await sortSelect.selectOption({ index: 1 });
-      await page.waitForTimeout(1000);
-    }
+    const sortSelect = page.locator('select[aria-label="Sort flashcards by"], .sort-select').first();
+    await expect(sortSelect).toBeVisible({ timeout: 10_000 });
+    await sortSelect.selectOption('title');
+    await waitForNoLoadingArtifacts(page);
+    await expect(page.locator('.sc-title').first()).toContainText('History Deck');
     await snap(page, 'WEB-FC-004_flashcards-sorted');
   });
 
   test('WEB-FC-005: Study deck player', async ({ page }) => {
-    const card = page.locator('.study-card').first();
-    if (await card.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      const studyBtn = card.locator('button:has-text("Study"), button:has-text("Start"), button:has-text("Play")').first();
-      if (await studyBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await studyBtn.click();
-        await page.waitForTimeout(3000);
-        await snap(page, 'WEB-FC-005_flashcard-player');
-      } else {
-        await card.click();
-        await page.waitForTimeout(3000);
-        await snap(page, 'WEB-FC-005_flashcard-detail');
-      }
-    } else {
-      await snap(page, 'WEB-FC-005_no-decks');
-    }
+    const physicsCard = page.locator('.study-card', { has: page.locator('.sc-title', { hasText: 'Physics Deck' }) }).first();
+    await expect(physicsCard).toBeVisible({ timeout: 10_000 });
+    await physicsCard.getByRole('button', { name: /study deck/i }).click();
+    await waitForNoLoadingArtifacts(page);
+    await expect(page.getByRole('button', { name: /^exit$/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.fc-face-text').first()).toContainText('What is velocity');
+    await snap(page, 'WEB-FC-005_flashcard-player');
   });
 
   test('WEB-FC-006: Edit deck accessible', async ({ page }) => {
     const editBtn = page.locator('.study-card button:has-text("Edit")').first();
-    if (await editBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await editBtn.click();
-      await page.waitForTimeout(3000);
-      await snap(page, 'WEB-FC-006_edit-deck');
-    } else {
-      await snap(page, 'WEB-FC-006_flashcards-page');
-    }
+    await expect(editBtn).toBeVisible({ timeout: 10_000 });
+    await editBtn.click();
+    await waitForNoLoadingArtifacts(page);
+    await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible({ timeout: 10_000 });
+    await snap(page, 'WEB-FC-006_edit-deck');
   });
 
   test('WEB-FC-007: Select mode for bulk delete', async ({ page }) => {
     const selectBtn = page.locator('button:has-text("Select")').first();
-    if (await selectBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await selectBtn.click();
-      await page.waitForTimeout(1000);
-      await snap(page, 'WEB-FC-007_flashcard-select-mode');
-    } else {
-      await snap(page, 'WEB-FC-007_flashcards-page');
-    }
+    await expect(selectBtn).toBeVisible({ timeout: 10_000 });
+    await selectBtn.click();
+    await page.getByRole('button', { name: /select visible \(\d+\)/i }).click();
+    await page.getByRole('button', { name: /^delete selected$/i }).first().click();
+    await expect(page.getByText(/delete selected decks/i)).toBeVisible({ timeout: 10_000 });
+    await snap(page, 'WEB-FC-007_flashcard-select-mode');
   });
 
   test('WEB-FC-008: Filter decks by pills', async ({ page }) => {
-    const pills = page.locator('.study-filter-pill, .filter-pill, [class*="pill"]').first();
-    if (await pills.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await pills.click();
-      await page.waitForTimeout(1000);
-      await snap(page, 'WEB-FC-008_flashcard-filter-active');
-    } else {
-      await snap(page, 'WEB-FC-008_flashcard-filters');
-    }
+    await page.getByRole('button', { name: /^categories$/i }).click();
+    await page.getByRole('button', { name: /^science$/i }).click();
+    await waitForNoLoadingArtifacts(page);
+    await expect(page.locator('.study-card')).toHaveCount(1);
+    await expect(page.locator('.sc-title').first()).toContainText('Physics Deck');
+    await snap(page, 'WEB-FC-008_flashcard-filter-active');
   });
 });

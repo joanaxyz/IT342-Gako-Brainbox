@@ -96,136 +96,138 @@ mobile/app/src/main/java/edu/cit/gako/brainbox/
 5.1.1 Authentication Module (WEB-AUTH)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-AUTH-001  Login with valid credentials             The implemented BrainBox behavior c  PASSED
-WEB-AUTH-002  Login with invalid credentials           The implemented BrainBox behavior c  PASSED
-WEB-AUTH-003  Login with empty fields                  The implemented BrainBox behavior c  PASSED
-WEB-AUTH-004  Login form UI elements                   The required implemented UI control  PASSED
-WEB-AUTH-005  Forgot password link navigation          Navigation reaches the expected rou  PASSED
-WEB-AUTH-006  Sign up link navigation                  Navigation reaches the expected rou  PASSED
-WEB-AUTH-010  Registration page UI elements            The required implemented UI control  PASSED
-WEB-AUTH-011  Registration form fill (email verification required)  The implemented BrainBox behavior c  PASSED
-WEB-AUTH-020  Forgot password page UI                  The implemented BrainBox behavior c  PASSED
-WEB-AUTH-021  Forgot password email filled (email required)  The implemented BrainBox behavior c  PASSED
-WEB-AUTH-030  Google login button on login page        The implemented BrainBox behavior c  PASSED
-WEB-AUTH-031  Google signup button on register page    The implemented BrainBox behavior c  PASSED
-WEB-AUTH-040  Logout flow                              Logout behaves as implemented and t  PASSED
-WEB-AUTH-041  Logout confirmation modal UI             Logout behaves as implemented and t  PASSED
-WEB-AUTH-050  Unauthenticated redirect                 Navigation reaches the expected rou  PASSED
+WEB-AUTH-001  Login with valid credentials             The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-002  Login with invalid credentials           The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-003  Login with empty fields                  The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-004  Login form UI elements                   The required implemented UI control  EVIDENCE
+WEB-AUTH-005  Forgot password link navigation          Navigation reaches the expected rou  EVIDENCE
+WEB-AUTH-006  Sign up link navigation                  Navigation reaches the expected rou  EVIDENCE
+WEB-AUTH-010  Registration page UI elements            The required implemented UI control  EVIDENCE
+WEB-AUTH-011  Registration form fill (email verification required)  The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-020  Forgot password page UI                  The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-021  Forgot password email filled (email required)  The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-030  Google login button on login page        The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-031  Google signup button on register page    The implemented BrainBox behavior c  EVIDENCE
+WEB-AUTH-040  Logout flow                              Logout behaves as implemented and t  EVIDENCE
+WEB-AUTH-041  Logout confirmation modal UI             Logout behaves as implemented and t  EVIDENCE
+WEB-AUTH-050  Unauthenticated redirect                 Navigation reaches the expected rou  EVIDENCE
 
 5.1.2 Dashboard Module (WEB-DASH)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-DASH-001  Dashboard loads with statistics          The page loads successfully and its  PASSED
-WEB-DASH-002  New notebook button                      The create flow opens correctly and  PASSED
-WEB-DASH-003  Dashboard view all links                 Navigation reaches the expected rou  PASSED
-WEB-DASH-004  Stat card navigation                     Navigation reaches the expected rou  PASSED
+WEB-DASH-001  Dashboard loads with statistics          The page loads successfully and its  EVIDENCE
+WEB-DASH-002  New notebook button                      The create flow opens correctly and  EVIDENCE
+WEB-DASH-003  Dashboard view all links                 Navigation reaches the expected rou  EVIDENCE
+WEB-DASH-004  Stat card navigation                     Navigation reaches the expected rou  EVIDENCE
 
 5.1.3 Library and Categories Module (WEB-LIB)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-LIB-001   Library page loads with notebooks        The page loads successfully and its  PASSED
-WEB-LIB-002   Search notebooks                         The relevant search control accepts  PASSED
-WEB-LIB-003   Sort notebooks                           The sort control is usable and the   PASSED
-WEB-LIB-004   Open notebook from library               The implemented BrainBox behavior c  PASSED
-WEB-LIB-010   Create a new category                    The create flow opens correctly and  PASSED
-WEB-LIB-011   Filter notebooks by category             The selected filter updates the vis  PASSED
-WEB-LIB-014   Search categories                        The relevant search control accepts  PASSED
+WEB-LIB-001   Library page loads with notebooks        The page loads successfully and its  EVIDENCE
+WEB-LIB-002   Search notebooks                         The relevant search control accepts  EVIDENCE
+WEB-LIB-003   Sort notebooks                           The sort control is usable and the   EVIDENCE
+WEB-LIB-004   Open notebook from library               The implemented BrainBox behavior c  EVIDENCE
+WEB-LIB-010   Create a new category                    The create flow opens correctly and  EVIDENCE
+WEB-LIB-011   Filter notebooks by category             The selected filter updates the vis  EVIDENCE
+WEB-LIB-014   Search categories                        The relevant search control accepts  EVIDENCE
 
 5.1.4 Notebook and Editor Module (WEB-NB)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-NB-001    Create a new notebook                    The create flow opens correctly and  PASSED
-WEB-NB-002    Edit notebook content                    The edit surface is reachable and t  PASSED
-WEB-NB-004    Auto-save indicator                      The save-status control reflects un  PASSED
-WEB-NB-006    Navigate back from editor                The edit surface is reachable and t  PASSED
-WEB-NB-010    Editor formatting and insert tools       The editor exposes the implemented   PASSED
-WEB-NB-012    Review mode toggle                       Review mode turns on and the docume  PASSED
-WEB-NB-014    Export menu visible                      The export menu opens and exposes t  PASSED
-WEB-NB-015    Version history sidebar                  The version-history sidebar opens w  PASSED
+WEB-NB-001    Create a new notebook                    The create flow opens correctly and  EVIDENCE
+WEB-NB-002    Edit notebook content                    The edit surface is reachable and t  EVIDENCE
+WEB-NB-003    Auto-save indicator                      The save-status control reflects un  EVIDENCE
+WEB-NB-004    Navigator panel opens and can be collapsed  The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-005    Navigate back from editor                The edit surface is reachable and t  EVIDENCE
+WEB-NB-006    Editor formatting and insert tools       The editor exposes the implemented   EVIDENCE
+WEB-NB-007    Review mode toggle                       Review mode turns on and the docume  EVIDENCE
+WEB-NB-008    Review mode playbar visible              Review mode turns on and the docume  EVIDENCE
+WEB-NB-009    Export menu visible                      The export menu opens and exposes t  EVIDENCE
+WEB-NB-010    Version history sidebar and version preview controls  The version-history sidebar opens w  EVIDENCE
 
 5.1.5 Notebook AI Module (WEB-NB-AI)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-NB-AI-001  AI Sidebar opens with default Chat tool  The AI assistant opens successfully  PASSED
-WEB-NB-AI-002  AI Sidebar — Chat composer ready         The implemented BrainBox behavior c  PASSED
-WEB-NB-AI-003  AI Sidebar — Improve tool                The selected AI tool becomes active  PASSED
-WEB-NB-AI-004  AI Sidebar — Expand tool                 The selected AI tool becomes active  PASSED
-WEB-NB-AI-005  AI Sidebar — Summarize tool              The selected AI tool becomes active  PASSED
-WEB-NB-AI-006  AI Sidebar — Explain tool                The selected AI tool becomes active  PASSED
-WEB-NB-AI-007  AI Sidebar — Quiz tool                   The selected AI tool becomes active  PASSED
-WEB-NB-AI-008  AI Sidebar — Flashcards tool             The selected AI tool becomes active  PASSED
-WEB-NB-AI-009  AI Sidebar — Tool help                   The selected AI tool becomes active  PASSED
-WEB-NB-AI-010  AI Sidebar — Settings panel              The AI provider settings panel open  PASSED
-WEB-NB-AI-011  AI Sidebar — History action              The chat-history surface opens and   PASSED
-WEB-NB-AI-012  AI Sidebar closes                        The assistant closes cleanly and th  PASSED
+WEB-NB-AI-001  AI Sidebar opens with default Chat tool  The AI assistant opens successfully  EVIDENCE
+WEB-NB-AI-002  Send prompt, generate note, accept AI changes  The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-003  Select AI text, run Improve, accept changes  The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-004  Select AI text, run Expand, accept changes  The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-005  Select AI text, run Summarize            The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-006  Select AI text, run Explain              The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-007  Quiz tool run and view quiz              The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-008  Flashcard tool run and view flashcard    The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-009  AI tool instructions open from rail      The implemented BrainBox behavior c  EVIDENCE
+WEB-NB-AI-010  AI provider settings panel opens         The AI provider settings panel open  EVIDENCE
+WEB-NB-AI-011  Chat history opens and loads previous conversation  The page loads successfully and its  EVIDENCE
+WEB-NB-AI-012  AI sidebar closes from navbar button     The assistant closes cleanly and th  EVIDENCE
 
 5.1.6 Quiz Module (WEB-QZ)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-QZ-001    Quizzes page loads                       The page loads successfully and its  PASSED
-WEB-QZ-002    Create quiz page                         The create flow opens correctly and  PASSED
-WEB-QZ-003    Search quizzes                           The relevant search control accepts  PASSED
-WEB-QZ-004    Sort quizzes                             The sort control is usable and the   PASSED
-WEB-QZ-005    Start quiz player                        The playback or study interaction r  PASSED
-WEB-QZ-006    Edit quiz accessible                     The edit surface is reachable and t  PASSED
-WEB-QZ-007    Select mode for bulk delete              The implemented BrainBox behavior c  PASSED
-WEB-QZ-008    Filter quizzes by pills                  The selected filter updates the vis  PASSED
+WEB-QZ-001    Quizzes page loads                       The page loads successfully and its  EVIDENCE
+WEB-QZ-002    Create quiz page                         The create flow opens correctly and  EVIDENCE
+WEB-QZ-003    Search quizzes                           The relevant search control accepts  EVIDENCE
+WEB-QZ-004    Sort quizzes                             The sort control is usable and the   EVIDENCE
+WEB-QZ-005    Start quiz player                        The playback or study interaction r  EVIDENCE
+WEB-QZ-006    Edit quiz accessible                     The edit surface is reachable and t  EVIDENCE
+WEB-QZ-007    Select mode for bulk delete              The implemented BrainBox behavior c  EVIDENCE
+WEB-QZ-008    Filter quizzes by pills                  The selected filter updates the vis  EVIDENCE
 
 5.1.7 Flashcard Module (WEB-FC)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-FC-001    Flashcards page loads                    The page loads successfully and its  PASSED
-WEB-FC-002    Create deck page                         The create flow opens correctly and  PASSED
-WEB-FC-003    Search flashcard decks                   The relevant search control accepts  PASSED
-WEB-FC-004    Sort flashcard decks                     The sort control is usable and the   PASSED
-WEB-FC-005    Study deck player                        The playback or study interaction r  PASSED
-WEB-FC-006    Edit deck accessible                     The edit surface is reachable and t  PASSED
-WEB-FC-007    Select mode for bulk delete              The implemented BrainBox behavior c  PASSED
-WEB-FC-008    Filter decks by pills                    The selected filter updates the vis  PASSED
+WEB-FC-001    Flashcards page loads                    The page loads successfully and its  EVIDENCE
+WEB-FC-002    Create deck page                         The create flow opens correctly and  EVIDENCE
+WEB-FC-003    Search flashcard decks                   The relevant search control accepts  EVIDENCE
+WEB-FC-004    Sort flashcard decks                     The sort control is usable and the   EVIDENCE
+WEB-FC-005    Study deck player                        The playback or study interaction r  EVIDENCE
+WEB-FC-006    Edit deck accessible                     The edit surface is reachable and t  EVIDENCE
+WEB-FC-007    Select mode for bulk delete              The implemented BrainBox behavior c  EVIDENCE
+WEB-FC-008    Filter decks by pills                    The selected filter updates the vis  EVIDENCE
 
 5.1.8 Playlist Module (WEB-PL)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-PL-001    Playlists page loads                     The page loads successfully and its  PASSED
-WEB-PL-002    Create a playlist                        The create flow opens correctly and  PASSED
-WEB-PL-003    Add notebook to playlist queue           The playback or study interaction r  PASSED
-WEB-PL-004    Remove notebook from queue               The playback or study interaction r  PASSED
-WEB-PL-005    Reorder playlist queue                   The playback or study interaction r  PASSED
-WEB-PL-006    Delete a playlist                        The implemented BrainBox behavior c  PASSED
-WEB-PL-007    Search playlists                         The relevant search control accepts  PASSED
+WEB-PL-001    Playlists page loads                     The page loads successfully and its  EVIDENCE
+WEB-PL-002    Create a playlist                        The create flow opens correctly and  EVIDENCE
+WEB-PL-003    Add notebook to playlist queue           The playback or study interaction r  EVIDENCE
+WEB-PL-004    Remove notebook from queue               The playback or study interaction r  MISSING
+WEB-PL-005    Reorder playlist queue                   The playback or study interaction r  MISSING
+WEB-PL-006    Delete a playlist                        The implemented BrainBox behavior c  MISSING
+WEB-PL-007    Search playlists                         The relevant search control accepts  EVIDENCE
 
 5.1.9 Profile and Navigation Module (WEB-PRF / WEB-NAV)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-PRF-001   Profile page loads                       The page loads successfully and its  PASSED
-WEB-PRF-002   Edit profile action                      The edit surface is reachable and t  PASSED
-WEB-PRF-003   Change password action                   The implemented BrainBox behavior c  PASSED
-WEB-PRF-004   AI provider action                       The implemented BrainBox behavior c  PASSED
-WEB-NAV-001   Sidebar navigation to all pages          Navigation reaches the expected rou  PASSED
+WEB-PRF-001   Profile page loads                       The page loads successfully and its  EVIDENCE
+WEB-PRF-002   Edit profile action                      The edit surface is reachable and t  EVIDENCE
+WEB-PRF-003   Change password action                   The implemented BrainBox behavior c  EVIDENCE
+WEB-PRF-004   AI provider action                       The implemented BrainBox behavior c  EVIDENCE
+WEB-NAV-001   Sidebar navigation to all pages          Navigation reaches the expected rou  EVIDENCE
 
 5.1.10 Playback and Queue Module (WEB-PB / WEB-Q)
 Test ID      Test Case                               Expected Result                     Status
 ---------     -----------                             ---------------                     ------
-WEB-PB-001    Player bar visible in review mode        Review mode turns on and the docume  PASSED
-WEB-PB-002    Playback controls - Play/Pause           The playback or study interaction r  PASSED
-WEB-PB-003    Playback progress bar                    The playback or study interaction r  PASSED
-WEB-PB-004    Playback time display                    The playback or study interaction r  PASSED
-WEB-PB-005    Player bar collapsed/expanded toggle     The playback or study interaction r  PASSED
-WEB-PB-006    Playback from playlist                   The playback or study interaction r  PASSED
-WEB-PB-007    Skip forward/backward in playback        The playback or study interaction r  PASSED
-WEB-PB-008    Playback speed control                   The playback or study interaction r  PASSED
-WEB-PB-009    Queue panel in playlists                 The playback or study interaction r  PASSED
-WEB-PB-010    Audio settings / mute toggle             The implemented BrainBox behavior c  PASSED
-WEB-Q-001     Queue panel displays current playlist items  The playback or study interaction r  PASSED
-WEB-Q-002     Current playing item highlighted in queue  The playback or study interaction r  PASSED
-WEB-Q-003     Queue item actions (play, remove)        The playback or study interaction r  PASSED
-WEB-Q-004     Queue reorder - move up/down             The playback or study interaction r  PASSED
-WEB-Q-005     Queue empty state                        The playback or study interaction r  PASSED
-WEB-Q-006     Add notebook to queue from library panel  The playback or study interaction r  PASSED
-WEB-Q-007     Queue progress indicator                 The playback or study interaction r  PASSED
-WEB-Q-008     Queue item info (title, duration)        The playback or study interaction r  PASSED
-WEB-Q-009     Clear queue / remove all                 The playback or study interaction r  PASSED
-WEB-Q-010     Queue continues to next item             The playback or study interaction r  PASSED
+WEB-PB-001    Player bar visible in review mode        Review mode turns on and the docume  EVIDENCE
+WEB-PB-002    Playback controls - Play/Pause           The playback or study interaction r  EVIDENCE
+WEB-PB-003    Playback progress bar                    The playback or study interaction r  EVIDENCE
+WEB-PB-004    Playback time display                    The playback or study interaction r  EVIDENCE
+WEB-PB-005    Player bar collapsed/expanded toggle     The playback or study interaction r  EVIDENCE
+WEB-PB-006    Playback from playlist                   The playback or study interaction r  EVIDENCE
+WEB-PB-007    Skip forward/backward in playback        The playback or study interaction r  EVIDENCE
+WEB-PB-008    Playback speed control                   The playback or study interaction r  EVIDENCE
+WEB-PB-009    Queue panel in playlists                 The playback or study interaction r  EVIDENCE
+WEB-PB-010    Audio settings / mute toggle             The implemented BrainBox behavior c  EVIDENCE
+WEB-Q-001     Queue panel displays current playlist items  The playback or study interaction r  EVIDENCE
+WEB-Q-002     Current playing item highlighted in queue  The playback or study interaction r  EVIDENCE
+WEB-Q-003     Queue item actions (play, remove)        The playback or study interaction r  EVIDENCE
+WEB-Q-004     Queue reorder - move up/down             The playback or study interaction r  EVIDENCE
+WEB-Q-005     Queue empty state                        The playback or study interaction r  EVIDENCE
+WEB-Q-006     Add notebook to queue from library panel  The playback or study interaction r  EVIDENCE
+WEB-Q-007     Queue progress indicator                 The playback or study interaction r  EVIDENCE
+WEB-Q-008     Queue item info (title, duration)        The playback or study interaction r  EVIDENCE
+WEB-Q-009     Clear queue / remove all                 The playback or study interaction r  EVIDENCE
+WEB-Q-010     Queue continues to next item             The playback or study interaction r  EVIDENCE
 
 5.2 Test Environment
 -------------------
@@ -238,7 +240,7 @@ WEB-Q-010     Queue continues to next item             The playback or study int
 
 5.3 Automated Test Coverage
 --------------------------
-- Total Test Cases: 94
+- Total Test Cases: 96
 - Test Categories: 10 feature groups
 - Automation Coverage: 100% of the web regression matrix
 - Screenshot Coverage: Every Playwright case captured refreshed visual evidence
@@ -250,70 +252,58 @@ WEB-Q-010     Queue continues to next item             The playback or study int
 -----------------------
 Metric               Value
 -------------------  -------------------------
-Total Test Cases     94
-Tests Passed         94
-Tests Failed         0
-Pass Rate            100%
-Regression Status    PASS
+Total Test Cases     96
+Cases with Evidence  93
+Cases missing evidence 3
+Regression Status    READY FOR MANUAL EXECUTION
 
 6.2 Module-Wise Results
 ----------------------
-Module              Total Tests    Passed    Failed    Pass Rate
-------------------  -----------    ------    ------    ---------
-Authentication      15             15        0         100%
-Dashboard           4              4         0         100%
-Library and Categories  7              7         0         100%
-Notebook and Editor  8              8         0         100%
-Notebook AI         12             12        0         100%
-Quizzes             8              8         0         100%
-Flashcards          8              8         0         100%
-Playlists           7              7         0         100%
-Profile and Navigation  5              5         0         100%
-Playback and Queue  20             20        0         100%
+Module              Total Tests    With Evidence    Missing Evidence
+------------------  -----------    ------------     ----------------
+Authentication      15             15               0
+Dashboard           4              4                0
+Library and Categories  7              7                0
+Notebook and Editor  10             10               0
+Notebook AI         12             12               0
+Quizzes             8              8                0
+Flashcards          8              8                0
+Playlists           7              4                3
+Profile and Navigation  5              5                0
+Playback and Queue  20             20               0
 
 6.3 Performance Observations
 ----------------------------
-- Average Test Execution Time: 7.9 seconds per test
-- All 94 web regression cases completed successfully against the live stack.
-- Screenshot generation completed for every case in web/tests/e2e/screenshots.
+- Average Test Execution Time (from last Playwright JSON, if present): 0.0 seconds per test
+- Evidence screenshots present for 93/96 cases in web/tests/e2e/screenshots.
+- This report was refreshed from Playwright test titles and existing screenshots (no automated re-run required).
 
 7. ISSUES FOUND
 ===============
 
-Issue 1: Legacy regression inventory drift
-Description: Historical regression documents referenced unsupported or no-longer-implemented web scenarios such as account lockout and flashcard shuffling.
+Issue 1: Regression documentation drift risk
+Description: Regression documents can drift from the Playwright suite when the suite evolves.
 Severity: Medium
-Affected Test Cases: Documentation-only legacy cases outside the active Playwright suite
-Status: Fixed
-
-Issue 2: Notebook editor coverage needed clearer tool-level evidence
-Description: The existing editor case set passed, but the regression narrative did not clearly call out the implemented formatting, insert, export, and version-history toolset.
-Severity: Low
-Affected Test Cases: WEB-NB-010, WEB-NB-014, WEB-NB-015
-Status: Fixed
+Affected Test Cases: Entire web regression inventory
+Status: Mitigated (this report now derives titles directly from Playwright specs)
 
 8. FIXES APPLIED
 ================
 
-8.1 Playwright inventory realignment
+8.1 Inventory refresh from Playwright specs
 Commit/Reference: Working tree update
-Related Tests: Full 94-case web suite
-Fix Applied: Rebased the regression matrix on the actual Playwright suite so unsupported web scenarios were removed from the report and spreadsheet.
+Related Tests: Entire web Playwright suite
+Fix Applied: Updated regression tables to use the current Playwright test IDs/titles as the single source of truth.
 
-8.2 Notebook editor evidence expansion
+8.2 Screenshot evidence reconciliation
 Commit/Reference: Working tree update
-Related Tests: WEB-NB-010, WEB-NB-014, WEB-NB-015
-Fix Applied: Strengthened editor coverage to assert the visible formatting, insert, zoom, export, and version-history controls that the notebook experience currently exposes.
-
-8.3 Refreshed screenshot and evidence generation
-Commit/Reference: Working tree update
-Related Tests: Full 94-case web suite
-Fix Applied: Re-ran Playwright, regenerated the web screenshots, and rebuilt the regression evidence artifacts from the latest passing execution.
+Related Tests: Entire web Playwright suite
+Fix Applied: Marked each case as EVIDENCE/MISSING based on whether a matching screenshot file exists.
 
 9. CONCLUSION
 =============
 
-The full web regression suite completed successfully with 94/94 passing cases, and the supporting QA artifacts now describe only the behavior BrainBox actually implements.
+The web regression inventory is synchronized with the current Playwright spec titles and the existing screenshot evidence set (93/96 screenshots present).
 
 9.1 Key Findings
 ----------------

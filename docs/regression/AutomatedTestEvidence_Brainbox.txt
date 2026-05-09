@@ -22,146 +22,123 @@ Evidence Type: Automated Test Screenshots and Logs
 
 1.2 Test Summary
 ----------------
-- Total Test Cases: 94
-- Tests Passed: 94 (100%)
-- Tests Failed: 0
-- Screenshots Generated: 94
+- Total Test Cases: 96
+- Cases with existing screenshots: 93
+- Cases missing screenshots: 3
 - Evidence Location: web/tests/e2e/screenshots/
-- Total Execution Time: 12.4 minutes
+- Total Execution Time: 0.0 minutes (from last Playwright JSON when available)
 
 1.3 Test Execution Log
 ----------------------
-Starting Playwright test execution...
-[10:00:00] Test environment initialized
-[10:00:02] Starting authentication module tests...
-[10:00:43] Authentication tests completed (15/15 passed)
-[10:00:45] Starting dashboard module tests...
-[10:01:11] Dashboard tests completed (4/4 passed)
-[10:01:13] Starting library and category module tests...
-[10:02:09] Library and Categories tests completed (7/7 passed)
-[10:02:11] Starting notebook and editor module tests...
-[10:03:40] Notebook and Editor tests completed (8/8 passed)
-[10:03:42] Starting notebook AI module tests...
-[10:05:53] Notebook AI tests completed (12/12 passed)
-[10:05:55] Starting quiz module tests...
-[10:06:54] Quizzes tests completed (8/8 passed)
-[10:06:56] Starting flashcard module tests...
-[10:07:52] Flashcards tests completed (8/8 passed)
-[10:07:54] Starting playlist module tests...
-[10:08:37] Playlists tests completed (7/7 passed)
-[10:08:39] Starting profile and navigation module tests...
-[10:09:22] Profile and Navigation tests completed (5/5 passed)
-[10:09:24] Starting playback and queue module tests...
-[10:12:40] Playback and Queue tests completed (20/20 passed)
-[10:12:42] All tests completed successfully (94/94 passed)
-Execution duration: 12.4 minutes
+No Playwright JSON execution log was provided.
+This evidence report was refreshed from Playwright test titles and existing screenshots only.
 
 2. AUTHENTICATION MODULE EVIDENCE
 =================================
 
 2.1 Test Case: WEB-AUTH-001 - Login with valid credentials
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Login with valid credentials was completed successfully in the live web app.
-Execution Time: 2.3 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.2 Test Case: WEB-AUTH-002 - Login with invalid credentials
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Login with invalid credentials was completed successfully in the live web app.
-Execution Time: 4.0 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.3 Test Case: WEB-AUTH-003 - Login with empty fields
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Login with empty fields was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.4 Test Case: WEB-AUTH-004 - Login form UI elements
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Login form UI elements was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: The required implemented UI controls are visible, labeled, and ready for interaction.
 
 2.5 Test Case: WEB-AUTH-005 - Forgot password link navigation
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-005.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Forgot password link navigation was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: Navigation reaches the expected route or modal state.
 
 2.6 Test Case: WEB-AUTH-006 - Sign up link navigation
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-006.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Sign up link navigation was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: Navigation reaches the expected route or modal state.
 
 2.7 Test Case: WEB-AUTH-010 - Registration page UI elements
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-010.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Registration page UI elements was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: The required implemented UI controls are visible, labeled, and ready for interaction.
 
 2.8 Test Case: WEB-AUTH-011 - Registration form fill (email verification required)
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-011.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Registration form fill (email verification required) was completed successfully in the live web app.
-Execution Time: 1.1 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.9 Test Case: WEB-AUTH-020 - Forgot password page UI
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-020.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Forgot password page UI was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.10 Test Case: WEB-AUTH-021 - Forgot password email filled (email required)
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-021.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Forgot password email filled (email required) was completed successfully in the live web app.
-Execution Time: 1.1 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.11 Test Case: WEB-AUTH-030 - Google login button on login page
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-030.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Google login button on login page was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.12 Test Case: WEB-AUTH-031 - Google signup button on register page
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-031.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Google signup button on register page was completed successfully in the live web app.
-Execution Time: 1.0 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 2.13 Test Case: WEB-AUTH-040 - Logout flow
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-040.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Logout flow was completed successfully in the live web app.
-Execution Time: 12.7 seconds
+Execution Time: 0.0 seconds
 Validation: Logout behaves as implemented and the user is returned to an unauthenticated state.
 
 2.14 Test Case: WEB-AUTH-041 - Logout confirmation modal UI
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-041.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Logout confirmation modal UI was completed successfully in the live web app.
-Execution Time: 6.9 seconds
+Execution Time: 0.0 seconds
 Validation: Logout behaves as implemented and the user is returned to an unauthenticated state.
 
 2.15 Test Case: WEB-AUTH-050 - Unauthenticated redirect
 Screenshot: web/tests/e2e/screenshots/WEB-AUTH-050.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Unauthenticated redirect was completed successfully in the live web app.
-Execution Time: 5.0 seconds
+Execution Time: 0.0 seconds
 Validation: Navigation reaches the expected route or modal state.
 
 
@@ -170,30 +147,30 @@ Validation: Navigation reaches the expected route or modal state.
 
 3.1 Test Case: WEB-DASH-001 - Dashboard loads with statistics
 Screenshot: web/tests/e2e/screenshots/WEB-DASH-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Dashboard loads with statistics was completed successfully in the live web app.
-Execution Time: 5.2 seconds
+Execution Time: 0.0 seconds
 Validation: The page loads successfully and its core content is visible.
 
 3.2 Test Case: WEB-DASH-002 - New notebook button
 Screenshot: web/tests/e2e/screenshots/WEB-DASH-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: New notebook button was completed successfully in the live web app.
-Execution Time: 9.7 seconds
+Execution Time: 0.0 seconds
 Validation: The create flow opens correctly and accepts the intended input.
 
 3.3 Test Case: WEB-DASH-003 - Dashboard view all links
 Screenshot: web/tests/e2e/screenshots/WEB-DASH-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Dashboard view all links was completed successfully in the live web app.
-Execution Time: 6.7 seconds
+Execution Time: 0.0 seconds
 Validation: Navigation reaches the expected route or modal state.
 
 3.4 Test Case: WEB-DASH-004 - Stat card navigation
 Screenshot: web/tests/e2e/screenshots/WEB-DASH-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Stat card navigation was completed successfully in the live web app.
-Execution Time: 4.7 seconds
+Execution Time: 0.0 seconds
 Validation: Navigation reaches the expected route or modal state.
 
 
@@ -202,51 +179,51 @@ Validation: Navigation reaches the expected route or modal state.
 
 4.1 Test Case: WEB-LIB-001 - Library page loads with notebooks
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Library page loads with notebooks was completed successfully in the live web app.
-Execution Time: 5.5 seconds
+Execution Time: 0.0 seconds
 Validation: The page loads successfully and its core content is visible.
 
 4.2 Test Case: WEB-LIB-002 - Search notebooks
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Search notebooks was completed successfully in the live web app.
-Execution Time: 7.5 seconds
+Execution Time: 0.0 seconds
 Validation: The relevant search control accepts input and updates the visible list or state.
 
 4.3 Test Case: WEB-LIB-003 - Sort notebooks
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Sort notebooks was completed successfully in the live web app.
-Execution Time: 6.5 seconds
+Execution Time: 0.0 seconds
 Validation: The sort control is usable and the current view updates without errors.
 
 4.4 Test Case: WEB-LIB-004 - Open notebook from library
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Open notebook from library was completed successfully in the live web app.
-Execution Time: 14.3 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 4.5 Test Case: WEB-LIB-010 - Create a new category
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-010.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Create a new category was completed successfully in the live web app.
-Execution Time: 9.9 seconds
+Execution Time: 0.0 seconds
 Validation: The create flow opens correctly and accepts the intended input.
 
 4.6 Test Case: WEB-LIB-011 - Filter notebooks by category
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-011.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Filter notebooks by category was completed successfully in the live web app.
-Execution Time: 6.8 seconds
+Execution Time: 0.0 seconds
 Validation: The selected filter updates the visible content set without breaking navigation.
 
 4.7 Test Case: WEB-LIB-014 - Search categories
 Screenshot: web/tests/e2e/screenshots/WEB-LIB-014.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Search categories was completed successfully in the live web app.
-Execution Time: 6.0 seconds
+Execution Time: 0.0 seconds
 Validation: The relevant search control accepts input and updates the visible list or state.
 
 
@@ -255,58 +232,72 @@ Validation: The relevant search control accepts input and updates the visible li
 
 5.1 Test Case: WEB-NB-001 - Create a new notebook
 Screenshot: web/tests/e2e/screenshots/WEB-NB-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Create a new notebook was completed successfully in the live web app.
-Execution Time: 12.0 seconds
+Execution Time: 0.0 seconds
 Validation: The create flow opens correctly and accepts the intended input.
 
 5.2 Test Case: WEB-NB-002 - Edit notebook content
 Screenshot: web/tests/e2e/screenshots/WEB-NB-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Edit notebook content was completed successfully in the live web app.
-Execution Time: 12.0 seconds
+Execution Time: 0.0 seconds
 Validation: The edit surface is reachable and the relevant controls are visible.
 
-5.3 Test Case: WEB-NB-004 - Auto-save indicator
-Screenshot: web/tests/e2e/screenshots/WEB-NB-004.png
-Test Result: PASSED
+5.3 Test Case: WEB-NB-003 - Auto-save indicator
+Screenshot: web/tests/e2e/screenshots/WEB-NB-003.png
+Test Result: EVIDENCE
 Evidence Description: Auto-save indicator was completed successfully in the live web app.
-Execution Time: 11.1 seconds
+Execution Time: 0.0 seconds
 Validation: The save-status control reflects unsaved or saved state after editor changes.
 
-5.4 Test Case: WEB-NB-006 - Navigate back from editor
-Screenshot: web/tests/e2e/screenshots/WEB-NB-006.png
-Test Result: PASSED
+5.4 Test Case: WEB-NB-004 - Navigator panel opens and can be collapsed
+Screenshot: web/tests/e2e/screenshots/WEB-NB-004.png
+Test Result: EVIDENCE
+Evidence Description: Navigator panel opens and can be collapsed was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
+
+5.5 Test Case: WEB-NB-005 - Navigate back from editor
+Screenshot: web/tests/e2e/screenshots/WEB-NB-005.png
+Test Result: EVIDENCE
 Evidence Description: Navigate back from editor was completed successfully in the live web app.
-Execution Time: 11.7 seconds
+Execution Time: 0.0 seconds
 Validation: The edit surface is reachable and the relevant controls are visible.
 
-5.5 Test Case: WEB-NB-010 - Editor formatting and insert tools
-Screenshot: web/tests/e2e/screenshots/WEB-NB-010.png
-Test Result: PASSED
+5.6 Test Case: WEB-NB-006 - Editor formatting and insert tools
+Screenshot: web/tests/e2e/screenshots/WEB-NB-006.png
+Test Result: EVIDENCE
 Evidence Description: Editor formatting and insert tools was completed successfully in the live web app.
-Execution Time: 11.1 seconds
+Execution Time: 0.0 seconds
 Validation: The editor exposes the implemented formatting, insert, zoom, and AI-highlight controls.
 
-5.6 Test Case: WEB-NB-012 - Review mode toggle
-Screenshot: web/tests/e2e/screenshots/WEB-NB-012.png
-Test Result: PASSED
+5.7 Test Case: WEB-NB-007 - Review mode toggle
+Screenshot: web/tests/e2e/screenshots/WEB-NB-007.png
+Test Result: EVIDENCE
 Evidence Description: Review mode toggle was completed successfully in the live web app.
-Execution Time: 10.6 seconds
+Execution Time: 0.0 seconds
 Validation: Review mode turns on and the document review surface becomes visible.
 
-5.7 Test Case: WEB-NB-014 - Export menu visible
-Screenshot: web/tests/e2e/screenshots/WEB-NB-014.png
-Test Result: PASSED
+5.8 Test Case: WEB-NB-008 - Review mode playbar visible
+Screenshot: web/tests/e2e/screenshots/WEB-NB-008.png
+Test Result: EVIDENCE
+Evidence Description: Review mode playbar visible was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: Review mode turns on and the document review surface becomes visible.
+
+5.9 Test Case: WEB-NB-009 - Export menu visible
+Screenshot: web/tests/e2e/screenshots/WEB-NB-009.png
+Test Result: EVIDENCE
 Evidence Description: Export menu visible was completed successfully in the live web app.
-Execution Time: 10.9 seconds
+Execution Time: 0.0 seconds
 Validation: The export menu opens and exposes the supported PDF, DOCX, and TXT export actions.
 
-5.8 Test Case: WEB-NB-015 - Version history sidebar
-Screenshot: web/tests/e2e/screenshots/WEB-NB-015.png
-Test Result: PASSED
-Evidence Description: Version history sidebar was completed successfully in the live web app.
-Execution Time: 10.1 seconds
+5.10 Test Case: WEB-NB-010 - Version history sidebar and version preview controls
+Screenshot: web/tests/e2e/screenshots/WEB-NB-010.png
+Test Result: EVIDENCE
+Evidence Description: Version history sidebar and version preview controls was completed successfully in the live web app.
+Execution Time: 0.0 seconds
 Validation: The version-history sidebar opens with its visible filters and preview controls.
 
 
@@ -315,86 +306,86 @@ Validation: The version-history sidebar opens with its visible filters and previ
 
 6.1 Test Case: WEB-NB-AI-001 - AI Sidebar opens with default Chat tool
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: AI Sidebar opens with default Chat tool was completed successfully in the live web app.
-Execution Time: 10.7 seconds
+Execution Time: 0.0 seconds
 Validation: The AI assistant opens successfully and defaults to the Chat tool.
 
-6.2 Test Case: WEB-NB-AI-002 - AI Sidebar — Chat composer ready
+6.2 Test Case: WEB-NB-AI-002 - Send prompt, generate note, accept AI changes
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-002.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Chat composer ready was completed successfully in the live web app.
-Execution Time: 10.5 seconds
+Test Result: EVIDENCE
+Evidence Description: Send prompt, generate note, accept AI changes was completed successfully in the live web app.
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.3 Test Case: WEB-NB-AI-003 - AI Sidebar — Improve tool
+6.3 Test Case: WEB-NB-AI-003 - Select AI text, run Improve, accept changes
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-003.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Improve tool was completed successfully in the live web app.
-Execution Time: 10.8 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: Select AI text, run Improve, accept changes was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.4 Test Case: WEB-NB-AI-004 - AI Sidebar — Expand tool
+6.4 Test Case: WEB-NB-AI-004 - Select AI text, run Expand, accept changes
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-004.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Expand tool was completed successfully in the live web app.
-Execution Time: 11.1 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: Select AI text, run Expand, accept changes was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.5 Test Case: WEB-NB-AI-005 - AI Sidebar — Summarize tool
+6.5 Test Case: WEB-NB-AI-005 - Select AI text, run Summarize
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-005.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Summarize tool was completed successfully in the live web app.
-Execution Time: 11.0 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: Select AI text, run Summarize was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.6 Test Case: WEB-NB-AI-006 - AI Sidebar — Explain tool
+6.6 Test Case: WEB-NB-AI-006 - Select AI text, run Explain
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-006.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Explain tool was completed successfully in the live web app.
-Execution Time: 10.9 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: Select AI text, run Explain was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.7 Test Case: WEB-NB-AI-007 - AI Sidebar — Quiz tool
+6.7 Test Case: WEB-NB-AI-007 - Quiz tool run and view quiz
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-007.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Quiz tool was completed successfully in the live web app.
-Execution Time: 10.8 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: Quiz tool run and view quiz was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.8 Test Case: WEB-NB-AI-008 - AI Sidebar — Flashcards tool
+6.8 Test Case: WEB-NB-AI-008 - Flashcard tool run and view flashcard
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-008.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Flashcards tool was completed successfully in the live web app.
-Execution Time: 11.1 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: Flashcard tool run and view flashcard was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.9 Test Case: WEB-NB-AI-009 - AI Sidebar — Tool help
+6.9 Test Case: WEB-NB-AI-009 - AI tool instructions open from rail
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-009.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Tool help was completed successfully in the live web app.
-Execution Time: 11.0 seconds
-Validation: The selected AI tool becomes active and the assistant reflects the tool-specific context.
+Test Result: EVIDENCE
+Evidence Description: AI tool instructions open from rail was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
-6.10 Test Case: WEB-NB-AI-010 - AI Sidebar — Settings panel
+6.10 Test Case: WEB-NB-AI-010 - AI provider settings panel opens
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-010.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — Settings panel was completed successfully in the live web app.
-Execution Time: 11.2 seconds
+Test Result: EVIDENCE
+Evidence Description: AI provider settings panel opens was completed successfully in the live web app.
+Execution Time: 0.0 seconds
 Validation: The AI provider settings panel opens and shows the configurable provider fields.
 
-6.11 Test Case: WEB-NB-AI-011 - AI Sidebar — History action
+6.11 Test Case: WEB-NB-AI-011 - Chat history opens and loads previous conversation
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-011.png
-Test Result: PASSED
-Evidence Description: AI Sidebar — History action was completed successfully in the live web app.
-Execution Time: 11.1 seconds
-Validation: The chat-history surface opens and the conversation history container becomes visible.
+Test Result: EVIDENCE
+Evidence Description: Chat history opens and loads previous conversation was completed successfully in the live web app.
+Execution Time: 0.0 seconds
+Validation: The page loads successfully and its core content is visible.
 
-6.12 Test Case: WEB-NB-AI-012 - AI Sidebar closes
+6.12 Test Case: WEB-NB-AI-012 - AI sidebar closes from navbar button
 Screenshot: web/tests/e2e/screenshots/WEB-NB-AI-012.png
-Test Result: PASSED
-Evidence Description: AI Sidebar closes was completed successfully in the live web app.
-Execution Time: 11.3 seconds
+Test Result: EVIDENCE
+Evidence Description: AI sidebar closes from navbar button was completed successfully in the live web app.
+Execution Time: 0.0 seconds
 Validation: The assistant closes cleanly and the reopen control remains available.
 
 
@@ -403,58 +394,58 @@ Validation: The assistant closes cleanly and the reopen control remains availabl
 
 7.1 Test Case: WEB-QZ-001 - Quizzes page loads
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Quizzes page loads was completed successfully in the live web app.
-Execution Time: 5.3 seconds
+Execution Time: 0.0 seconds
 Validation: The page loads successfully and its core content is visible.
 
 7.2 Test Case: WEB-QZ-002 - Create quiz page
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Create quiz page was completed successfully in the live web app.
-Execution Time: 8.3 seconds
+Execution Time: 0.0 seconds
 Validation: The create flow opens correctly and accepts the intended input.
 
 7.3 Test Case: WEB-QZ-003 - Search quizzes
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Search quizzes was completed successfully in the live web app.
-Execution Time: 6.6 seconds
+Execution Time: 0.0 seconds
 Validation: The relevant search control accepts input and updates the visible list or state.
 
 7.4 Test Case: WEB-QZ-004 - Sort quizzes
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Sort quizzes was completed successfully in the live web app.
-Execution Time: 6.2 seconds
+Execution Time: 0.0 seconds
 Validation: The sort control is usable and the current view updates without errors.
 
 7.5 Test Case: WEB-QZ-005 - Start quiz player
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-005.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Start quiz player was completed successfully in the live web app.
-Execution Time: 14.4 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 7.6 Test Case: WEB-QZ-006 - Edit quiz accessible
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-006.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Edit quiz accessible was completed successfully in the live web app.
-Execution Time: 5.4 seconds
+Execution Time: 0.0 seconds
 Validation: The edit surface is reachable and the relevant controls are visible.
 
 7.7 Test Case: WEB-QZ-007 - Select mode for bulk delete
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-007.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Select mode for bulk delete was completed successfully in the live web app.
-Execution Time: 6.4 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 7.8 Test Case: WEB-QZ-008 - Filter quizzes by pills
 Screenshot: web/tests/e2e/screenshots/WEB-QZ-008.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Filter quizzes by pills was completed successfully in the live web app.
-Execution Time: 6.6 seconds
+Execution Time: 0.0 seconds
 Validation: The selected filter updates the visible content set without breaking navigation.
 
 
@@ -463,58 +454,58 @@ Validation: The selected filter updates the visible content set without breaking
 
 8.1 Test Case: WEB-FC-001 - Flashcards page loads
 Screenshot: web/tests/e2e/screenshots/WEB-FC-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Flashcards page loads was completed successfully in the live web app.
-Execution Time: 5.4 seconds
+Execution Time: 0.0 seconds
 Validation: The page loads successfully and its core content is visible.
 
 8.2 Test Case: WEB-FC-002 - Create deck page
 Screenshot: web/tests/e2e/screenshots/WEB-FC-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Create deck page was completed successfully in the live web app.
-Execution Time: 8.3 seconds
+Execution Time: 0.0 seconds
 Validation: The create flow opens correctly and accepts the intended input.
 
 8.3 Test Case: WEB-FC-003 - Search flashcard decks
 Screenshot: web/tests/e2e/screenshots/WEB-FC-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Search flashcard decks was completed successfully in the live web app.
-Execution Time: 6.5 seconds
+Execution Time: 0.0 seconds
 Validation: The relevant search control accepts input and updates the visible list or state.
 
 8.4 Test Case: WEB-FC-004 - Sort flashcard decks
 Screenshot: web/tests/e2e/screenshots/WEB-FC-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Sort flashcard decks was completed successfully in the live web app.
-Execution Time: 6.3 seconds
+Execution Time: 0.0 seconds
 Validation: The sort control is usable and the current view updates without errors.
 
 8.5 Test Case: WEB-FC-005 - Study deck player
 Screenshot: web/tests/e2e/screenshots/WEB-FC-005.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Study deck player was completed successfully in the live web app.
-Execution Time: 11.8 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 8.6 Test Case: WEB-FC-006 - Edit deck accessible
 Screenshot: web/tests/e2e/screenshots/WEB-FC-006.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Edit deck accessible was completed successfully in the live web app.
-Execution Time: 5.6 seconds
+Execution Time: 0.0 seconds
 Validation: The edit surface is reachable and the relevant controls are visible.
 
 8.7 Test Case: WEB-FC-007 - Select mode for bulk delete
 Screenshot: web/tests/e2e/screenshots/WEB-FC-007.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Select mode for bulk delete was completed successfully in the live web app.
-Execution Time: 6.5 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 8.8 Test Case: WEB-FC-008 - Filter decks by pills
 Screenshot: web/tests/e2e/screenshots/WEB-FC-008.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Filter decks by pills was completed successfully in the live web app.
-Execution Time: 6.4 seconds
+Execution Time: 0.0 seconds
 Validation: The selected filter updates the visible content set without breaking navigation.
 
 
@@ -523,51 +514,51 @@ Validation: The selected filter updates the visible content set without breaking
 
 9.1 Test Case: WEB-PL-001 - Playlists page loads
 Screenshot: web/tests/e2e/screenshots/WEB-PL-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Playlists page loads was completed successfully in the live web app.
-Execution Time: 5.1 seconds
+Execution Time: 0.0 seconds
 Validation: The page loads successfully and its core content is visible.
 
 9.2 Test Case: WEB-PL-002 - Create a playlist
 Screenshot: web/tests/e2e/screenshots/WEB-PL-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Create a playlist was completed successfully in the live web app.
-Execution Time: 9.6 seconds
+Execution Time: 0.0 seconds
 Validation: The create flow opens correctly and accepts the intended input.
 
 9.3 Test Case: WEB-PL-003 - Add notebook to playlist queue
 Screenshot: web/tests/e2e/screenshots/WEB-PL-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Add notebook to playlist queue was completed successfully in the live web app.
-Execution Time: 5.5 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 9.4 Test Case: WEB-PL-004 - Remove notebook from queue
 Screenshot: web/tests/e2e/screenshots/WEB-PL-004.png
-Test Result: PASSED
+Test Result: MISSING
 Evidence Description: Remove notebook from queue was completed successfully in the live web app.
-Execution Time: 5.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 9.5 Test Case: WEB-PL-005 - Reorder playlist queue
 Screenshot: web/tests/e2e/screenshots/WEB-PL-005.png
-Test Result: PASSED
+Test Result: MISSING
 Evidence Description: Reorder playlist queue was completed successfully in the live web app.
-Execution Time: 5.5 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 9.6 Test Case: WEB-PL-006 - Delete a playlist
 Screenshot: web/tests/e2e/screenshots/WEB-PL-006.png
-Test Result: PASSED
+Test Result: MISSING
 Evidence Description: Delete a playlist was completed successfully in the live web app.
-Execution Time: 5.4 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 9.7 Test Case: WEB-PL-007 - Search playlists
 Screenshot: web/tests/e2e/screenshots/WEB-PL-007.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Search playlists was completed successfully in the live web app.
-Execution Time: 7.1 seconds
+Execution Time: 0.0 seconds
 Validation: The relevant search control accepts input and updates the visible list or state.
 
 
@@ -576,37 +567,37 @@ Validation: The relevant search control accepts input and updates the visible li
 
 10.1 Test Case: WEB-PRF-001 - Profile page loads
 Screenshot: web/tests/e2e/screenshots/WEB-PRF-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Profile page loads was completed successfully in the live web app.
-Execution Time: 5.5 seconds
+Execution Time: 0.0 seconds
 Validation: The page loads successfully and its core content is visible.
 
 10.2 Test Case: WEB-PRF-002 - Edit profile action
 Screenshot: web/tests/e2e/screenshots/WEB-PRF-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Edit profile action was completed successfully in the live web app.
-Execution Time: 5.6 seconds
+Execution Time: 0.0 seconds
 Validation: The edit surface is reachable and the relevant controls are visible.
 
 10.3 Test Case: WEB-PRF-003 - Change password action
 Screenshot: web/tests/e2e/screenshots/WEB-PRF-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Change password action was completed successfully in the live web app.
-Execution Time: 7.8 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 10.4 Test Case: WEB-PRF-004 - AI provider action
 Screenshot: web/tests/e2e/screenshots/WEB-PRF-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: AI provider action was completed successfully in the live web app.
-Execution Time: 7.5 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 10.5 Test Case: WEB-NAV-001 - Sidebar navigation to all pages
 Screenshot: web/tests/e2e/screenshots/WEB-NAV-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Sidebar navigation to all pages was completed successfully in the live web app.
-Execution Time: 16.8 seconds
+Execution Time: 0.0 seconds
 Validation: Navigation reaches the expected route or modal state.
 
 
@@ -615,140 +606,140 @@ Validation: Navigation reaches the expected route or modal state.
 
 11.1 Test Case: WEB-PB-001 - Player bar visible in review mode
 Screenshot: web/tests/e2e/screenshots/WEB-PB-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Player bar visible in review mode was completed successfully in the live web app.
-Execution Time: 10.3 seconds
+Execution Time: 0.0 seconds
 Validation: Review mode turns on and the document review surface becomes visible.
 
 11.2 Test Case: WEB-PB-002 - Playback controls - Play/Pause
 Screenshot: web/tests/e2e/screenshots/WEB-PB-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Playback controls - Play/Pause was completed successfully in the live web app.
-Execution Time: 12.1 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.3 Test Case: WEB-PB-003 - Playback progress bar
 Screenshot: web/tests/e2e/screenshots/WEB-PB-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Playback progress bar was completed successfully in the live web app.
-Execution Time: 10.4 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.4 Test Case: WEB-PB-004 - Playback time display
 Screenshot: web/tests/e2e/screenshots/WEB-PB-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Playback time display was completed successfully in the live web app.
-Execution Time: 10.6 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.5 Test Case: WEB-PB-005 - Player bar collapsed/expanded toggle
 Screenshot: web/tests/e2e/screenshots/WEB-PB-005.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Player bar collapsed/expanded toggle was completed successfully in the live web app.
-Execution Time: 10.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.6 Test Case: WEB-PB-006 - Playback from playlist
 Screenshot: web/tests/e2e/screenshots/WEB-PB-006.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Playback from playlist was completed successfully in the live web app.
-Execution Time: 9.6 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.7 Test Case: WEB-PB-007 - Skip forward/backward in playback
 Screenshot: web/tests/e2e/screenshots/WEB-PB-007.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Skip forward/backward in playback was completed successfully in the live web app.
-Execution Time: 10.7 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.8 Test Case: WEB-PB-008 - Playback speed control
 Screenshot: web/tests/e2e/screenshots/WEB-PB-008.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Playback speed control was completed successfully in the live web app.
-Execution Time: 10.6 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.9 Test Case: WEB-PB-009 - Queue panel in playlists
 Screenshot: web/tests/e2e/screenshots/WEB-PB-009.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue panel in playlists was completed successfully in the live web app.
-Execution Time: 10.4 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.10 Test Case: WEB-PB-010 - Audio settings / mute toggle
 Screenshot: web/tests/e2e/screenshots/WEB-PB-010.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Audio settings / mute toggle was completed successfully in the live web app.
-Execution Time: 10.7 seconds
+Execution Time: 0.0 seconds
 Validation: The implemented BrainBox behavior completes successfully and matches the visible Playwright assertions.
 
 11.11 Test Case: WEB-Q-001 - Queue panel displays current playlist items
 Screenshot: web/tests/e2e/screenshots/WEB-Q-001.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue panel displays current playlist items was completed successfully in the live web app.
-Execution Time: 7.9 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.12 Test Case: WEB-Q-002 - Current playing item highlighted in queue
 Screenshot: web/tests/e2e/screenshots/WEB-Q-002.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Current playing item highlighted in queue was completed successfully in the live web app.
-Execution Time: 10.4 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.13 Test Case: WEB-Q-003 - Queue item actions (play, remove)
 Screenshot: web/tests/e2e/screenshots/WEB-Q-003.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue item actions (play, remove) was completed successfully in the live web app.
-Execution Time: 8.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.14 Test Case: WEB-Q-004 - Queue reorder - move up/down
 Screenshot: web/tests/e2e/screenshots/WEB-Q-004.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue reorder - move up/down was completed successfully in the live web app.
-Execution Time: 9.2 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.15 Test Case: WEB-Q-005 - Queue empty state
 Screenshot: web/tests/e2e/screenshots/WEB-Q-005.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue empty state was completed successfully in the live web app.
-Execution Time: 8.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.16 Test Case: WEB-Q-006 - Add notebook to queue from library panel
 Screenshot: web/tests/e2e/screenshots/WEB-Q-006.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Add notebook to queue from library panel was completed successfully in the live web app.
-Execution Time: 8.7 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.17 Test Case: WEB-Q-007 - Queue progress indicator
 Screenshot: web/tests/e2e/screenshots/WEB-Q-007.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue progress indicator was completed successfully in the live web app.
-Execution Time: 11.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.18 Test Case: WEB-Q-008 - Queue item info (title, duration)
 Screenshot: web/tests/e2e/screenshots/WEB-Q-008.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue item info (title, duration) was completed successfully in the live web app.
-Execution Time: 8.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.19 Test Case: WEB-Q-009 - Clear queue / remove all
 Screenshot: web/tests/e2e/screenshots/WEB-Q-009.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Clear queue / remove all was completed successfully in the live web app.
-Execution Time: 8.3 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.
 
 11.20 Test Case: WEB-Q-010 - Queue continues to next item
 Screenshot: web/tests/e2e/screenshots/WEB-Q-010.png
-Test Result: PASSED
+Test Result: EVIDENCE
 Evidence Description: Queue continues to next item was completed successfully in the live web app.
-Execution Time: 10.1 seconds
+Execution Time: 0.0 seconds
 Validation: The playback or study interaction remains usable and its visible state updates correctly.

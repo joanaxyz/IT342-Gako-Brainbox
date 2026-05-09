@@ -113,9 +113,9 @@ const formatCheckpointTime = (isoString) => {
 
 const EDITOR_TOOL_INSTRUCTIONS = [
   'Pick a tool from the rail to choose the kind of help you want.',
-  'Select text and click Add in the editor if you want saved AI highlights for targeted edits.',
+  'Select text and click Add in the editor if you want saved AI selections for targeted edits.',
   'If nothing is selected, the editor will ask whether the AI should use the whole note instead.',
-  'Use Clear to remove saved AI highlights when you want a fresh target set.',
+  'Use Clear to remove saved AI selections when you want a fresh target set.',
   'Review AI proposals before accepting them into the note.',
 ];
 

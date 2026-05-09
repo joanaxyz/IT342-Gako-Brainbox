@@ -369,17 +369,17 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
   const handleAddReviewAiSelection = useCallback(() => {
     const next = reviewEditorRef.current?.addAiSelectionFromCurrentSelection?.();
     if (!next) {
-      addNotification('Select text in the review first, then add it as an AI highlight.', 'error', 3000);
+      addNotification('Select text in the review first, then add it as an AI selection.', 'error', 3000);
       return;
     }
-    addNotification('Saved AI highlight for targeted edits.', 'success', 2200);
+    addNotification('Saved AI selection for targeted edits.', 'success', 2200);
   }, [addNotification]);
 
   const handleClearReviewAiSelections = useCallback(() => {
     const current = reviewEditorRef.current?.getAiSelectionTargets?.() || [];
     if (current.length === 0) return;
     reviewEditorRef.current?.clearAiSelections?.();
-    addNotification('Cleared AI highlights.', 'success', 2200);
+    addNotification('Cleared AI selections.', 'success', 2200);
   }, [addNotification]);
 
   // ── AI proposal acceptance ────────────────────────────────────────────
@@ -514,18 +514,18 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
   const handleAddAiSelection = useCallback(() => {
     const next = editorRef.current?.addAiSelectionFromCurrentSelection?.();
     if (!next) {
-      addNotification('Select text in the editor first, then add it as an AI highlight.', 'error', 3000);
+      addNotification('Select text in the editor first, then add it as an AI selection.', 'error', 3000);
       focusEditor();
       return;
     }
-    addNotification('Saved AI highlight for targeted edits.', 'success', 2200);
+    addNotification('Saved AI selection for targeted edits.', 'success', 2200);
   }, [addNotification, focusEditor]);
 
   const handleClearAiSelections = useCallback(() => {
     const current = editorRef.current?.getAiSelectionTargets?.() || [];
     if (current.length === 0) return;
     editorRef.current?.clearAiSelections?.();
-    addNotification('Cleared AI highlights.', 'success', 2200);
+    addNotification('Cleared AI selections.', 'success', 2200);
   }, [addNotification]);
 
   const handleTogglePlay = useCallback(async () => {
