@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDown,
   ArrowUp,
@@ -12,6 +13,22 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import ConfirmModal from '../../common/components/ConfirmModal';
 import Modal from '../../common/components/Modal';
 import PaginationControls from '../../common/components/PaginationControls';
@@ -22,6 +39,8 @@ import SortDirectionToggle from '../../common/components/SortDirectionToggle';
 import SortSelect from '../../common/components/SortSelect';
 import { useCategory, useNotebook, usePlaylist } from '../../notebook/shared/hooks/hooks';
 import { countWordsFromHtml } from '../../notebook/shared/utils/notebookPages';
+import { playlistAPI } from './api/playlistService';
+import { queryKeys } from '../../common/query/queryKeys';
 import '../dashboard/styles/dashboard.css';
 import './playlists.css';
 
@@ -171,7 +190,7 @@ const LibraryNotebookRow = ({
   </div>
 );
 
-const QueueNotebookRow = ({
+const SortableQueueNotebookRow = ({
   notebook,
   index,
   total,
@@ -181,65 +200,89 @@ const QueueNotebookRow = ({
   onMoveUp,
   onMoveDown,
   onRemove,
-}) => (
-  <div className={`pl-row pl-queue-row${isActive ? ' is-active' : ''}`}>
-    <div className="pl-queue-order">
-      <GripVertical size={14} />
-      <span>{index + 1}</span>
-    </div>
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: notebook.uuid });
 
-    <div className="pl-row-copy">
-      <span className="pl-row-title">{notebook.title}</span>
-      <div className="pl-row-meta">
-        <span className="pl-meta-pill">
-          {notebook.categoryName || 'Uncategorized'}
-        </span>
-        <span className="pl-row-meta-text">
-          {getNotebookWordCount(notebook).toLocaleString()} words
-        </span>
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`pl-row pl-queue-row${isActive ? ' is-active' : ''}`}
+    >
+      <div className="pl-queue-order">
+        <div {...attributes} {...listeners} style={{ cursor: 'grab', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <GripVertical size={14} />
+        </div>
+        <span>{index + 1}</span>
+      </div>
+
+      <div className="pl-row-copy">
+        <span className="pl-row-title">{notebook.title}</span>
+        <div className="pl-row-meta">
+          <span className="pl-meta-pill">
+            {notebook.categoryName || 'Uncategorized'}
+          </span>
+          <span className="pl-row-meta-text">
+            {getNotebookWordCount(notebook).toLocaleString()} words
+          </span>
+        </div>
+      </div>
+
+      <div className="pl-queue-actions">
+        <button
+          type="button"
+          className="pl-icon-btn"
+          title={isPlaying ? 'Pause current notebook' : 'Play from this spot'}
+          onClick={onPlay}
+        >
+          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+        </button>
+        <button
+          type="button"
+          className="pl-icon-btn"
+          title="Move up"
+          onClick={onMoveUp}
+          disabled={index === 0}
+        >
+          <ArrowUp size={15} />
+        </button>
+        <button
+          type="button"
+          className="pl-icon-btn"
+          title="Move down"
+          onClick={onMoveDown}
+          disabled={index === total - 1}
+        >
+          <ArrowDown size={15} />
+        </button>
+        <button
+          type="button"
+          className="pl-icon-btn pl-icon-btn-danger"
+          title="Remove from playlist"
+          onClick={onRemove}
+        >
+          <Trash2 size={15} />
+        </button>
       </div>
     </div>
-
-    <div className="pl-queue-actions">
-      <button
-        type="button"
-        className="pl-icon-btn"
-        title={isPlaying ? 'Pause current notebook' : 'Play from this spot'}
-        onClick={onPlay}
-      >
-        {isPlaying ? <Pause size={15} /> : <Play size={15} />}
-      </button>
-      <button
-        type="button"
-        className="pl-icon-btn"
-        title="Move up"
-        onClick={onMoveUp}
-        disabled={index === 0}
-      >
-        <ArrowUp size={15} />
-      </button>
-      <button
-        type="button"
-        className="pl-icon-btn"
-        title="Move down"
-        onClick={onMoveDown}
-        disabled={index === total - 1}
-      >
-        <ArrowDown size={15} />
-      </button>
-      <button
-        type="button"
-        className="pl-icon-btn pl-icon-btn-danger"
-        title="Remove from playlist"
-        onClick={onRemove}
-      >
-        <Trash2 size={15} />
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 const Playlists = () => {
+  const queryClient = useQueryClient();
   const { notebooks } = useNotebook();
   const { fetchCategories } = useCategory();
   const {
@@ -254,6 +297,13 @@ const Playlists = () => {
   } = usePlaylist();
   const { currentNotebook, isPlaying, isPreparing, playPlaylist, togglePlay } = useAudioPlayer();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const [librarySearch, setLibrarySearch] = useState('');
   const [playlistSearch, setPlaylistSearch] = useState('');
   const [sortBy, setSortBy] = useState('updatedAt');
@@ -261,6 +311,7 @@ const Playlists = () => {
   const [selectedPlaylistUuid, setSelectedPlaylistUuid] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [playlistToDelete, setPlaylistToDelete] = useState(null);
+  const [draggedItems, setDraggedItems] = useState(null);
 
   useEffect(() => {
     fetchCategories();
@@ -269,6 +320,11 @@ const Playlists = () => {
   useEffect(() => {
     fetchPlaylists();
   }, [fetchPlaylists]);
+
+  // Reset dragged items when playlist changes
+  useEffect(() => {
+    setDraggedItems(null);
+  }, [selectedPlaylistUuid]);
 
   const selectedPlaylist = useMemo(
     () => playlists.find((playlist) => playlist.uuid === selectedPlaylistUuid) ?? playlists[0] ?? null,
@@ -296,12 +352,23 @@ const Playlists = () => {
     [notebooks]
   );
 
-  const playlistQueue = useMemo(
-    () => (selectedPlaylist?.queue || [])
+  const playlistQueue = useMemo(() => {
+    const queue = (selectedPlaylist?.queue || [])
       .map((queuedNotebook) => notebooksById.get(queuedNotebook.uuid) || queuedNotebook)
-      .filter(Boolean),
-    [notebooksById, selectedPlaylist]
-  );
+      .filter(Boolean);
+    
+    // If we have dragged items from a drag operation, use that order
+    if (draggedItems && selectedPlaylist?.uuid === draggedItems.playlistUuid) {
+      const orderedQueue = [];
+      draggedItems.uuids.forEach(uuid => {
+        const item = queue.find(n => n.uuid === uuid);
+        if (item) orderedQueue.push(item);
+      });
+      return orderedQueue;
+    }
+    
+    return queue;
+  }, [notebooksById, selectedPlaylist, draggedItems]);
 
   const selectedNotebookIds = useMemo(
     () => new Set(playlistQueue.map((notebook) => notebook.uuid)),
@@ -396,6 +463,65 @@ const Playlists = () => {
     await reorderQueue(selectedPlaylist.uuid, nextOrder);
   };
 
+  const handleDragStart = () => {
+    // No action needed
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    
+    if (!over || !selectedPlaylist) {
+      return;
+    }
+
+    if (active.id !== over.id) {
+      const oldIndex = playlistQueue.findIndex((notebook) => notebook.uuid === active.id);
+      const newIndex = playlistQueue.findIndex((notebook) => notebook.uuid === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+
+      // Use arrayMove to get the new order
+      const newOrder = arrayMove(playlistQueue.map((notebook) => notebook.uuid), oldIndex, newIndex);
+      
+      // Update local state immediately for optimistic UI update
+      setDraggedItems({
+        playlistUuid: selectedPlaylist.uuid,
+        uuids: newOrder
+      });
+
+      // Update cache immediately (optimistic)
+      queryClient.setQueryData(queryKeys.playlists.all, (currentPlaylists = []) => {
+        return currentPlaylists.map((playlist) => {
+          if (playlist.uuid === selectedPlaylist.uuid) {
+            const newQueue = newOrder.map(uuid => {
+              const existingItem = playlist.queue?.find(q => q.uuid === uuid);
+              return existingItem || { uuid };
+            });
+            return { ...playlist, queue: newQueue };
+          }
+          return playlist;
+        });
+      });
+
+      // Call API in background without delay
+      // Reset local state after API completes (success or failure)
+      playlistAPI.reorderQueue(selectedPlaylist.uuid, newOrder)
+        .then((response) => {
+          if (!response.success) {
+            console.error('Failed to reorder playlist');
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to reorder playlist:', error);
+        })
+        .finally(() => {
+          setDraggedItems(null);
+        });
+    }
+  };
+
   const handleDeletePlaylist = async () => {
     if (!playlistToDelete) {
       return;
@@ -432,7 +558,7 @@ const Playlists = () => {
 
   const queueHeading = selectedPlaylist ? `${selectedPlaylist.title} queue` : 'Queue';
   const queueDescription = selectedPlaylist
-    ? 'Add from the library, then use the arrows to change the listening order.'
+    ? 'Add from the library, then drag the grip handle or use the arrows to change the listening order.'
     : 'Create or choose a playlist to start arranging notebooks.';
 
   return (
@@ -652,27 +778,39 @@ const Playlists = () => {
                     <span>Add notebooks from the library panel, then reorder them here.</span>
                   </div>
                 ) : (
-                  <div className="pl-list">
-                    {playlistQueue.map((notebook, index) => {
-                      const isCurrentNotebook = currentNotebook?.uuid === notebook.uuid;
-                      const isCurrentPlayback = isCurrentNotebook && (isPlaying || isPreparing);
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={playlistQueue.map((notebook) => notebook.uuid)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="pl-list">
+                        {playlistQueue.map((notebook, index) => {
+                          const isCurrentNotebook = currentNotebook?.uuid === notebook.uuid;
+                          const isCurrentPlayback = isCurrentNotebook && (isPlaying || isPreparing);
 
-                      return (
-                        <QueueNotebookRow
-                          key={notebook.uuid}
-                          notebook={notebook}
-                          index={index}
-                          total={playlistQueue.length}
-                          isActive={isCurrentNotebook}
-                          isPlaying={isCurrentPlayback}
-                          onPlay={() => handlePlayFromQueue(index)}
-                          onMoveUp={() => handleMoveNotebook(index, index - 1)}
-                          onMoveDown={() => handleMoveNotebook(index, index + 1)}
-                          onRemove={() => handleRemoveNotebook(notebook.uuid)}
-                        />
-                      );
-                    })}
-                  </div>
+                          return (
+                            <SortableQueueNotebookRow
+                              key={notebook.uuid}
+                              notebook={notebook}
+                              index={index}
+                              total={playlistQueue.length}
+                              isActive={isCurrentNotebook}
+                              isPlaying={isCurrentPlayback}
+                              onPlay={() => handlePlayFromQueue(index)}
+                              onMoveUp={() => handleMoveNotebook(index, index - 1)}
+                              onMoveDown={() => handleMoveNotebook(index, index + 1)}
+                              onRemove={() => handleRemoveNotebook(notebook.uuid)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </div>
             </div>

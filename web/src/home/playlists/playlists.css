@@ -684,6 +684,14 @@
   background: var(--cream-2);
 }
 
+.pl-queue-row[aria-roledescription="draggable"] {
+  cursor: grab;
+}
+
+.pl-queue-row[aria-roledescription="draggable"]:active {
+  cursor: grabbing;
+}
+
 .pl-queue-order {
   display: inline-flex;
   align-items: center;
