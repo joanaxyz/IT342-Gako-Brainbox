@@ -1,6 +1,9 @@
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i;
 const CODE_FENCE_PATTERN = /^```(?:html|markdown|md|text)?\s*([\s\S]*?)\s*```$/i;
 const MARKDOWN_TABLE_DIVIDER_CELL = /^:?-{3,}:?$/;
+const STANDALONE_LIST_MARKER_PATTERN = /^(?:[-*+]|\d+[.)])$/;
+const EMPTY_LIST_ITEM_HTML_PATTERN = /<li\b[^>]*>(?:\s|&nbsp;|&#160;|<br\s*\/?>|<p>(?:\s|&nbsp;|&#160;|<br\s*\/?>)*<\/p>)*<\/li>/gi;
+const EMPTY_LIST_HTML_PATTERN = /<(ul|ol)\b[^>]*>(?:\s|&nbsp;|&#160;|<br\s*\/?>)*<\/\1>/gi;
 const BLOCK_TAG_NAMES = new Set([
   'P',
   'H1',
@@ -20,6 +23,20 @@ const BLOCK_TAG_NAMES = new Set([
   'HR',
 ]);
 
+const EDITOR_NATIVE_DIV_SELECTOR = 'div[data-page-break="true"], div[data-type="block-math"]';
+const MEANINGFUL_EMPTY_ELEMENT_SELECTOR = [
+  EDITOR_NATIVE_DIV_SELECTOR,
+  'img',
+  'svg',
+  'math',
+  'table',
+  'hr',
+  'pre',
+  'code',
+  '[data-type="inline-math"]',
+  '[data-type="block-math"]',
+].join(', ');
+
 const escapeHtml = (value = '') => value
   .replaceAll('&', '&amp;')
   .replaceAll('<', '&lt;')
@@ -34,6 +51,24 @@ const stripCodeFences = (value = '') => {
 };
 
 const hasHtmlTags = (value = '') => HTML_TAG_PATTERN.test(value);
+
+const normalizeVisibleText = (value = '') => value.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+
+const isStandaloneListMarker = (value = '') => STANDALONE_LIST_MARKER_PATTERN.test(normalizeVisibleText(value));
+
+const stripEmptyListArtifactsFromHtml = (value = '') => {
+  let html = value;
+  let previousHtml = '';
+
+  while (html !== previousHtml) {
+    previousHtml = html;
+    html = html
+      .replace(EMPTY_LIST_ITEM_HTML_PATTERN, '')
+      .replace(EMPTY_LIST_HTML_PATTERN, '');
+  }
+
+  return html;
+};
 
 const normalizeInlineMarkdown = (value = '') => {
   let html = escapeHtml(value.trim());
@@ -187,6 +222,11 @@ const markdownToHtml = (value = '') => {
       continue;
     }
 
+    if (isStandaloneListMarker(trimmed)) {
+      flushParagraph();
+      continue;
+    }
+
     const parsedTable = parseMarkdownTable(lines, index);
     if (parsedTable) {
       flushParagraph();
@@ -259,13 +299,56 @@ const markdownToHtml = (value = '') => {
   return blocks.join('');
 };
 
+const isListElement = (node) => node && (node.nodeName === 'UL' || node.nodeName === 'OL');
+
+const isEmptyListItem = (listItem) => {
+  if (normalizeVisibleText(listItem.textContent || '')) {
+    return false;
+  }
+
+  return !listItem.querySelector(MEANINGFUL_EMPTY_ELEMENT_SELECTOR);
+};
+
+const removeEmptyListArtifacts = (root) => {
+  Array.from(root.querySelectorAll('li')).forEach((listItem) => {
+    if (isEmptyListItem(listItem)) {
+      listItem.remove();
+    }
+  });
+
+  Array.from(root.querySelectorAll('p')).forEach((paragraph) => {
+    if (
+      isStandaloneListMarker(paragraph.textContent || '')
+      && (isListElement(paragraph.previousElementSibling) || isListElement(paragraph.nextElementSibling))
+    ) {
+      paragraph.remove();
+    }
+  });
+
+  let removedEmptyList = true;
+  while (removedEmptyList) {
+    removedEmptyList = false;
+    Array.from(root.querySelectorAll('ul, ol')).reverse().forEach((list) => {
+      if (!list.querySelector('li')) {
+        list.remove();
+        removedEmptyList = true;
+      }
+    });
+  }
+};
+
 const normalizeHtmlContainers = (root) => {
   const divs = Array.from(root.querySelectorAll('div'));
 
   divs.reverse().forEach((div) => {
+    if (div.matches(EDITOR_NATIVE_DIV_SELECTOR)) {
+      return;
+    }
+
     const childNodes = Array.from(div.childNodes);
     const hasBlockChildren = childNodes.some((node) => (
-      node.nodeType === Node.ELEMENT_NODE && BLOCK_TAG_NAMES.has(node.nodeName)
+      node.nodeType === Node.ELEMENT_NODE
+      && (BLOCK_TAG_NAMES.has(node.nodeName) || node.matches?.(EDITOR_NATIVE_DIV_SELECTOR))
     ));
 
     if (hasBlockChildren) {
@@ -285,16 +368,19 @@ const normalizeHtmlContainers = (root) => {
       node.replaceWith(paragraph);
     }
   });
+
+  removeEmptyListArtifacts(root);
 };
 
 const normalizeHtmlString = (value = '') => {
+  const cleaned = stripCodeFences(value);
+
   if (typeof DOMParser === 'undefined') {
-    return stripCodeFences(value);
+    return stripEmptyListArtifactsFromHtml(cleaned);
   }
 
-  const cleaned = stripCodeFences(value);
   const parser = new DOMParser();
-  const documentNode = parser.parseFromString(cleaned, 'text/html');
+  const documentNode = parser.parseFromString(stripEmptyListArtifactsFromHtml(cleaned), 'text/html');
   const root = documentNode.body;
 
   normalizeHtmlContainers(root);

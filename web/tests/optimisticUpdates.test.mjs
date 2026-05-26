@@ -5,9 +5,12 @@ import {
   addNotebookToPlaylistList,
   applyCategoryDeleteToNotebooks,
   applyCategoryDeleteToPlaylists,
+  applyCategoryRenameToNotebooks,
+  applyCategoryRenameToPlaylists,
   applyFlashcardAttemptToList,
   applyNotebookPatchToList,
   applyQuizAttemptToList,
+  renameCategory,
   removeNotebookFromPlaylistList,
   reorderPlaylistQueueList,
 } from '../src/common/query/optimisticUpdates.js';
@@ -53,6 +56,23 @@ test('deletes categories by uncategorizing or removing affected notebooks', () =
 
   assert.deepEqual(uncategorized.map((notebook) => notebook.categoryId), [null, null, 20]);
   assert.deepEqual(deleted.map((notebook) => notebook.uuid), ['notebook-2', 'notebook-3']);
+});
+
+test('renames categories across cached categories, notebooks, and playlists', () => {
+  const renamedCategories = renameCategory([
+    { id: 20, name: 'Math' },
+    { id: 10, name: 'Science' },
+  ], 10, 'Life Science');
+  const renamedNotebooks = applyCategoryRenameToNotebooks([notebookOne, notebookTwo], 10, 'Life Science');
+  const renamedPlaylists = applyCategoryRenameToPlaylists([{
+    uuid: 'playlist-1',
+    queue: [notebookOne, notebookTwo],
+  }], 10, 'Life Science');
+
+  assert.deepEqual(renamedCategories.map((category) => category.name), ['Life Science', 'Math']);
+  assert.equal(renamedNotebooks[0].categoryName, 'Life Science');
+  assert.equal(renamedNotebooks[1], notebookTwo);
+  assert.equal(renamedPlaylists[0].queue[0].categoryName, 'Life Science');
 });
 
 test('updates playlist queues for category deletion and item mutations', () => {

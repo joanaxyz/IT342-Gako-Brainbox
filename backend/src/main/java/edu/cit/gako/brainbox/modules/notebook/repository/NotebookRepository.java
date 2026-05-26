@@ -15,8 +15,8 @@ public interface NotebookRepository extends JpaRepository<Notebook, Long> {
     Optional<Notebook> findByUuidAndUserId(String uuid, Long userId);
     List<Notebook> findByUuidInAndUserId(Collection<String> uuids, Long userId);
     List<Notebook> findByUserId(Long userId);
+    List<Notebook> findByUserIdOrderByUpdatedAtDesc(Long userId);
     List<Notebook> findByCategoryIdAndUserId(Long categoryId, Long userId);
-    List<Notebook> findTop6ByUserIdOrderByUpdatedAtDesc(Long userId);
     List<Notebook> findTop3ByUserIdAndLastReviewedAtNotNullOrderByLastReviewedAtDesc(Long userId);
     boolean existsByUuid(String uuid);
 
@@ -24,7 +24,6 @@ public interface NotebookRepository extends JpaRepository<Notebook, Long> {
     @Query("""
         UPDATE Notebook n
         SET n.lastReviewedAt = :reviewedAt,
-            n.updatedAt = :reviewedAt,
             n.version = CASE
                 WHEN n.version IS NULL THEN 1
                 ELSE n.version + 1

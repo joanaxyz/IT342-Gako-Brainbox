@@ -15,6 +15,15 @@ internal fun List<CategoryDetail>.replaceOptimisticCategory(
 internal fun List<CategoryDetail>.withoutCategoryById(categoryId: Long): List<CategoryDetail> =
     filterNot { it.id == categoryId }
 
+internal fun List<CategoryDetail>.withRenamedCategory(categoryId: Long, name: String): List<CategoryDetail> =
+    map { category ->
+        if (category.id == categoryId) {
+            category.copy(name = name)
+        } else {
+            category
+        }
+    }.sortedBy { it.name.lowercase() }
+
 internal fun List<NotebookSummary>.withNotebookCategory(
     notebookUuid: String,
     category: CategoryDetail?
@@ -22,6 +31,18 @@ internal fun List<NotebookSummary>.withNotebookCategory(
     map { notebook ->
         if (notebook.uuid == notebookUuid) {
             notebook.copy(categoryId = category?.id, categoryName = category?.name)
+        } else {
+            notebook
+        }
+    }
+
+internal fun List<NotebookSummary>.withNotebookCategoryName(
+    categoryId: Long,
+    name: String
+): List<NotebookSummary> =
+    map { notebook ->
+        if (notebook.categoryId == categoryId) {
+            notebook.copy(categoryName = name)
         } else {
             notebook
         }

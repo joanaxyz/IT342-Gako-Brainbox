@@ -787,6 +787,7 @@ a.ai-btn-create {
   outline: none;
   resize: none;
   max-height: 120px;
+  overflow-y: auto;
   font-size: 0.875rem;
   color: var(--ink);
   padding: 4px 0;

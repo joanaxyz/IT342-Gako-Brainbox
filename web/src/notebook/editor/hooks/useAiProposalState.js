@@ -84,6 +84,7 @@ export const useAiProposalState = ({
   editorRef,
   currentNotebookUuid,
   isPreviewMode,
+  onDirectApplyContent,
 }) => {
   const scopeKey = `${currentNotebookUuid ?? 'none'}:${isPreviewMode ? 'preview' : 'document'}`;
   const [state, setState] = useState(() => createScopedState(scopeKey));
@@ -139,7 +140,11 @@ export const useAiProposalState = ({
     const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').trim();
     if (!strippedOriginal) {
       editorRef.current.setContent?.(proposedContent);
-      return { applied: true };
+      onDirectApplyContent?.(proposedContent, {
+        sourceMessageId,
+        clearAllAiSelections: Boolean(normalizedOptions.clearAllAiSelections),
+      });
+      return { applied: true, direct: true };
     }
 
     // Pre-build the comparison session so we can detect no-op proposals before
@@ -170,7 +175,7 @@ export const useAiProposalState = ({
     });
 
     return { applied: true };
-  }, [editorRef, scopeKey, updateScopedState]);
+  }, [editorRef, onDirectApplyContent, scopeKey, updateScopedState]);
 
   const clearProposalState = useCallback((baseState) => ({
     ...baseState,

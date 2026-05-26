@@ -60,7 +60,7 @@ Use this phrasing on the implementation-structure slide:
 
 **Say:**
 
-Good day everyone. I am `[Your Name]` from `[Course and Section]`, and for my final project presentation, I will be presenting my individual system project called BrainBox. BrainBox is an integrated study platform designed to combine notebook management, AI assistance, quizzes, flashcards, playlists, playback, and version history in one connected learning system. In the next part of this presentation, I will introduce the purpose of the system, its main features, the architecture used, and how that architecture is reflected in the actual implementation.
+Good day everyone. I am `[Joana Carla Gako]` from section `[G5]` in IT342. I will be presenting my system project called BrainBox. BrainBox is an integrated study platform designed to combine notebook management, AI assistance, quizzes, flashcards, playlists, playback, and version history in one connected learning system. In the next part of this presentation, I will introduce the purpose of the system, its main features, the architecture used, and how that architecture is reflected in the actual implementation.
 
 ### Slide 2: System Project Introduction
 **Time:** 0:30 to 1:20  

@@ -1,4 +1,5 @@
 import { Editor as CoreEditor } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 import { EditorContent, useEditor } from '@tiptap/react';
 import {
   forwardRef,
@@ -259,11 +260,16 @@ const NoteEditorContent = forwardRef(({
     },
   }, [editorExtensions, emitSelectionState, isEditable, storageKey, updateOutline]);
 
-  const insertEquation = useCallback((kind = 'auto') => {
+  const insertEquation = useCallback((options = 'auto') => {
     if (!editor) {
       return;
     }
 
+    const normalizedOptions = typeof options === 'string'
+      ? { kind: options }
+      : (options || {});
+    const kind = normalizedOptions.kind || 'auto';
+    const latex = typeof normalizedOptions.latex === 'string' ? normalizedOptions.latex : '';
     const { selection } = editor.state;
     const emptyParagraphRange = selection.$from.depth > 0
       ? {
@@ -290,28 +296,45 @@ const NoteEditorContent = forwardRef(({
 
     if (shouldInsertBlock) {
       editor.chain().focus().insertBlockMath({
-        latex: '',
+        latex,
         range,
         moveSelectionAfterInsert: isOnlyRootParagraph,
       }).run();
       return;
     }
 
-    editor.chain().focus().insertInlineMath({ latex: '', range }).run();
+    editor.chain().focus().insertInlineMath({ latex, range }).run();
   }, [editor]);
 
   const applyExternalContent = useCallback((nextContent) => {
     if (!editor || editor.isDestroyed) {
-      return;
+      return false;
     }
 
     suppressExternalUpdateRef.current = true;
-    editor.commands.setContent(nextContent, false);
-    editor.commands.normalizeTables?.();
+    try {
+      editor.view.dispatch(
+        editor.state.tr
+          .setSelection(TextSelection.atStart(editor.state.doc))
+          .setMeta('preventUpdate', true),
+      );
+      const didSetContent = editor.commands.setContent(nextContent, {
+        emitUpdate: false,
+        errorOnInvalidContent: false,
+      });
 
-    window.setTimeout(() => {
-      suppressExternalUpdateRef.current = false;
-    }, 0);
+      editor.view.dispatch(
+        editor.state.tr
+          .setSelection(TextSelection.atStart(editor.state.doc))
+          .setMeta('preventUpdate', true),
+      );
+      editor.commands.normalizeTables?.();
+      return didSetContent;
+    } finally {
+      window.setTimeout(() => {
+        suppressExternalUpdateRef.current = false;
+      }, 0);
+    }
   }, [editor]);
 
   useEffect(() => {
@@ -624,9 +647,10 @@ const NoteEditorContent = forwardRef(({
         return;
       }
 
-      applyExternalContent(newContent);
+      const didSetContent = applyExternalContent(newContent);
       lastKnownContentRef.current = editor.getHTML() || newContent || '';
       emitSelectionState(editor);
+      return didSetContent;
     },
     insertPageBreak: () => {
       editor?.chain().focus().insertPageBreak().run();
@@ -781,7 +805,10 @@ const NoteEditorContent = forwardRef(({
             .insertContentAt(from, nextContent)
             .run();
         } else {
-          scratchEditor.commands.setContent(nextContent, false);
+          scratchEditor.commands.setContent(nextContent, {
+            emitUpdate: false,
+            errorOnInvalidContent: false,
+          });
         }
 
         return scratchEditor.getHTML();

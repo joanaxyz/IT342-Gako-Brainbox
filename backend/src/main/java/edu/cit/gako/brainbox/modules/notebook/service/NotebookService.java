@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NotebookService {
+    private static final int RECENTLY_EDITED_LIMIT = 6;
 
     private final NotebookRepository notebookRepository;
     private final CategoryRepository categoryRepository;
@@ -107,7 +108,9 @@ public class NotebookService {
     }
 
     public List<NotebookOverviewResponse> getRecentlyEditedNotebooksByUser(Long userId) {
-        return notebookRepository.findTop6ByUserIdOrderByUpdatedAtDesc(userId).stream()
+        return notebookRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream()
+                .filter(this::isRecentlyEditedNotebook)
+                .limit(RECENTLY_EDITED_LIMIT)
                 .map(this::mapToOverviewResponse)
                 .toList();
     }
@@ -178,7 +181,7 @@ public class NotebookService {
                 clientMutationId,
                 baseVersion,
                 () -> {
-                    if (nextContent.equals(notebook.getContent())) {
+                    if (isEquivalentNotebookContent(nextContent, notebook.getContent())) {
                         return mapToFullResponse(notebook);
                     }
 
@@ -392,20 +395,50 @@ public class NotebookService {
     }
 
     private int countWords(String html) {
-        if (html == null || html.isBlank()) {
-            return 0;
-        }
-
-        String plainText = html
-                .replaceAll("<[^>]+>", " ")
-                .replace("&nbsp;", " ")
-                .replaceAll("&[^;]+;", " ")
-                .trim();
+        String plainText = extractPlainText(html);
 
         if (plainText.isBlank()) {
             return 0;
         }
 
         return plainText.split("\\s+").length;
+    }
+
+    private boolean isRecentlyEditedNotebook(Notebook notebook) {
+        return notebook.getUpdatedAt() != null
+                && (notebook.getCreatedAt() == null || notebook.getUpdatedAt().isAfter(notebook.getCreatedAt()))
+                && countWords(notebook.getContent()) > 0;
+    }
+
+    private boolean isEquivalentNotebookContent(String leftHtml, String rightHtml) {
+        if ((leftHtml != null ? leftHtml : "").equals(rightHtml != null ? rightHtml : "")) {
+            return true;
+        }
+
+        return isBlankEditorContent(leftHtml) && isBlankEditorContent(rightHtml);
+    }
+
+    private boolean isBlankEditorContent(String html) {
+        if (html == null || html.isBlank()) {
+            return true;
+        }
+
+        if (html.matches("(?is).*<\\s*(img|svg|math|table|ul|ol|li|blockquote|pre|code|hr)\\b.*")) {
+            return false;
+        }
+
+        return extractPlainText(html).isBlank();
+    }
+
+    private String extractPlainText(String html) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+
+        return html
+                .replaceAll("<[^>]+>", " ")
+                .replace("&nbsp;", " ")
+                .replaceAll("&[^;]+;", " ")
+                .trim();
     }
 }

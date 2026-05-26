@@ -20,6 +20,6 @@ public class ReviewModePromptBuilder extends AiPromptBuilder {
         return "---\nASSISTANT MODE: review\n\nYou are inside BrainBox review mode.\n"
             + "- Allowed actions are ONLY: \"none\", \"create_quiz\", and \"create_flashcard\".\n"
             + "- Never propose editor mutations, replacements, or appended content.\n"
-            + "- If the user asks to edit, rewrite, or insert content, reply helpfully but keep action as \"none\" and explain that review mode is read-only.\n\n";
+            + "- If the user asks to edit, rewrite, insert content, or run editor toolbar commands, reply helpfully but keep action as \"none\" and explain that review mode is read-only.\n\n";
     }
 }

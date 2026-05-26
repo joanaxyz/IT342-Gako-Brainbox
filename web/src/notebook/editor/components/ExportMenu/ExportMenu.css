@@ -46,14 +46,17 @@
   cursor: not-allowed;
 }
 
-.pdf-options-overlay {
+.pdf-options-overlay,
+.export-progress-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+  z-index: 2400;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
@@ -65,6 +68,62 @@
   width: 380px;
   max-width: calc(100vw - 32px);
   overflow: hidden;
+}
+
+.export-progress-modal {
+  width: min(380px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--r-lg, 10px);
+  border: 1px solid var(--border-color);
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.export-progress-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r, 6px);
+  background: var(--cream-2, #f5f0ea);
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.export-progress-copy {
+  min-width: 0;
+}
+
+.export-progress-copy h2 {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.export-progress-copy p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.export-progress-spinner {
+  color: var(--ink-2);
+  animation: export-progress-spin 0.85s linear infinite;
+}
+
+@keyframes export-progress-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pdf-options-header {

@@ -91,6 +91,12 @@ interface NotebookApiService {
         @Body request: CategoryCreateRequest
     ): ApiEnvelope<CategoryDetail>
 
+    @PUT("api/categories/{id}")
+    suspend fun updateCategoryEnvelope(
+        @Path("id") id: Long,
+        @Body request: CategoryCreateRequest
+    ): ApiEnvelope<CategoryDetail>
+
     @HTTP(method = "DELETE", path = "api/categories/{id}", hasBody = true)
     suspend fun deleteCategoryEnvelope(
         @Path("id") id: Long,

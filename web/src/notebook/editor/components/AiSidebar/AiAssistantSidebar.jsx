@@ -348,6 +348,7 @@ const AiAssistantSidebar = ({
   onToolHelpClose,
   contained = false,
   onApplyEditorContent,
+  onApplyEditorCommands,
   hasProposedChanges = false,
   pendingProposalSourceId = null,
   acceptedCheckpointEvent = null,
@@ -387,6 +388,7 @@ const AiAssistantSidebar = ({
   const activeTool = quickTools.find((tool) => tool.key === activeToolKey) || quickTools[0] || null;
   const ActiveToolIcon = activeTool?.icon;
   const messagesListRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const md = useMemo(() => new MarkdownIt({ html: false, linkify: true, typographer: true }), []);
   const renderMarkdown = useCallback((value) => {
@@ -587,6 +589,23 @@ const AiAssistantSidebar = ({
     return Array.isArray(nextSelections) ? nextSelections : [];
   }, [getAiSelections]);
 
+  const INPUT_TEXTAREA_MAX_HEIGHT = 120; // px - matches CSS max-height
+
+  const resizeTextarea = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+
+    // reset to allow correct measurement
+    ta.style.height = 'auto';
+    const newHeight = Math.min(ta.scrollHeight, INPUT_TEXTAREA_MAX_HEIGHT);
+    ta.style.height = `${newHeight}px`;
+    ta.style.overflowY = ta.scrollHeight > INPUT_TEXTAREA_MAX_HEIGHT ? 'auto' : 'hidden';
+  }, []);
+
+  useEffect(() => {
+    resizeTextarea();
+  }, [message, resizeTextarea]);
+
   const handleSendMessage = async (textOverride, options = {}) => {
     const text = textOverride !== undefined ? textOverride : message;
     const selectedText = options.selectedText !== undefined
@@ -653,6 +672,7 @@ const AiAssistantSidebar = ({
         editorContent,
         conversationTitle: aiConversationTitle,
         selectionEdits,
+        editorCommands,
       } = response.data;
       const normalizedQuizDraft = resolveGeneratedQuizDraft(response.data, notebookUuid);
       const normalizedFlashcardDraft = resolveGeneratedFlashcardDraft(response.data, notebookUuid);
@@ -723,6 +743,24 @@ const AiAssistantSidebar = ({
         if (aiSelResult?.applied === false) {
           addNotification(
             'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
+            'info',
+            3500,
+          );
+        }
+      } else if (
+        onApplyEditorCommands
+        && action === 'apply_editor_commands'
+        && Array.isArray(editorCommands)
+        && editorCommands.length > 0
+      ) {
+        const commandResult = onApplyEditorCommands(editorCommands, {
+          sourceMessageId: userMessage.id,
+        });
+        if (commandResult?.applied === false) {
+          addNotification(
+            commandResult?.reason === 'blocked_by_proposal'
+              ? 'Accept or reject the current AI proposal before applying toolbar commands.'
+              : 'The AI toolbar command could not be applied in the current editor state.',
             'info',
             3500,
           );
@@ -1234,6 +1272,8 @@ const AiAssistantSidebar = ({
                 <div className="ai-chat-input-wrapper">
                   <div className="ai-chat-input-container">
                     <textarea
+                      ref={textareaRef}
+                      aria-label="AI message input"
                       placeholder={
                         mode === 'review'
                           ? 'Ask about this note...'
@@ -1243,6 +1283,7 @@ const AiAssistantSidebar = ({
                       }
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
+                      onInput={() => resizeTextarea()}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault();

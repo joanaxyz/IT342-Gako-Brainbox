@@ -3,6 +3,7 @@ package edu.cit.gako.brainbox.modules.ai.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.cit.gako.brainbox.modules.ai.dto.AiEditorCommand;
 import edu.cit.gako.brainbox.modules.ai.dto.AiSelectionEdit;
 import edu.cit.gako.brainbox.modules.ai.dto.AiSelectionTarget;
 import edu.cit.gako.brainbox.modules.ai.dto.request.AiRequest;
@@ -29,7 +30,8 @@ public class AiService {
     private final ObjectMapper objectMapper;
 
     private static final Set<String> VALID_ACTIONS = Set.of(
-        "none", "add_to_editor", "replace_editor", "replace_selection", "replace_ai_selections", "create_quiz", "create_flashcard"
+        "none", "add_to_editor", "replace_editor", "replace_selection", "replace_ai_selections",
+        "apply_editor_commands", "create_quiz", "create_flashcard"
     );
     private static final Set<String> QUIZ_ACTION_ALIASES = Set.of(
         "create_quiz", "create_quizzes", "generate_quiz", "generate_quizzes", "quiz", "quizzes"
@@ -37,6 +39,37 @@ public class AiService {
     private static final Set<String> FLASHCARD_ACTION_ALIASES = Set.of(
         "create_flashcard", "create_flashcards", "generate_flashcard", "generate_flashcards",
         "create_flashcard_deck", "create_deck", "deck", "flashcard", "flashcards"
+    );
+    private static final Set<String> VALID_EDITOR_COMMANDS = Set.of(
+        "undo", "redo", "set_font_family", "set_font_size", "unset_font_size", "set_paragraph",
+        "toggle_heading", "toggle_bold", "toggle_italic", "toggle_underline", "toggle_strike",
+        "toggle_code", "toggle_bullet_list", "toggle_ordered_list", "toggle_task_list",
+        "indent_list_item", "outdent_list_item", "set_text_align", "toggle_blockquote",
+        "toggle_code_block", "insert_horizontal_rule", "insert_page_break", "set_highlight",
+        "unset_highlight", "set_link", "unset_link", "toggle_superscript", "toggle_subscript",
+        "insert_table", "insert_equation", "clear_formatting", "set_ruled_lines", "toggle_ruled_lines"
+    );
+    private static final Set<String> VALID_FONT_FAMILIES = Set.of(
+        "default", "dm-sans", "plus-jakarta", "lora", "playfair", "jetbrains", "caveat"
+    );
+    private static final Set<String> VALID_FONT_SIZES = Set.of(
+        "12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"
+    );
+    private static final Set<String> VALID_TEXT_ALIGN_VALUES = Set.of(
+        "left", "center", "right", "justify"
+    );
+    private static final Set<String> VALID_EQUATION_KINDS = Set.of(
+        "auto", "inline", "block"
+    );
+    private static final Map<String, String> HIGHLIGHT_COLOR_ALIASES = Map.of(
+        "yellow", "#fef08a",
+        "green", "#bbf7d0",
+        "blue", "#bfdbfe",
+        "pink", "#fbcfe8",
+        "orange", "#fed7aa",
+        "purple", "#ddd6fe",
+        "red", "#fecaca",
+        "teal", "#99f6e4"
     );
 
     public AiResponse generateResponse(AiRequest aiRequest, Long userId) {
@@ -98,10 +131,12 @@ public class AiService {
         if (!reviewMode) return response;
         String action = response.getAction();
         if ("add_to_editor".equals(action) || "replace_editor".equals(action)
-            || "replace_selection".equals(action) || "replace_ai_selections".equals(action)) {
+            || "replace_selection".equals(action) || "replace_ai_selections".equals(action)
+            || "apply_editor_commands".equals(action)) {
             response.setAction("none");
             response.setEditorContent(null);
             response.setSelectionEdits(null);
+            response.setEditorCommands(null);
         }
         return response;
     }
@@ -116,21 +151,28 @@ public class AiService {
 
         try {
             JsonNode parsed = objectMapper.readTree(trimmed);
-            String reply = parsed.path("reply").asText("");
+            String reply = firstTextField(parsed, "reply", "response", "message");
             String action = normalizeAction(parsed.path("action").asText("none"));
-            String editorContent = parsed.path("editorContent").asText("");
-            String conversationTitle = parsed.path("conversationTitle").asText("");
+            String editorContent = firstTextField(parsed, "editorContent", "editor_content");
+            String conversationTitle = firstTextField(parsed, "conversationTitle", "conversation_title", "title");
 
             if (reply.isBlank()) reply = extractFieldFallback(trimmed, "reply");
             if (conversationTitle.isBlank()) conversationTitle = extractFieldFallback(trimmed, "conversationTitle");
 
             Object quizData = extractQuizData(parsed);
             Object flashcardData = extractFlashcardData(parsed);
+            List<AiEditorCommand> editorCommands = extractEditorCommands(parsed);
             List<AiSelectionEdit> selectionEdits = null;
             if ("replace_ai_selections".equals(action) && parsed.path("selectionEdits").isArray()) {
-                selectionEdits = objectMapper.convertValue(parsed.path("selectionEdits"), new TypeReference<>() {});
+                selectionEdits = objectMapper.convertValue(
+                    parsed.path("selectionEdits"),
+                    new TypeReference<List<AiSelectionEdit>>() {}
+                );
             }
             if ("replace_ai_selections".equals(action) && (selectionEdits == null || selectionEdits.isEmpty())) {
+                action = "none";
+            }
+            if ("apply_editor_commands".equals(action) && editorCommands.isEmpty()) {
                 action = "none";
             }
             if ("create_quiz".equals(action) && quizData == null) {
@@ -140,7 +182,9 @@ public class AiService {
                 action = quizData != null ? "create_quiz" : "none";
             }
             if ("none".equals(action)) {
-                if (quizData != null && flashcardData == null) {
+                if (!editorCommands.isEmpty()) {
+                    action = "apply_editor_commands";
+                } else if (quizData != null && flashcardData == null) {
                     action = "create_quiz";
                 } else if (flashcardData != null && quizData == null) {
                     action = "create_flashcard";
@@ -150,18 +194,26 @@ public class AiService {
             return new AiResponse(
                 reply.isBlank() ? aiMessage : reply, action,
                 editorContent.isBlank() ? null : editorContent, conversationTitle,
-                selectionEdits, quizData, flashcardData
+                selectionEdits,
+                "apply_editor_commands".equals(action) ? editorCommands : null,
+                quizData,
+                flashcardData
             );
         } catch (Exception e) {
             String reply = extractFieldFallback(trimmed, "reply");
+            if (reply.isBlank()) reply = extractFieldFallback(trimmed, "response");
+            if (reply.isBlank()) reply = extractFieldFallback(trimmed, "message");
             String action = normalizeAction(extractFieldFallback(trimmed, "action"));
             String editorContent = extractFieldFallback(trimmed, "editorContent");
+            if (editorContent.isBlank()) editorContent = extractFieldFallback(trimmed, "editor_content");
             String conversationTitle = extractFieldFallback(trimmed, "conversationTitle");
+            if (conversationTitle.isBlank()) conversationTitle = extractFieldFallback(trimmed, "conversation_title");
+            if (conversationTitle.isBlank()) conversationTitle = extractFieldFallback(trimmed, "title");
 
             return new AiResponse(
                 reply.isBlank() ? aiMessage : reply, action,
                 editorContent.isBlank() ? null : editorContent, conversationTitle,
-                null, null, null
+                null, null, null, null
             );
         }
     }
@@ -175,8 +227,309 @@ public class AiService {
         if (FLASHCARD_ACTION_ALIASES.contains(normalizedAction)) {
             return "create_flashcard";
         }
+        if ("editor_commands".equals(normalizedAction) || "apply_toolbar_commands".equals(normalizedAction)
+            || "toolbar_commands".equals(normalizedAction)) {
+            return "apply_editor_commands";
+        }
 
         return VALID_ACTIONS.contains(normalizedAction) ? normalizedAction : "none";
+    }
+
+    private String firstTextField(JsonNode parsed, String... fieldNames) {
+        if (parsed == null || fieldNames == null) {
+            return "";
+        }
+
+        for (String fieldName : fieldNames) {
+            JsonNode value = parsed.path(fieldName);
+            String text = textFromNode(value);
+
+            if (!text.isBlank()) {
+                return text;
+            }
+        }
+
+        return "";
+    }
+
+    private String textFromNode(JsonNode value) {
+        if (value == null || value.isMissingNode() || value.isNull()) {
+            return "";
+        }
+
+        if (value.isTextual() || value.isNumber() || value.isBoolean()) {
+            return value.asText("").trim();
+        }
+
+        if (value.isArray()) {
+            List<String> items = new ArrayList<>();
+            value.forEach((item) -> {
+                String itemText = textFromNode(item);
+                if (!itemText.isBlank()) {
+                    items.add(itemText);
+                }
+            });
+            return String.join("\n", items).trim();
+        }
+
+        if (value.isObject()) {
+            String nested = firstTextField(value, "reply", "response", "message", "content", "text");
+            if (!nested.isBlank()) {
+                return nested;
+            }
+        }
+
+        return "";
+    }
+
+    private List<AiEditorCommand> extractEditorCommands(JsonNode parsed) {
+        List<JsonNode> candidates = Arrays.asList(
+            parsed.get("editorCommands"),
+            parsed.get("editor_commands"),
+            parsed.get("toolbarCommands"),
+            parsed.get("toolbar_commands"),
+            parsed.get("commands")
+        );
+
+        for (JsonNode candidate : candidates) {
+            JsonNode normalizedCandidate = normalizePayloadNode(candidate);
+            if (normalizedCandidate == null) {
+                continue;
+            }
+
+            List<AiEditorCommand> commands = new ArrayList<>();
+            try {
+                if (normalizedCandidate.isArray()) {
+                    commands = objectMapper.convertValue(
+                        normalizedCandidate,
+                        new TypeReference<List<AiEditorCommand>>() {}
+                    );
+                } else if (normalizedCandidate.isObject()) {
+                    commands = List.of(objectMapper.convertValue(normalizedCandidate, AiEditorCommand.class));
+                }
+            } catch (IllegalArgumentException ignored) {
+                commands = List.of();
+            }
+
+            List<AiEditorCommand> normalizedCommands = commands.stream()
+                .map(this::normalizeEditorCommand)
+                .filter(Objects::nonNull)
+                .toList();
+
+            if (!normalizedCommands.isEmpty()) {
+                return normalizedCommands;
+            }
+        }
+
+        return List.of();
+    }
+
+    private AiEditorCommand normalizeEditorCommand(AiEditorCommand command) {
+        if (command == null) {
+            return null;
+        }
+
+        String rawName = command.getName() != null
+            ? command.getName().trim().toLowerCase().replace('-', '_').replace(' ', '_')
+            : "";
+        String name = normalizeEditorCommandName(command.getName());
+        if (!VALID_EDITOR_COMMANDS.contains(name)) {
+            return null;
+        }
+
+        AiEditorCommand normalized = new AiEditorCommand();
+        normalized.setName(name);
+        normalized.setLevel(command.getLevel());
+        normalized.setRows(command.getRows());
+        normalized.setCols(command.getCols());
+        normalized.setWithHeaderRow(command.getWithHeaderRow());
+        normalized.setHref(cleanOptional(command.getHref()));
+        normalized.setLatex(cleanOptional(command.getLatex()));
+        normalized.setValue(cleanOptional(command.getValue()));
+
+        switch (name) {
+            case "set_font_family" -> {
+                String fontFamily = normalizeFontFamily(normalized.getValue());
+                if (fontFamily == null) return null;
+                normalized.setValue(fontFamily);
+            }
+            case "set_font_size" -> {
+                String fontSize = normalizeFontSize(normalized.getValue());
+                if (fontSize == null) return null;
+                normalized.setValue(fontSize);
+            }
+            case "toggle_heading" -> {
+                int level = normalizeHeadingLevel(normalized.getLevel(), normalized.getValue());
+                if (level < 1 || level > 3) return null;
+                normalized.setLevel(level);
+                normalized.setValue(null);
+            }
+            case "set_text_align" -> {
+                String align = normalizeEnumValue(normalized.getValue(), VALID_TEXT_ALIGN_VALUES);
+                if (align == null) return null;
+                normalized.setValue(align);
+            }
+            case "set_highlight" -> {
+                String color = normalizeHighlightColor(normalized.getValue());
+                if (color == null) return null;
+                normalized.setValue(color);
+            }
+            case "set_link" -> {
+                if (normalized.getHref() == null && normalized.getValue() != null) {
+                    normalized.setHref(normalized.getValue());
+                }
+                if (normalized.getHref() == null) return null;
+                normalized.setValue(null);
+            }
+            case "insert_table" -> {
+                normalized.setRows(clampInt(normalized.getRows(), 1, 8, 3));
+                normalized.setCols(clampInt(normalized.getCols(), 1, 8, 3));
+                if (normalized.getWithHeaderRow() == null) {
+                    normalized.setWithHeaderRow(true);
+                }
+                normalized.setValue(null);
+            }
+            case "insert_equation" -> {
+                String kind = normalizeEnumValue(
+                    normalized.getValue() == null ? "auto" : normalized.getValue(),
+                    VALID_EQUATION_KINDS
+                );
+                if (kind == null) return null;
+                normalized.setValue(kind);
+            }
+            case "set_ruled_lines" -> {
+                String state = normalizeBooleanValue(normalized.getValue());
+                if (state == null && rawName.startsWith("show")) {
+                    state = "true";
+                } else if (state == null && rawName.startsWith("hide")) {
+                    state = "false";
+                }
+                if (state == null) return null;
+                normalized.setValue(state);
+            }
+            default -> {
+                if (!Set.of(
+                    "set_font_family", "set_font_size", "toggle_heading", "set_text_align",
+                    "set_highlight", "set_link", "insert_table", "insert_equation", "set_ruled_lines"
+                ).contains(name)) {
+                    normalized.setValue(null);
+                }
+            }
+        }
+
+        return normalized;
+    }
+
+    private String normalizeEditorCommandName(String rawName) {
+        String normalizedName = rawName != null
+            ? rawName.trim().toLowerCase().replace('-', '_').replace(' ', '_')
+            : "";
+
+        return switch (normalizedName) {
+            case "font_family", "change_font", "set_font" -> "set_font_family";
+            case "font_size", "change_font_size" -> "set_font_size";
+            case "paragraph", "normal_text" -> "set_paragraph";
+            case "heading", "set_heading" -> "toggle_heading";
+            case "bold" -> "toggle_bold";
+            case "italic" -> "toggle_italic";
+            case "underline" -> "toggle_underline";
+            case "strike", "strikethrough" -> "toggle_strike";
+            case "inline_code" -> "toggle_code";
+            case "bullet_list", "unordered_list" -> "toggle_bullet_list";
+            case "numbered_list", "ordered_list" -> "toggle_ordered_list";
+            case "task_list", "checklist" -> "toggle_task_list";
+            case "indent" -> "indent_list_item";
+            case "outdent" -> "outdent_list_item";
+            case "align", "text_align", "alignment" -> "set_text_align";
+            case "blockquote", "quote" -> "toggle_blockquote";
+            case "code_block" -> "toggle_code_block";
+            case "horizontal_rule", "divider", "separator" -> "insert_horizontal_rule";
+            case "page_break", "insert_export_page_break" -> "insert_page_break";
+            case "highlight", "set_mark" -> "set_highlight";
+            case "remove_highlight" -> "unset_highlight";
+            case "link" -> "set_link";
+            case "remove_link", "unlink" -> "unset_link";
+            case "superscript" -> "toggle_superscript";
+            case "subscript" -> "toggle_subscript";
+            case "table" -> "insert_table";
+            case "equation", "math" -> "insert_equation";
+            case "clear_format", "clear_formats", "remove_formatting" -> "clear_formatting";
+            case "show_ruled_lines", "hide_ruled_lines", "ruled_lines" -> "set_ruled_lines";
+            default -> normalizedName;
+        };
+    }
+
+    private String cleanOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String cleaned = value.trim();
+        return cleaned.isBlank() ? null : cleaned;
+    }
+
+    private String normalizeFontFamily(String value) {
+        String normalizedValue = value != null
+            ? value.trim().toLowerCase().replace(' ', '-')
+            : "";
+        return VALID_FONT_FAMILIES.contains(normalizedValue) ? normalizedValue : null;
+    }
+
+    private String normalizeFontSize(String value) {
+        String normalizedValue = value != null ? value.trim().toLowerCase() : "";
+        if (normalizedValue.matches("\\d{1,2}")) {
+            normalizedValue = normalizedValue + "px";
+        }
+        return VALID_FONT_SIZES.contains(normalizedValue) ? normalizedValue : null;
+    }
+
+    private int normalizeHeadingLevel(Integer level, String value) {
+        if (level != null) {
+            return level;
+        }
+        if (value == null) {
+            return -1;
+        }
+        String normalizedValue = value.trim().toLowerCase().replace("heading", "").replace("h", "").trim();
+        try {
+            return Integer.parseInt(normalizedValue);
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
+    }
+
+    private String normalizeEnumValue(String value, Set<String> validValues) {
+        String normalizedValue = value != null ? value.trim().toLowerCase() : "";
+        return validValues.contains(normalizedValue) ? normalizedValue : null;
+    }
+
+    private String normalizeHighlightColor(String value) {
+        String normalizedValue = value != null ? value.trim().toLowerCase() : "";
+        if (normalizedValue.isBlank()) {
+            return HIGHLIGHT_COLOR_ALIASES.get("yellow");
+        }
+        if (HIGHLIGHT_COLOR_ALIASES.containsKey(normalizedValue)) {
+            return HIGHLIGHT_COLOR_ALIASES.get(normalizedValue);
+        }
+        if (normalizedValue.matches("#[0-9a-f]{6}")) {
+            return normalizedValue;
+        }
+        return null;
+    }
+
+    private String normalizeBooleanValue(String value) {
+        String normalizedValue = value != null ? value.trim().toLowerCase() : "";
+        if (Set.of("true", "on", "show", "visible", "yes").contains(normalizedValue)) {
+            return "true";
+        }
+        if (Set.of("false", "off", "hide", "hidden", "no").contains(normalizedValue)) {
+            return "false";
+        }
+        return null;
+    }
+
+    private int clampInt(Integer value, int min, int max, int fallback) {
+        int resolvedValue = value == null ? fallback : value;
+        return Math.max(min, Math.min(max, resolvedValue));
     }
 
     private Object extractQuizData(JsonNode parsed) {

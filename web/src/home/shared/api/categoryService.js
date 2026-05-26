@@ -10,6 +10,9 @@ export const categoryAPI = {
   createCategory: (name) =>
     apiCall('/categories', 'POST', { name }),
 
+  updateCategory: (categoryId, name) =>
+    apiCall(`/categories/${categoryId}`, 'PUT', { name }),
+
   deleteCategory: (categoryId, options = {}) =>
     apiCall(`/categories/${categoryId}`, 'DELETE', options),
 };

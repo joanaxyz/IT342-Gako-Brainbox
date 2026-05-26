@@ -53,8 +53,10 @@ import androidx.compose.ui.unit.dp
 import edu.cit.gako.brainbox.features.home.library.data.LibraryNotebookMutationResult
 import edu.cit.gako.brainbox.features.home.library.data.LibraryRepository
 import edu.cit.gako.brainbox.features.home.library.data.replaceOptimisticCategory
+import edu.cit.gako.brainbox.features.home.library.data.withNotebookCategoryName
 import edu.cit.gako.brainbox.features.home.library.data.withNotebookCategory
 import edu.cit.gako.brainbox.features.home.library.data.withOptimisticCategory
+import edu.cit.gako.brainbox.features.home.library.data.withRenamedCategory
 import edu.cit.gako.brainbox.features.home.library.data.withoutCategory
 import edu.cit.gako.brainbox.features.home.library.data.withoutCategoryById
 import edu.cit.gako.brainbox.features.notebook.data.dto.CategoryDetail
@@ -116,6 +118,7 @@ internal fun LibraryScreen(
     var showCreateCategoryDialog by rememberSaveable { mutableStateOf(false) }
     var moveNotebookTarget by remember { mutableStateOf<NotebookSummary?>(null) }
     var pendingNotebookForCreatedCategory by remember { mutableStateOf<NotebookSummary?>(null) }
+    var editCategoryTarget by remember { mutableStateOf<CategoryDetail?>(null) }
     var deleteCategoryTarget by remember { mutableStateOf<CategoryDeleteTarget?>(null) }
 
     LaunchedEffect(repository) {
@@ -307,6 +310,38 @@ internal fun LibraryScreen(
         }
     }
 
+    fun renameCategory(category: CategoryDetail, name: String) {
+        if (name == category.name) {
+            editCategoryTarget = null
+            return
+        }
+
+        val previousCategories = localCategories
+        val previousNotebooks = localNotebooks
+        localCategories = localCategories.withRenamedCategory(category.id, name)
+        localNotebooks = localNotebooks.withNotebookCategoryName(category.id, name)
+        categoryBusy = true
+
+        scope.launch {
+            runCatching { repository.updateCategory(category.id, name) }
+                .onSuccess { updated ->
+                    localCategories = mergeCategories(
+                        localCategories.withRenamedCategory(updated.id, updated.name),
+                        localNotebooks.withNotebookCategoryName(updated.id, updated.name)
+                    )
+                    localNotebooks = localNotebooks.withNotebookCategoryName(updated.id, updated.name)
+                    editCategoryTarget = null
+                    message = "Category renamed to \"${updated.name}\"."
+                }
+                .onFailure {
+                    localCategories = previousCategories
+                    localNotebooks = previousNotebooks
+                    message = "We couldn't rename that category."
+                }
+            categoryBusy = false
+        }
+    }
+
     fun deleteCategory(target: CategoryDeleteTarget, deleteNotebooks: Boolean) {
         val previousCategories = localCategories
         val previousNotebooks = localNotebooks
@@ -365,6 +400,7 @@ internal fun LibraryScreen(
             onQueryChange = { categoryQuery = it },
             onSelectCategory = { selectedCategoryId = it },
             onCreateCategory = { showCreateCategoryDialog = true },
+            onEditCategory = { category -> editCategoryTarget = category },
             onDeleteCategory = { category ->
                 deleteCategoryTarget = CategoryDeleteTarget(
                     category = category,
@@ -454,6 +490,15 @@ internal fun LibraryScreen(
                 showCreateCategoryDialog = false
                 createCategory(name)
             }
+        )
+    }
+
+    editCategoryTarget?.let { category ->
+        EditCategoryDialog(
+            category = category,
+            isBusy = categoryBusy,
+            onDismiss = { editCategoryTarget = null },
+            onSave = { name -> renameCategory(category, name) }
         )
     }
 

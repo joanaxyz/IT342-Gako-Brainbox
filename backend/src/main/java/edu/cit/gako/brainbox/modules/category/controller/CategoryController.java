@@ -31,6 +31,15 @@ public class CategoryController {
     }
 
     @RequireAuth
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
+            @PathVariable("id") Long categoryId,
+            @RequestBody CategoryRequest categoryRequest,
+            @RequestAttribute Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(categoryService.updateCategory(categoryId, categoryRequest, userId)));
+    }
+
+    @RequireAuth
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable("id") Long categoryId) {
         return ResponseEntity.ok(ApiResponse.success(categoryService.getCategoryResponseById(categoryId)));

@@ -14,16 +14,20 @@ export const extractOutlineFromHtml = (html = '') => {
     .filter((heading) => heading.text);
 };
 
-export const countWordsFromHtml = (html = '') => {
+export const extractPlainTextFromHtml = (html = '') => {
   if (!html) {
-    return 0;
+    return '';
   }
 
-  const plainText = html
+  return html
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&[^;]+;/g, ' ')
     .trim();
+};
+
+export const countWordsFromHtml = (html = '') => {
+  const plainText = extractPlainTextFromHtml(html);
 
   if (!plainText) {
     return 0;
@@ -31,3 +35,19 @@ export const countWordsFromHtml = (html = '') => {
 
   return plainText.split(/\s+/).length;
 };
+
+export const isBlankEditorHtml = (html = '') => {
+  if (!html) {
+    return true;
+  }
+
+  if (/<\s*(img|svg|math|table|ul|ol|li|blockquote|pre|code|hr)\b/i.test(html)) {
+    return false;
+  }
+
+  return extractPlainTextFromHtml(html) === '';
+};
+
+export const isEquivalentNotebookHtml = (leftHtml = '', rightHtml = '') => (
+  leftHtml === rightHtml || (isBlankEditorHtml(leftHtml) && isBlankEditorHtml(rightHtml))
+);

@@ -51,9 +51,10 @@ public class Notebook implements UserOwned {
 
     @PrePersist
     private void prePersist(){
+        Instant now = Instant.now();
         if(uuid == null) uuid = UUID.randomUUID().toString();
-        if(createdAt == null) createdAt = Instant.now();
-        if(updatedAt == null) updatedAt = Instant.now();
+        if(createdAt == null) createdAt = now;
+        if(updatedAt == null) updatedAt = now;
         if(version == null) version = 0L;
     }
 
