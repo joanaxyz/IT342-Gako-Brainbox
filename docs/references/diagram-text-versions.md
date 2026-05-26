@@ -23,7 +23,7 @@ External systems outside the BrainBox boundary are:
 
 - Email provider, used for email verification and password reset messages
 - Google identity provider, used for Google sign-in
-- AI proxy/provider, used for AI-assisted notebook and study workflows
+- AI provider, called by the BrainBox backend for AI-assisted notebook and study workflows
 
 ### Components and Responsibilities
 
@@ -44,7 +44,7 @@ External systems outside the BrainBox boundary are:
 | PostgreSQL Database | Persists users, refresh tokens, verification codes, notebooks, categories, notebook versions, mutation records, quizzes, flashcards, playlists, playback queues, AI configurations, and AI conversations. |
 | Email Provider | Sends verification and password reset email messages requested by the backend. |
 | Google Identity Provider | Validates Google sign-in information used by the authentication flow. |
-| AI Proxy/Provider | Produces AI responses for notebook editing, review support, quiz generation, flashcard generation, and other AI-assisted study flows. |
+| AI Provider | Produces AI responses for notebook editing, review support, quiz generation, flashcard generation, and other AI-assisted study flows. |
 
 ### Component Connections
 
@@ -56,7 +56,7 @@ The Spring Boot Backend API uses the PostgreSQL database through Spring Data JPA
 
 The backend uses the Email Provider through the email service layer when a user registers, verifies an account, requests password recovery, or receives a reset code. Email templates are built inside the backend before sending.
 
-The backend uses the AI Proxy/Provider through the AI service layer. Users save encrypted AI provider configuration, select a provider, and submit AI requests. The backend keeps provider keys server-side and returns only generated AI responses or saved conversation metadata to clients.
+The backend uses server-side provider calls through the AI service layer. Users save an API Base URL, encrypted AI provider API key, select a provider, and submit AI requests. The backend keeps provider keys server-side and returns only generated AI responses or saved conversation metadata to clients.
 
 The backend uses the Google Identity Provider during Google sign-in. The client sends Google identity data to the backend, and the backend uses that data to create or locate a BrainBox user account before issuing BrainBox tokens.
 
@@ -101,7 +101,7 @@ The ERD describes the persistent data model used by BrainBox. The database is ce
 | `playlist_notebooks` | Join table that stores notebook membership for playlists. | `playlist_id`, `notebook_id`, `position` |
 | `PlaybackQueue` | Stores a user's current playback queue and optional selected playlist. | `id`, `uuid`, `user_id`, `selected_playlist_id`, `currentIndex`, `updatedAt` |
 | `playback_queue_notebooks` | Join table that stores notebook membership for the active playback queue. | `playback_queue_id`, `notebook_id`, `position` |
-| `ai_config` | Stores user-owned AI provider configuration. | `id`, `user_id`, `name`, `model`, `proxyUrl`, `apiKey`, `createdAt`, `updatedAt` |
+| `ai_config` | Stores user-owned AI provider configuration. The legacy `proxyUrl` column stores the provider API Base URL. | `id`, `user_id`, `name`, `model`, `proxyUrl`, `apiKey`, `createdAt`, `updatedAt` |
 | `ai_conversation` | Stores AI conversation metadata and serialized messages for a notebook. | `id`, `uuid`, `user_id`, `notebookUuid`, `mode`, `title`, `messages`, `createdAt`, `updatedAt` |
 
 ### Primary Relationships
@@ -306,7 +306,7 @@ The activity model describes the main authenticated BrainBox study workflow from
 5. The client sends the prompt, notebook UUID, selected text, selection targets, mode, and optional conversation history.
 6. The backend validates the authenticated user.
 7. The backend loads the selected AI configuration.
-8. The backend builds the provider request and sends it to the AI proxy/provider.
+8. The backend builds the provider request and sends it with a server-side provider call.
 9. The provider returns generated content.
 10. The backend returns the AI response to the client.
 11. The user reviews the proposal.
@@ -423,7 +423,7 @@ The class model describes the main backend classes and their responsibilities. B
 | `FlashcardAttempt` | `id`, `mastery`, `clientMutationId`, `createdAt` | Attempt belongs to one flashcard deck and one user. |
 | `Playlist` | `id`, `uuid`, `title`, `currentIndex`, timestamps | Playlist belongs to one user and contains many notebooks through `playlist_notebooks`. |
 | `PlaybackQueue` | `id`, `uuid`, `currentIndex`, `updatedAt` | Queue belongs to one user, optionally references a selected playlist, and contains many notebooks through `playback_queue_notebooks`. |
-| `AiConfig` | `id`, `name`, `model`, `proxyUrl`, `apiKey`, timestamps | AI configuration belongs to one user. |
+| `AiConfig` | `id`, `name`, `model`, `proxyUrl` legacy API Base URL storage, `apiKey`, timestamps | AI configuration belongs to one user. |
 | `AiConversation` | `id`, `uuid`, `notebookUuid`, `mode`, `title`, `messages`, timestamps | Conversation belongs to one user and references notebook content by notebook UUID. |
 
 ### Important Class Interactions

@@ -1543,8 +1543,8 @@ emailService.sendEmail(
 
             <article class="integration-panel">
               <div class="path">AiController.java + AiService.java</div>
-              <h3>AI proxy and config flow</h3>
-              <p>The backend checks notebook ownership, loads the saved AI configuration, decrypts the API key, builds the prompt, and only then calls the configured provider or proxy.</p>
+              <h3>AI provider config flow</h3>
+              <p>The backend checks notebook ownership, loads the saved AI configuration, decrypts the API key, builds the prompt, and only then makes the server-side provider call.</p>
               <pre>notebookService.getNotebookByUuidAndUserId(
   aiRequest.getNotebookUuid(), userId
 );
@@ -1552,7 +1552,7 @@ emailService.sendEmail(
 AiConfig config = aiConfigService.getConfigEntity(userId);
 String apiKey = aiConfigService.decryptApiKey(config);
 
-String aiMessage = proxyProvider.generateResponse(
+String aiMessage = aiProvider.generateResponse(
   config.getProxyUrl(), apiKey, config.getModel(), messages, 0.4
 );</pre>
             </article>

@@ -26,7 +26,7 @@ public class AiService {
 
     private final NotebookService notebookService;
     private final AiConfigService aiConfigService;
-    private final AiProvider proxyProvider;
+    private final AiProvider aiProvider;
     private final ObjectMapper objectMapper;
 
     private static final Set<String> VALID_ACTIONS = Set.of(
@@ -112,7 +112,7 @@ public class AiService {
 
             messages.add(Map.of("role", "user", "content", aiRequest.getQuery()));
 
-            String aiMessage = proxyProvider.generateResponse(
+            String aiMessage = aiProvider.generateResponse(
                 config.getProxyUrl(), apiKey, config.getModel(), messages, 0.4
             );
             AiResponse aiResponse = sanitizeMode(parseAiMessage(aiMessage), reviewMode);
