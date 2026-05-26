@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { useAiConfig } from '../../../../ai/hooks/useAiConfig';
+import {
+  AI_PROVIDER_PRESETS,
+  DEFAULT_PROVIDER_PRESET_ID,
+  getProviderPreset,
+} from '../../../../ai/config/providerPresets';
 
 const EyeIcon = ({ open }) => open ? (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -22,14 +27,24 @@ const AiConfigSetup = () => {
 
   const [name, setName] = useState('');
   const [model, setModel] = useState('');
-  const [proxyUrl, setProxyUrl] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [providerPresetId, setProviderPresetId] = useState(DEFAULT_PROVIDER_PRESET_ID);
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
+  const providerPreset = getProviderPreset(providerPresetId);
+
+  const handleProviderPresetChange = (event) => {
+    const nextPreset = getProviderPreset(event.target.value);
+    setProviderPresetId(nextPreset.id);
+    setName((currentName) => currentName.trim() ? currentName : nextPreset.name);
+    setModel(nextPreset.model);
+    setBaseUrl(nextPreset.baseUrl);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !model.trim() || !proxyUrl.trim() || !apiKey.trim()) {
+    if (!name.trim() || !model.trim() || !baseUrl.trim() || !apiKey.trim()) {
       addNotification('Please fill in all fields.', 'error');
       return;
     }
@@ -39,7 +54,7 @@ const AiConfigSetup = () => {
       id: null,
       name: name.trim(),
       model: model.trim(),
-      proxyUrl: proxyUrl.trim(),
+      baseUrl: baseUrl.trim(),
       apiKey: apiKey.trim(),
     });
     setSaving(false);
@@ -58,10 +73,22 @@ const AiConfigSetup = () => {
       </div>
       <h3 className="ai-config-setup-title">Connect your AI</h3>
       <p className="ai-config-setup-desc">
-        Add your proxy URL and API key to start using the AI assistant. Your key is encrypted and stored securely.
+        Choose an AI provider and enter its API base URL, model, and API key. Your key is encrypted and stored securely.
       </p>
 
       <form className="ai-config-setup-form" onSubmit={handleSubmit}>
+        <select
+          className="ai-config-input"
+          value={providerPresetId}
+          onChange={handleProviderPresetChange}
+        >
+          {AI_PROVIDER_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+
         <input
           type="text"
           className="ai-config-input"
@@ -74,7 +101,7 @@ const AiConfigSetup = () => {
         <input
           type="text"
           className="ai-config-input"
-          placeholder="Model (e.g. gpt-4o)"
+          placeholder={`Model (e.g. ${providerPreset.modelPlaceholder})`}
           value={model}
           onChange={(e) => setModel(e.target.value)}
           autoComplete="off"
@@ -83,9 +110,9 @@ const AiConfigSetup = () => {
         <input
           type="url"
           className="ai-config-input"
-          placeholder="Proxy URL (e.g. https://api.openai.com/v1)"
-          value={proxyUrl}
-          onChange={(e) => setProxyUrl(e.target.value)}
+          placeholder="API Base URL (e.g. https://openrouter.ai/api/v1)"
+          value={baseUrl}
+          onChange={(e) => setBaseUrl(e.target.value)}
           autoComplete="off"
         />
 
@@ -111,7 +138,7 @@ const AiConfigSetup = () => {
         <button
           type="submit"
           className="btn btn-primary btn-sm ai-config-submit"
-          disabled={saving || !name.trim() || !model.trim() || !proxyUrl.trim() || !apiKey.trim()}
+          disabled={saving || !name.trim() || !model.trim() || !baseUrl.trim() || !apiKey.trim()}
         >
           {saving ? 'Saving…' : 'Connect'}
         </button>

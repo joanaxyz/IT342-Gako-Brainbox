@@ -115,8 +115,8 @@ export const useAiConfig = () => {
     };
   }, [isAuthReady, userId]);
 
-  const saveConfig = useCallback(async ({ id, name, model, proxyUrl, apiKey }) => {
-    const res = await aiAPI.saveAiConfig({ id, name, model, proxyUrl, apiKey });
+  const saveConfig = useCallback(async ({ id, name, model, baseUrl, proxyUrl, apiKey }) => {
+    const res = await aiAPI.saveAiConfig({ id, name, model, baseUrl, proxyUrl, apiKey });
     if (res.success) {
       const savedConfigId = res.data?.id ?? id ?? null;
       // Only auto-select on create (no id was provided), not on edits.

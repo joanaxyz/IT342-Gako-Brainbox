@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNotification } from '../../common/hooks/hooks';
+import {
+  AI_PROVIDER_PRESETS,
+  DEFAULT_PROVIDER_PRESET_ID,
+  getProviderPreset,
+} from '../config/providerPresets';
 import { useAiConfig } from '../hooks/useAiConfig';
 
 const EMPTY_FORM = {
   name: '',
   model: '',
-  proxyUrl: '',
+  baseUrl: '',
   apiKey: '',
 };
 
@@ -58,7 +63,7 @@ const getInitialFormValues = (editTarget, row) => {
   return {
     name: row.name || '',
     model: row.model || '',
-    proxyUrl: row.proxyUrl || '',
+    baseUrl: row.baseUrl || row.proxyUrl || '',
     apiKey: '',
   };
 };
@@ -80,16 +85,29 @@ const AiConfigEditorForm = ({
 }) => {
   const { addNotification } = useNotification();
   const [formValues, setFormValues] = useState(() => getInitialFormValues(editTarget, row));
+  const [providerPresetId, setProviderPresetId] = useState(DEFAULT_PROVIDER_PRESET_ID);
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const isNew = editTarget === 'new';
   const canSubmit = editTarget !== null && !aiConfigLoading;
+  const providerPreset = getProviderPreset(providerPresetId);
 
   const updateField = (field) => (event) => {
     setFormValues((currentValues) => ({
       ...currentValues,
       [field]: event.target.value,
+    }));
+  };
+
+  const handleProviderPresetChange = (event) => {
+    const nextPreset = getProviderPreset(event.target.value);
+    setProviderPresetId(nextPreset.id);
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      name: currentValues.name.trim() ? currentValues.name : nextPreset.name,
+      model: nextPreset.model,
+      baseUrl: nextPreset.baseUrl,
     }));
   };
 
@@ -110,8 +128,8 @@ const AiConfigEditorForm = ({
       return;
     }
 
-    if (!formValues.proxyUrl.trim()) {
-      addNotification('Please enter a proxy URL.', 'error');
+    if (!formValues.baseUrl.trim()) {
+      addNotification('Please enter an API Base URL.', 'error');
       return;
     }
 
@@ -125,7 +143,7 @@ const AiConfigEditorForm = ({
       id: isNew ? null : editTarget,
       name: formValues.name.trim(),
       model: formValues.model.trim(),
-      proxyUrl: formValues.proxyUrl.trim(),
+      baseUrl: formValues.baseUrl.trim(),
       apiKey: formValues.apiKey.trim() || null,
     });
     setAiLoading(false);
@@ -163,7 +181,7 @@ const AiConfigEditorForm = ({
   return (
     <form className={`settings-form${compact ? ' settings-form--compact' : ''}`} onSubmit={handleSubmit}>
       <p className="settings-hint">
-        Connect your own AI provider by entering your proxy URL and API key. Your key is encrypted and stored securely.
+        Choose an AI provider and enter its API base URL, model, and API key. Your key is encrypted and stored securely.
         You can save multiple profiles and choose which one the assistant uses.
       </p>
 
@@ -192,6 +210,22 @@ const AiConfigEditorForm = ({
       )}
 
       <div className="settings-field">
+        <label className="settings-label" htmlFor="ai-config-panel-provider">Provider</label>
+        <select
+          id="ai-config-panel-provider"
+          className="settings-input"
+          value={providerPresetId}
+          onChange={handleProviderPresetChange}
+        >
+          {AI_PROVIDER_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="settings-field">
         <label className="settings-label">Configuration Name</label>
         <input
           type="text"
@@ -208,7 +242,7 @@ const AiConfigEditorForm = ({
         <input
           type="text"
           className="settings-input"
-          placeholder="e.g. gpt-4o, llama-3.3-70b-versatile"
+          placeholder={`e.g. ${providerPreset.modelPlaceholder}`}
           value={formValues.model}
           onChange={updateField('model')}
           autoComplete="off"
@@ -216,13 +250,13 @@ const AiConfigEditorForm = ({
       </div>
 
       <div className="settings-field">
-        <label className="settings-label">Proxy URL</label>
+        <label className="settings-label">API Base URL</label>
         <input
           type="url"
           className="settings-input"
-          placeholder="e.g. https://api.openai.com/v1"
-          value={formValues.proxyUrl}
-          onChange={updateField('proxyUrl')}
+          placeholder="https://openrouter.ai/api/v1"
+          value={formValues.baseUrl}
+          onChange={updateField('baseUrl')}
           autoComplete="off"
         />
       </div>
