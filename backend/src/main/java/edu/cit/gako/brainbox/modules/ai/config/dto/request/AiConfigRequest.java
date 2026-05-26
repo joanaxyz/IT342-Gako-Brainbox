@@ -10,6 +10,7 @@ public class AiConfigRequest {
     private Long id;
     private String name;
     private String model;
+    private String baseUrl;
     private String proxyUrl;
     private String apiKey;
 }
