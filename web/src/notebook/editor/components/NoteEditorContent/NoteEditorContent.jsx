@@ -26,6 +26,7 @@ import {
 } from '../../tiptap/createEditorExtensions';
 import { findRangeIndexForOffset } from '../../../../common/audio/playbackModel';
 import { isAndroidHost } from '../../../../app/host/brainBoxHost';
+import { normalizeEditorHtmlStructure } from '../../utils/normalizeAiGeneratedHtml';
 import TableBubbleMenu from '../TableBubbleMenu/TableBubbleMenu';
 import './NoteEditorContent.css';
 
@@ -118,7 +119,11 @@ const NoteEditorContent = forwardRef(({
   const viewportRef = useRef(null);
   const paperRef = useRef(null);
   const resizeObserverRef = useRef(null);
-  const lastKnownContentRef = useRef(content || '');
+  const normalizedContent = useMemo(
+    () => normalizeEditorHtmlStructure(content || ''),
+    [content],
+  );
+  const lastKnownContentRef = useRef(normalizedContent);
   const lastAppliedContentSyncTokenRef = useRef(contentSyncToken);
   const suppressExternalUpdateRef = useRef(false);
   const isEmbeddedAndroidHost = useMemo(() => isAndroidHost(), []);
@@ -185,7 +190,7 @@ const NoteEditorContent = forwardRef(({
 
   const editor = useEditor({
     extensions: editorExtensions,
-    content: content || '',
+    content: normalizedContent,
     editable: isEditable,
     onCreate: ({ editor: currentEditor }) => {
       lastKnownContentRef.current = currentEditor.getHTML();
@@ -311,6 +316,7 @@ const NoteEditorContent = forwardRef(({
       return false;
     }
 
+    const normalizedNextContent = normalizeEditorHtmlStructure(nextContent || '');
     suppressExternalUpdateRef.current = true;
     try {
       editor.view.dispatch(
@@ -318,7 +324,7 @@ const NoteEditorContent = forwardRef(({
           .setSelection(TextSelection.atStart(editor.state.doc))
           .setMeta('preventUpdate', true),
       );
-      const didSetContent = editor.commands.setContent(nextContent, {
+      const didSetContent = editor.commands.setContent(normalizedNextContent, {
         emitUpdate: false,
         errorOnInvalidContent: false,
       });
@@ -344,12 +350,12 @@ const NoteEditorContent = forwardRef(({
   }, [editor, isEditable]);
 
   useEffect(() => {
-    if (!editor || content === undefined || editor.isDestroyed) {
+    if (!editor || editor.isDestroyed) {
       return;
     }
 
     const isSyncedToCurrentToken = lastAppliedContentSyncTokenRef.current === contentSyncToken;
-    const shouldApplyReadOnlyContent = readOnly && content !== lastKnownContentRef.current;
+    const shouldApplyReadOnlyContent = readOnly && normalizedContent !== lastKnownContentRef.current;
 
     if (isSyncedToCurrentToken && !shouldApplyReadOnlyContent) {
       return;
@@ -357,15 +363,15 @@ const NoteEditorContent = forwardRef(({
 
     const liveHtml = editor.getHTML();
 
-    if (content !== liveHtml) {
-      applyExternalContent(content);
+    if (normalizedContent !== liveHtml) {
+      applyExternalContent(normalizedContent);
     }
 
     lastKnownContentRef.current = editor.getHTML();
     lastAppliedContentSyncTokenRef.current = contentSyncToken;
     updateOutline(editor);
     emitSelectionState(editor);
-  }, [applyExternalContent, content, contentSyncToken, editor, emitSelectionState, readOnly, updateOutline]);
+  }, [applyExternalContent, contentSyncToken, editor, emitSelectionState, normalizedContent, readOnly, updateOutline]);
 
   useEffect(() => {
     if (!editor) {
@@ -426,7 +432,7 @@ const NoteEditorContent = forwardRef(({
       resizeObserverRef.current?.disconnect();
       resizeObserverRef.current = null;
     };
-  }, [content, paperHeight, paperWidth, zoom]);
+  }, [normalizedContent, paperHeight, paperWidth, zoom]);
 
   // ── TTS word highlight (review mode only) ─────────────────────────────
   const ttsPositionMapRef = useRef([]);
@@ -437,7 +443,7 @@ const NoteEditorContent = forwardRef(({
       return;
     }
     ttsPositionMapRef.current = buildTtsPositionMap(editor);
-  }, [editor, reviewMode, content]);
+  }, [editor, reviewMode, normalizedContent]);
 
   useEffect(() => {
     if (!editor?.view || !reviewMode) return;

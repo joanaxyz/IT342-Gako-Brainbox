@@ -3,6 +3,7 @@ package edu.cit.gako.brainbox.modules.ai.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.time.Duration;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -21,6 +22,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OpenAiCompatibleProvider implements AiProvider {
 
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(90);
+
     private final ObjectMapper objectMapper;
 
     public String generateResponse(String baseUrl, String apiKey, String model,
@@ -36,12 +40,15 @@ public class OpenAiCompatibleProvider implements AiProvider {
 
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-            HttpResponse<String> response = HttpClient.newHttpClient()
+            HttpResponse<String> response = HttpClient.newBuilder()
+                .connectTimeout(CONNECT_TIMEOUT)
+                .build()
                 .send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {

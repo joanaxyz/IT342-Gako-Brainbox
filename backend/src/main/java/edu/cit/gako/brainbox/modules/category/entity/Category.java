@@ -3,6 +3,7 @@ package edu.cit.gako.brainbox.modules.category.entity;
 import edu.cit.gako.brainbox.modules.user.entity.User;
 import edu.cit.gako.brainbox.platform.security.interfaces.UserOwned;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,7 +29,7 @@ public class Category implements UserOwned {
 
     private Instant updatedAt;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 

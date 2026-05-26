@@ -86,6 +86,45 @@ const hasEditIntent = (value, activeToolKey, mode, isToolTriggered = false) => {
   return EDIT_INTENT_PATTERN.test(value);
 };
 
+const getAiQueryErrorMessage = (errorOrResponse) => {
+  const status = errorOrResponse?.status;
+  const message = errorOrResponse?.message || errorOrResponse?.error?.message;
+
+  if (status === 0) {
+    return message || 'Could not reach the BrainBox backend. Check that the API server is running.';
+  }
+
+  if (status === 401) {
+    return 'Your session expired. Sign in again and retry the AI request.';
+  }
+
+  if (status === 403) {
+    return 'You do not have access to this notebook.';
+  }
+
+  if (typeof message === 'string' && message.trim()) {
+    return message.trim();
+  }
+
+  return 'Failed to reach AI service. Please try again.';
+};
+
+const getEditorApplyFailureMessage = (result) => {
+  if (result?.reason === 'editor_unavailable') {
+    return 'AI replied, but the editor was not ready to receive the update. Reload the notebook and try again.';
+  }
+
+  if (result?.reason === 'empty_response') {
+    return 'AI replied, but it did not return note content to insert.';
+  }
+
+  if (result?.reason === 'editor_rejected_content') {
+    return 'AI replied, but the editor could not read the generated content.';
+  }
+
+  return 'AI replied, but the editor could not update the note.';
+};
+
 const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   const diff = Date.now() - new Date(isoString).getTime();
@@ -663,7 +702,12 @@ const AiAssistantSidebar = ({
       );
 
       if (!response.success) {
-        throw new Error(response.message || 'Failed to get AI response');
+        setError(getAiQueryErrorMessage(response));
+        return;
+      }
+
+      if (!response.data) {
+        throw new Error('AI service returned an empty response.');
       }
 
       const {
@@ -693,12 +737,18 @@ const AiAssistantSidebar = ({
       const nextConversationTitle = sanitizeConversationTitle(aiConversationTitle, finalMessages);
       setConversationTitle(nextConversationTitle);
 
+      try {
       if (
         onApplyEditorContent
         && action === 'add_to_editor'
         && editorContent
       ) {
-        onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
+        const appendResult = onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
+        if (appendResult?.applied === false) {
+          const applyMessage = getEditorApplyFailureMessage(appendResult);
+          setError(applyMessage);
+          addNotification(applyMessage, 'error', 3500);
+        }
       } else if (
         onApplyEditorContent
         && action === 'replace_editor'
@@ -772,10 +822,17 @@ const AiAssistantSidebar = ({
         setPendingFlashcard(normalizedFlashcardDraft);
         setPendingQuiz(null);
       }
+      } catch (applyError) {
+        console.error('Failed to apply AI response to editor:', applyError);
+        const applyMessage = getEditorApplyFailureMessage();
+        setError(applyMessage);
+        addNotification(applyMessage, 'error', 3500);
+      }
 
       void persistConversation(finalMessages, nextConversationTitle);
-    } catch {
-      setError('Failed to reach AI service. Please try again.');
+    } catch (requestError) {
+      console.error('AI request failed:', requestError);
+      setError(getAiQueryErrorMessage(requestError));
     } finally {
       setIsTyping(false);
     }

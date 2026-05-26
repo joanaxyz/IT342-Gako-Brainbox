@@ -8,6 +8,7 @@ import edu.cit.gako.brainbox.modules.ai.dto.AiSelectionEdit;
 import edu.cit.gako.brainbox.modules.ai.dto.AiSelectionTarget;
 import edu.cit.gako.brainbox.modules.ai.dto.request.AiRequest;
 import edu.cit.gako.brainbox.modules.ai.dto.response.AiResponse;
+import edu.cit.gako.brainbox.modules.ai.exception.AiServiceException;
 import edu.cit.gako.brainbox.modules.ai.prompt.AiPromptBuilder;
 import edu.cit.gako.brainbox.modules.ai.prompt.EditorModePromptBuilder;
 import edu.cit.gako.brainbox.modules.ai.prompt.ReviewModePromptBuilder;
@@ -77,7 +78,7 @@ public class AiService {
             AiConfig config = aiConfigService.getConfigEntity(userId);
             String apiKey = aiConfigService.decryptApiKey(config);
 
-            Notebook notebook = notebookService.getNotebookByUuid(aiRequest.getNotebookUuid());
+            Notebook notebook = notebookService.getNotebookByUuidAndUserId(aiRequest.getNotebookUuid(), userId);
             String assistantMode = aiRequest.getMode() != null ? aiRequest.getMode().trim().toLowerCase() : "editor";
             boolean reviewMode = "review".equals(assistantMode);
             String notebookContent = notebook.getContent() != null ? notebook.getContent() : "";
@@ -118,14 +119,24 @@ public class AiService {
             AiResponse aiResponse = sanitizeMode(parseAiMessage(aiMessage), reviewMode);
             aiResponse.setConversationTitle(sanitizeConversationTitle(aiResponse.getConversationTitle(), aiRequest.getQuery()));
             return aiResponse;
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error communicating with AI service", e);
+            throw new AiServiceException("Failed to reach AI service: " + rootCauseMessage(e), e);
         }
     }
 
     // ── Response parsing ──
+
+    private String rootCauseMessage(Throwable throwable) {
+        Throwable cursor = throwable;
+        while (cursor.getCause() != null) {
+            cursor = cursor.getCause();
+        }
+
+        String message = cursor.getMessage();
+        return message == null || message.isBlank() ? "unknown provider error" : message;
+    }
 
     private AiResponse sanitizeMode(AiResponse response, boolean reviewMode) {
         if (!reviewMode) return response;
@@ -152,8 +163,15 @@ public class AiService {
         try {
             JsonNode parsed = objectMapper.readTree(trimmed);
             String reply = firstTextField(parsed, "reply", "response", "message");
-            String action = normalizeAction(parsed.path("action").asText("none"));
+            String action = normalizeAction(firstTextField(parsed, "action", "tool", "operation"));
             String editorContent = firstTextField(parsed, "editorContent", "editor_content");
+            if (isEditorContentAction(action) && editorContent.isBlank()) {
+                editorContent = firstTextField(
+                    parsed,
+                    "content", "html", "markdown", "noteContent", "note_content",
+                    "notebookContent", "notebook_content"
+                );
+            }
             String conversationTitle = firstTextField(parsed, "conversationTitle", "conversation_title", "title");
 
             if (reply.isBlank()) reply = extractFieldFallback(trimmed, "reply");
@@ -181,6 +199,9 @@ public class AiService {
             if ("create_flashcard".equals(action) && flashcardData == null) {
                 action = quizData != null ? "create_quiz" : "none";
             }
+            if ("none".equals(action) && !editorContent.isBlank()) {
+                action = "add_to_editor";
+            }
             if ("none".equals(action)) {
                 if (!editorCommands.isEmpty()) {
                     action = "apply_editor_commands";
@@ -206,6 +227,16 @@ public class AiService {
             String action = normalizeAction(extractFieldFallback(trimmed, "action"));
             String editorContent = extractFieldFallback(trimmed, "editorContent");
             if (editorContent.isBlank()) editorContent = extractFieldFallback(trimmed, "editor_content");
+            if (isEditorContentAction(action) && editorContent.isBlank()) {
+                editorContent = extractFieldFallback(trimmed, "content");
+                if (editorContent.isBlank()) editorContent = extractFieldFallback(trimmed, "html");
+                if (editorContent.isBlank()) editorContent = extractFieldFallback(trimmed, "markdown");
+                if (editorContent.isBlank()) editorContent = extractFieldFallback(trimmed, "notebookContent");
+                if (editorContent.isBlank()) editorContent = extractFieldFallback(trimmed, "notebook_content");
+            }
+            if ("none".equals(action) && !editorContent.isBlank()) {
+                action = "add_to_editor";
+            }
             String conversationTitle = extractFieldFallback(trimmed, "conversationTitle");
             if (conversationTitle.isBlank()) conversationTitle = extractFieldFallback(trimmed, "conversation_title");
             if (conversationTitle.isBlank()) conversationTitle = extractFieldFallback(trimmed, "title");
@@ -219,7 +250,9 @@ public class AiService {
     }
 
     private String normalizeAction(String rawAction) {
-        String normalizedAction = rawAction != null ? rawAction.trim().toLowerCase() : "";
+        String normalizedAction = rawAction != null
+            ? rawAction.trim().toLowerCase().replace('-', '_').replace(' ', '_')
+            : "";
 
         if (QUIZ_ACTION_ALIASES.contains(normalizedAction)) {
             return "create_quiz";
@@ -233,6 +266,12 @@ public class AiService {
         }
 
         return VALID_ACTIONS.contains(normalizedAction) ? normalizedAction : "none";
+    }
+
+    private boolean isEditorContentAction(String action) {
+        return "add_to_editor".equals(action)
+            || "replace_editor".equals(action)
+            || "replace_selection".equals(action);
     }
 
     private String firstTextField(JsonNode parsed, String... fieldNames) {

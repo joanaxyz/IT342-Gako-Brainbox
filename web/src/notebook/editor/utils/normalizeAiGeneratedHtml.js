@@ -372,7 +372,7 @@ const normalizeHtmlContainers = (root) => {
   removeEmptyListArtifacts(root);
 };
 
-const normalizeHtmlString = (value = '') => {
+export const normalizeEditorHtmlStructure = (value = '') => {
   const cleaned = stripCodeFences(value);
 
   if (typeof DOMParser === 'undefined') {
@@ -396,10 +396,10 @@ export const normalizeAiGeneratedHtml = (value = '') => {
   }
 
   const html = hasHtmlTags(cleaned)
-    ? normalizeHtmlString(cleaned)
+    ? normalizeEditorHtmlStructure(cleaned)
     : markdownToHtml(cleaned);
 
-  return html.trim();
+  return normalizeEditorHtmlStructure(html).trim();
 };
 
 export const normalizeAiSelectionEdits = (selectionEdits = []) => selectionEdits

@@ -110,8 +110,7 @@ public class FlashcardService {
         if (request.getDescription() != null) flashcard.setDescription(request.getDescription());
 
         if (request.getNotebookUuid() != null && !request.getNotebookUuid().isBlank()) {
-            Notebook notebook = notebookService.getNotebookByUuid(request.getNotebookUuid());
-            notebook.assertOwnedBy(userId);
+            Notebook notebook = notebookService.getNotebookByUuidAndUserId(request.getNotebookUuid(), userId);
             flashcard.setNotebook(notebook);
         } else {
             flashcard.setNotebook(null);

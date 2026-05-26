@@ -5,18 +5,32 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface NotebookRepository extends JpaRepository<Notebook, Long> {
+    @EntityGraph(attributePaths = "category")
     Optional<Notebook> findByUuid(String uuid);
+
+    @EntityGraph(attributePaths = "category")
     Optional<Notebook> findByUuidAndUserId(String uuid, Long userId);
+
+    @EntityGraph(attributePaths = "category")
     List<Notebook> findByUuidInAndUserId(Collection<String> uuids, Long userId);
+
+    @EntityGraph(attributePaths = "category")
     List<Notebook> findByUserId(Long userId);
+
+    @EntityGraph(attributePaths = "category")
     List<Notebook> findByUserIdOrderByUpdatedAtDesc(Long userId);
+
+    @EntityGraph(attributePaths = "category")
     List<Notebook> findByCategoryIdAndUserId(Long categoryId, Long userId);
+
+    @EntityGraph(attributePaths = "category")
     List<Notebook> findTop3ByUserIdAndLastReviewedAtNotNullOrderByLastReviewedAtDesc(Long userId);
     boolean existsByUuid(String uuid);
 

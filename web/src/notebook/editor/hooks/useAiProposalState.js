@@ -117,7 +117,7 @@ export const useAiProposalState = ({
 
   const handleAiUpdateContent = useCallback((content, mode = 'replace', options = {}) => {
     if (!editorRef.current) {
-      return;
+      return { applied: false, reason: 'editor_unavailable' };
     }
 
     const normalizedContent = normalizeAiGeneratedHtml(content);
@@ -128,23 +128,34 @@ export const useAiProposalState = ({
         : [],
     };
     const originalContent = editorRef.current.getHTML();
-    const proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
     const sourceMessageId = options?.sourceMessageId ?? null;
+    const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/g, ' ').trim();
 
-    if (proposedContent === originalContent) {
-      return { applied: false, reason: 'identical' };
+    if (!normalizedContent && mode !== 'replace_ai_selections') {
+      return { applied: false, reason: 'empty_response' };
     }
 
-    // If the notebook is empty (no meaningful content), skip the comparison modal
-    // and apply content directly
-    const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').trim();
-    if (!strippedOriginal) {
-      editorRef.current.setContent?.(proposedContent);
-      onDirectApplyContent?.(proposedContent, {
+    // Empty documents do not need a comparison session. Applying directly also
+    // avoids scratch-editor parsing failures from blocking first-generation notes.
+    if (!strippedOriginal && (mode === 'append' || mode === 'replace')) {
+      const didSetContent = editorRef.current.setContent?.(normalizedContent);
+
+      if (didSetContent === false) {
+        return { applied: false, reason: 'editor_rejected_content' };
+      }
+
+      const appliedContent = editorRef.current.getHTML?.() || normalizedContent;
+      onDirectApplyContent?.(appliedContent, {
         sourceMessageId,
         clearAllAiSelections: Boolean(normalizedOptions.clearAllAiSelections),
       });
       return { applied: true, direct: true };
+    }
+
+    const proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
+
+    if (proposedContent === originalContent) {
+      return { applied: false, reason: 'identical' };
     }
 
     // Pre-build the comparison session so we can detect no-op proposals before

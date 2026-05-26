@@ -63,7 +63,7 @@ class FlashcardServiceTest {
         request.setCards(List.of(card));
 
         when(userService.findById(11L)).thenReturn(user);
-        when(notebookService.getNotebookByUuid("nb-1")).thenReturn(notebook);
+        when(notebookService.getNotebookByUuidAndUserId("nb-1", 11L)).thenReturn(notebook);
         when(flashcardRepository.save(any(Flashcard.class))).thenAnswer((invocation) -> {
             Flashcard flashcard = invocation.getArgument(0);
             flashcard.setId(42L);
