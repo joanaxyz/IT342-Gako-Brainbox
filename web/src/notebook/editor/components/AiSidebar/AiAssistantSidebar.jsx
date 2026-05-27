@@ -160,6 +160,35 @@ const logEditorApplyFailure = ({ action, editorContent, reply, result, error }) 
   });
 };
 
+const logAiResponsePayload = ({ payload, normalizedAction, editorAction }) => {
+  const editorContent = payload?.editorContent;
+  const reply = payload?.response;
+  const diagnostics = {
+    action: payload?.action,
+    normalizedAction,
+    editorAction,
+    willApplyToEditor: Boolean(editorAction),
+    editorContentLength: getContentLength(editorContent),
+    replyLength: getContentLength(reply),
+    containsTableTags: containsTableTags(editorContent),
+    hasSelectionEdits: Array.isArray(payload?.selectionEdits) && payload.selectionEdits.length > 0,
+    hasEditorCommands: Array.isArray(payload?.editorCommands) && payload.editorCommands.length > 0,
+  };
+
+  if (typeof console.groupCollapsed === 'function') {
+    console.groupCollapsed('[BrainBox AI DEBUG] response payload');
+    console.log('diagnostics', diagnostics);
+    console.log('raw payload', payload);
+    console.groupEnd();
+    return;
+  }
+
+  console.info('[BrainBox AI DEBUG] response payload', {
+    diagnostics,
+    payload,
+  });
+};
+
 const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   const diff = Date.now() - new Date(isoString).getTime();
@@ -759,6 +788,15 @@ const AiAssistantSidebar = ({
         quizDraft: normalizedQuizDraft,
         flashcardDraft: normalizedFlashcardDraft,
       });
+      const editorAction = EDITOR_CONTENT_ACTIONS.has(normalizedGenerationAction)
+        ? normalizedGenerationAction
+        : '';
+
+      logAiResponsePayload({
+        payload: response.data,
+        normalizedAction: normalizedGenerationAction,
+        editorAction,
+      });
 
       const finalMessages = [
         ...nextMessages,
@@ -773,39 +811,39 @@ const AiAssistantSidebar = ({
       setConversationTitle(nextConversationTitle);
 
       try {
-        if (EDITOR_CONTENT_ACTIONS.has(action) && !hasUsableEditorContent(editorContent)) {
+        if (editorAction && !hasUsableEditorContent(editorContent)) {
           const emptyResult = { applied: false, reason: 'empty_response' };
-          logEditorApplyFailure({ action, editorContent, reply, result: emptyResult });
+          logEditorApplyFailure({ action: editorAction, editorContent, reply, result: emptyResult });
           const applyMessage = getEditorApplyFailureMessage(emptyResult);
           setError(applyMessage);
           addNotification(applyMessage, 'error', 3500);
-        } else if (EDITOR_CONTENT_ACTIONS.has(action) && !onApplyEditorContent) {
+        } else if (editorAction && !onApplyEditorContent) {
           const unavailableResult = { applied: false, reason: 'editor_unavailable' };
-          logEditorApplyFailure({ action, editorContent, reply, result: unavailableResult });
+          logEditorApplyFailure({ action: editorAction, editorContent, reply, result: unavailableResult });
           const applyMessage = getEditorApplyFailureMessage(unavailableResult);
           setError(applyMessage);
           addNotification(applyMessage, 'error', 3500);
         } else if (
           onApplyEditorContent
-          && action === 'add_to_editor'
+          && editorAction === 'add_to_editor'
         ) {
           const appendResult = onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
           if (appendResult?.applied === false) {
-            logEditorApplyFailure({ action, editorContent, reply, result: appendResult });
+            logEditorApplyFailure({ action: editorAction, editorContent, reply, result: appendResult });
             const applyMessage = getEditorApplyFailureMessage(appendResult);
             setError(applyMessage);
             addNotification(applyMessage, 'error', 3500);
           }
         } else if (
           onApplyEditorContent
-          && action === 'replace_editor'
+          && editorAction === 'replace_editor'
         ) {
           const replaceResult = onApplyEditorContent(editorContent, 'replace', {
             sourceMessageId: userMessage.id,
             clearAllAiSelections: true,
           });
           if (replaceResult?.applied === false) {
-            logEditorApplyFailure({ action, editorContent, reply, result: replaceResult });
+            logEditorApplyFailure({ action: editorAction, editorContent, reply, result: replaceResult });
             if (replaceResult?.reason === 'editor_rejected_content' || replaceResult?.reason === 'editor_unavailable') {
               const applyMessage = getEditorApplyFailureMessage(replaceResult);
               setError(applyMessage);
@@ -816,14 +854,14 @@ const AiAssistantSidebar = ({
           }
         } else if (
           onApplyEditorContent
-          && action === 'replace_selection'
+          && editorAction === 'replace_selection'
         ) {
           const selectionResult = onApplyEditorContent(editorContent, 'replace_selection', {
             sourceMessageId: userMessage.id,
             aiSelectionIds: aiSelections.map((selection) => selection.id),
           });
           if (selectionResult?.applied === false) {
-            logEditorApplyFailure({ action, editorContent, reply, result: selectionResult });
+            logEditorApplyFailure({ action: editorAction, editorContent, reply, result: selectionResult });
             if (selectionResult?.reason === 'editor_rejected_content' || selectionResult?.reason === 'editor_unavailable') {
               const applyMessage = getEditorApplyFailureMessage(selectionResult);
               setError(applyMessage);
@@ -840,7 +878,7 @@ const AiAssistantSidebar = ({
           }
         } else if (
           onApplyEditorContent
-          && action === 'replace_ai_selections'
+          && normalizedGenerationAction === 'replace_ai_selections'
           && Array.isArray(selectionEdits)
           && selectionEdits.length > 0
         ) {
@@ -850,7 +888,7 @@ const AiAssistantSidebar = ({
             selectionEdits,
           });
           if (aiSelResult?.applied === false) {
-            logEditorApplyFailure({ action, editorContent, reply, result: aiSelResult });
+            logEditorApplyFailure({ action: normalizedGenerationAction, editorContent, reply, result: aiSelResult });
             addNotification(
               'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
               'info',
@@ -859,7 +897,7 @@ const AiAssistantSidebar = ({
           }
         } else if (
           onApplyEditorCommands
-          && action === 'apply_editor_commands'
+          && normalizedGenerationAction === 'apply_editor_commands'
           && Array.isArray(editorCommands)
           && editorCommands.length > 0
         ) {
@@ -883,7 +921,7 @@ const AiAssistantSidebar = ({
           setPendingQuiz(null);
         }
       } catch (applyError) {
-        logEditorApplyFailure({ action, editorContent, reply, error: applyError });
+        logEditorApplyFailure({ action: editorAction || normalizedGenerationAction || action, editorContent, reply, error: applyError });
         const applyMessage = getEditorApplyFailureMessage();
         setError(applyMessage);
         addNotification(applyMessage, 'error', 3500);
