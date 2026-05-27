@@ -185,6 +185,18 @@ const getNodeAtSafely = (doc, pos) => {
   }
 };
 
+const collectTablePositions = (doc) => {
+  const positions = [];
+
+  doc?.descendants((node, pos) => {
+    if (node.type.name === 'table') {
+      positions.push(pos);
+    }
+  });
+
+  return positions;
+};
+
 const getPairLockedColumnWidths = (currentWidths, previousWidths, previousTableNode, availableWidth, cellMinWidth) => {
   if (!previousTableNode || currentWidths.length !== previousWidths.length || currentWidths.length === 0) {
     return null;
@@ -386,48 +398,51 @@ const normalizeTableNode = (tr, tableNode, previousTableNode, tablePos, containe
   return true;
 };
 
-const ensureParagraphAfterTables = (tr, doc, schema) => {
+export const ensureParagraphAfterTables = (tr, _doc, schema) => {
   const paragraphType = schema.nodes.paragraph;
-  const insertionPositions = [];
 
   if (!paragraphType) {
     return false;
   }
 
-  doc.descendants((node, pos) => {
-    if (node.type.name !== 'table') {
+  const insertionPositions = collectTablePositions(tr.doc)
+    .map((position) => {
+      const tableNode = getNodeAtSafely(tr.doc, position);
+      return tableNode?.type?.name === 'table' ? position + tableNode.nodeSize : null;
+    })
+    .filter((position) => Number.isInteger(position))
+    .sort((a, b) => b - a)
+    .filter((position, index, positions) => position !== positions[index - 1]);
+
+  let didInsert = false;
+
+  insertionPositions.forEach((position) => {
+    if (position < 0 || position > tr.doc.content.size) {
       return;
     }
 
-    const endPosition = pos + node.nodeSize;
+    try {
+      const $end = tr.doc.resolve(position);
+      const parent = $end.parent;
+      const index = $end.index();
+      const nextNode = index < parent.childCount ? parent.child(index) : null;
 
-    if (endPosition < 0 || endPosition > doc.content.size) {
-      return;
-    }
+      if (nextNode?.type.name === 'paragraph') {
+        return;
+      }
 
-    const $end = doc.resolve(endPosition);
-    const parent = $end.parent;
-    const index = $end.index();
-    const nextNode = index < parent.childCount ? parent.child(index) : null;
+      if (!parent.canReplaceWith(index, index, paragraphType)) {
+        return;
+      }
 
-    if (nextNode?.type.name === 'paragraph') {
-      return;
-    }
-
-    if (parent.canReplaceWith(index, index, paragraphType)) {
-      insertionPositions.push(endPosition);
+      tr.insert(position, paragraphType.create());
+      didInsert = true;
+    } catch (error) {
+      warnTableNormalizationFailure(error, position);
     }
   });
 
-  insertionPositions
-    .sort((a, b) => b - a)
-    .forEach((position) => {
-      if (position >= 0 && position <= tr.doc.content.size) {
-        tr.insert(position, paragraphType.create());
-      }
-    });
-
-  return insertionPositions.length > 0;
+  return didInsert;
 };
 
 const normalizeSelectionAfterTable = (tr) => {
@@ -509,23 +524,62 @@ const normalizeSelectionAfterTableSafely = (tr) => {
   }
 };
 
+const docContainsTable = (doc) => {
+  let hasTable = false;
+
+  doc?.descendants((node) => {
+    if (node.type.name === 'table') {
+      hasTable = true;
+      return false;
+    }
+
+    return !hasTable;
+  });
+
+  return hasTable;
+};
+
+const isTinyDocument = (doc) => !doc || doc.content.size <= 4;
+
+const isGeneratedDocumentReplacement = (transactions, oldState, newState) => (
+  isTinyDocument(oldState?.doc)
+  && docContainsTable(newState?.doc)
+  && transactions.some((transaction) => (
+    transaction.docChanged
+    && transaction.before?.content?.size <= 4
+    && transaction.doc?.content?.size > transaction.before.content.size
+  ))
+);
+
 export const normalizeTablesInDoc = (tr, doc, previousDoc, editor, cellMinWidth) => {
   const containerWidth = getContainerWidth(editor, null, editor?.extensionStorage?.tableLayout?.containerWidth);
   let didChange = false;
 
-  doc.descendants((node, pos) => {
-    if (node.type.name !== 'table') {
-      return;
-    }
+  collectTablePositions(doc)
+    .sort((a, b) => b - a)
+    .forEach((pos) => {
+      const mappedPos = tr.docChanged ? tr.mapping.map(pos, 1) : pos;
+      const tableNode = getNodeAtSafely(tr.doc, mappedPos);
 
-    const previousNode = getPreviousTableNodeAt(previousDoc, pos);
+      if (tableNode?.type?.name !== 'table') {
+        return;
+      }
 
-    try {
-      didChange = normalizeTableNode(tr, node, previousNode, pos, containerWidth, cellMinWidth) || didChange;
-    } catch (error) {
-      warnTableNormalizationFailure(error, pos);
-    }
-  });
+      const previousNode = getPreviousTableNodeAt(previousDoc, pos);
+
+      try {
+        didChange = normalizeTableNode(
+          tr,
+          tableNode,
+          previousNode,
+          mappedPos,
+          containerWidth,
+          cellMinWidth,
+        ) || didChange;
+      } catch (error) {
+        warnTableNormalizationFailure(error, mappedPos);
+      }
+    });
 
   return didChange;
 };
@@ -747,28 +801,33 @@ export const TableLayout = Extension.create({
       normalizeTables:
         () =>
         ({ state, dispatch }) => {
-          const tr = state.tr;
-          const didNormalizeWidths = normalizeTablesForTransaction(
-            tr,
-            state.doc,
-            null,
-            this.editor,
-            this.options.cellMinWidth,
-          );
-          const didInsertParagraph = ensureParagraphAfterTablesSafely(tr, state.doc, state.schema);
-          const didNormalizeSelection = normalizeSelectionAfterTableSafely(tr);
+          try {
+            const tr = state.tr;
+            const didNormalizeWidths = normalizeTablesForTransaction(
+              tr,
+              state.doc,
+              null,
+              this.editor,
+              this.options.cellMinWidth,
+            );
+            const didInsertParagraph = ensureParagraphAfterTablesSafely(tr, state.doc, state.schema);
+            const didNormalizeSelection = normalizeSelectionAfterTableSafely(tr);
 
-          if (!didNormalizeWidths && !didInsertParagraph && !didNormalizeSelection) {
+            if (!didNormalizeWidths && !didInsertParagraph && !didNormalizeSelection) {
+              return false;
+            }
+
+            tr.setMeta(TABLE_META, true);
+
+            if (dispatch) {
+              dispatch(tr);
+            }
+
+            return true;
+          } catch (error) {
+            warnTableNormalizationFailure(error, null);
             return false;
           }
-
-          tr.setMeta(TABLE_META, true);
-
-          if (dispatch) {
-            dispatch(tr);
-          }
-
-          return true;
         },
     };
   },
@@ -778,31 +837,33 @@ export const TableLayout = Extension.create({
       new Plugin({
         key: tablePluginKey,
         appendTransaction: (transactions, _oldState, newState) => {
-          if (!transactions.some((transaction) => transaction.docChanged || transaction.selectionSet)) {
+          try {
+            if (!transactions.some((transaction) => transaction.docChanged || transaction.selectionSet)) {
+              return null;
+            }
+
+            if (transactions.some((transaction) => transaction.getMeta(TABLE_META))) {
+              return null;
+            }
+
+            if (isGeneratedDocumentReplacement(transactions, _oldState, newState)) {
+              return null;
+            }
+
+            const tr = newState.tr;
+            const didInsertParagraph = ensureParagraphAfterTablesSafely(tr, newState.doc, newState.schema);
+            const didNormalizeSelection = normalizeSelectionAfterTableSafely(tr);
+
+            if (!didInsertParagraph && !didNormalizeSelection) {
+              return null;
+            }
+
+            tr.setMeta(TABLE_META, true);
+            return tr;
+          } catch (error) {
+            warnTableNormalizationFailure(error, null);
             return null;
           }
-
-          if (transactions.some((transaction) => transaction.getMeta(TABLE_META))) {
-            return null;
-          }
-
-          const tr = newState.tr;
-          const didNormalizeWidths = normalizeTablesForTransaction(
-            tr,
-            newState.doc,
-            _oldState.doc,
-            this.editor,
-            this.options.cellMinWidth,
-          );
-          const didInsertParagraph = ensureParagraphAfterTablesSafely(tr, newState.doc, newState.schema);
-          const didNormalizeSelection = normalizeSelectionAfterTableSafely(tr);
-
-          if (!didNormalizeWidths && !didInsertParagraph && !didNormalizeSelection) {
-            return null;
-          }
-
-          tr.setMeta(TABLE_META, true);
-          return tr;
         },
       }),
       new Plugin({

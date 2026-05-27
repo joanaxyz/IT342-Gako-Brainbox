@@ -7,6 +7,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { EditorState } from '@tiptap/pm/state';
 
 import {
+  ensureParagraphAfterTables,
   getPreviousTableNodeAt,
   TableLayout,
   normalizeTablesInDoc,
@@ -36,6 +37,16 @@ const table = (rows) => schema.nodes.table.create(
   null,
   rows.map((row) => schema.nodes.tableRow.create(null, row.map(tableCell))),
 );
+
+const getTopLevelNodeNames = (doc) => {
+  const names = [];
+
+  doc.content.forEach((node) => {
+    names.push(node.type.name);
+  });
+
+  return names;
+};
 
 const getFirstTable = (doc) => {
   let found = null;
@@ -90,4 +101,76 @@ test('table normalization tolerates generated tables beyond the previous doc siz
   const normalizedTable = getFirstTable(updatedState.doc);
 
   assert.equal(normalizedTable.node.attrs.tableWidth, 638);
+});
+
+test('paragraph insertion after generated tables uses current transaction positions', () => {
+  const nextDoc = schema.nodes.doc.create(null, [
+    table([
+      ['Complexity', 'Meaning'],
+      ['O(1)', 'Constant'],
+    ]),
+    table([
+      ['Structure', 'Use case'],
+      ['Stack', 'LIFO operations'],
+    ]),
+  ]);
+  const state = EditorState.create({ doc: nextDoc });
+  const tr = state.tr.insert(0, paragraph('Generated introduction'));
+
+  assert.doesNotThrow(() => {
+    ensureParagraphAfterTables(tr, nextDoc, schema);
+  });
+
+  const updatedState = state.apply(tr);
+
+  assert.deepEqual(getTopLevelNodeNames(updatedState.doc), [
+    'paragraph',
+    'table',
+    'paragraph',
+    'table',
+    'paragraph',
+  ]);
+});
+
+test('table normalization maps positions after earlier transaction changes', () => {
+  const nextDoc = schema.nodes.doc.create(null, [
+    paragraph('Before generated comparison'),
+    table([
+      ['Operation', 'Array', 'Linked list'],
+      ['Access', 'O(1)', 'O(n)'],
+    ]),
+    table([
+      ['Operation', 'Stack', 'Queue'],
+      ['Insert', 'O(1)', 'O(1)'],
+    ]),
+  ]);
+  const state = EditorState.create({ doc: nextDoc });
+  const tr = state.tr.insert(0, paragraph('AI preface'));
+
+  assert.doesNotThrow(() => {
+    normalizeTablesInDoc(
+      tr,
+      nextDoc,
+      null,
+      {
+        extensionStorage: {
+          tableLayout: {
+            containerWidth: 640,
+          },
+        },
+      },
+      96,
+    );
+  });
+
+  const updatedState = state.apply(tr);
+  const widths = [];
+
+  updatedState.doc.descendants((node) => {
+    if (node.type.name === 'table') {
+      widths.push(node.attrs.tableWidth);
+    }
+  });
+
+  assert.deepEqual(widths, [638, 638]);
 });
