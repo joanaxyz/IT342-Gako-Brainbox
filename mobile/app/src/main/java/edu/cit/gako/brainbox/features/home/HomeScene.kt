@@ -49,8 +49,12 @@ internal fun HomeScene(
     onStartQueue: () -> Unit = {}
 ) {
     var isPlaybarExpanded by rememberSaveable { mutableStateOf(false) }
+    val shouldShowPlaybackOverlay = state.currentTab != HomeTab.QUIZZES &&
+        state.currentTab != HomeTab.FLASHCARDS
     val shouldUseFullscreenPlayer =
-        (state.playbackState.isVisible || state.playbackQueue.isNotEmpty()) && isPlaybarExpanded
+        shouldShowPlaybackOverlay &&
+            (state.playbackState.isVisible || state.playbackQueue.isNotEmpty()) &&
+            isPlaybarExpanded
 
     Scaffold(
         containerColor = Cream,
@@ -88,7 +92,8 @@ internal fun HomeScene(
                 top = if (state.isBusy) 18.dp else 12.dp,
                 end = 20.dp,
                 bottom = when {
-                    state.playbackState.isVisible || state.playbackQueue.isNotEmpty() -> 140.dp
+                    shouldShowPlaybackOverlay &&
+                        (state.playbackState.isVisible || state.playbackQueue.isNotEmpty()) -> 140.dp
                     else -> 112.dp
                 }
             )
@@ -145,27 +150,29 @@ internal fun HomeScene(
                 )
             }
 
-            PlaybackOverlay(
-                playbackState = state.playbackState,
-                playbackQueue = state.playbackQueue,
-                playlists = state.homeData.playlists,
-                activePlaylistUuid = state.playbackPlaylistUuid,
-                activePlaylistTitle = state.playbackPlaylistTitle,
-                currentQueueIndex = state.playbackPlaylistCurrentIndex,
-                isLooping = state.isPlaybackLooping,
-                isShuffling = state.isPlaybackShuffling,
-                isExpanded = isPlaybarExpanded,
-                onExpandedChange = { isPlaybarExpanded = it },
-                onStartQueue = onStartQueue,
-                onSkipNext = onSkipNext,
-                onSkipPrevious = onSkipPrevious,
-                onToggleLoop = onTogglePlaybackLoop,
-                onToggleShuffle = onTogglePlaybackShuffle,
-                onSelectPlaylist = onSelectQueuePlaylist,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .align(Alignment.BottomCenter)
-            )
+            if (shouldShowPlaybackOverlay) {
+                PlaybackOverlay(
+                    playbackState = state.playbackState,
+                    playbackQueue = state.playbackQueue,
+                    playlists = state.homeData.playlists,
+                    activePlaylistUuid = state.playbackPlaylistUuid,
+                    activePlaylistTitle = state.playbackPlaylistTitle,
+                    currentQueueIndex = state.playbackPlaylistCurrentIndex,
+                    isLooping = state.isPlaybackLooping,
+                    isShuffling = state.isPlaybackShuffling,
+                    isExpanded = isPlaybarExpanded,
+                    onExpandedChange = { isPlaybarExpanded = it },
+                    onStartQueue = onStartQueue,
+                    onSkipNext = onSkipNext,
+                    onSkipPrevious = onSkipPrevious,
+                    onToggleLoop = onTogglePlaybackLoop,
+                    onToggleShuffle = onTogglePlaybackShuffle,
+                    onSelectPlaylist = onSelectQueuePlaylist,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.BottomCenter)
+                )
+            }
         }
     }
 }
