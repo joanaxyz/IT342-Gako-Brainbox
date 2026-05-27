@@ -111,8 +111,7 @@ public class QuizService {
         if (request.getDifficulty() != null) quiz.setDifficulty(request.getDifficulty());
 
         if (request.getNotebookUuid() != null && !request.getNotebookUuid().isBlank()) {
-            Notebook notebook = notebookService.getNotebookByUuid(request.getNotebookUuid());
-            notebook.assertOwnedBy(userId);
+            Notebook notebook = notebookService.getNotebookByUuidAndUserId(request.getNotebookUuid(), userId);
             quiz.setNotebook(notebook);
         } else {
             quiz.setNotebook(null);

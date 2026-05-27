@@ -1,6 +1,7 @@
 package edu.cit.gako.brainbox.modules.ai.dto.response;
 
 import edu.cit.gako.brainbox.modules.ai.dto.AiSelectionEdit;
+import edu.cit.gako.brainbox.modules.ai.dto.AiEditorCommand;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ public class AiResponse {
     private String editorContent;
     private String conversationTitle;
     private List<AiSelectionEdit> selectionEdits;
+    private List<AiEditorCommand> editorCommands;
     private Object quizData;
     private Object flashcardData;
 
@@ -22,6 +24,7 @@ public class AiResponse {
         this.editorContent = null;
         this.conversationTitle = null;
         this.selectionEdits = null;
+        this.editorCommands = null;
     }
 
     public AiResponse(String response, String action, String editorContent, String conversationTitle) {
@@ -30,6 +33,7 @@ public class AiResponse {
         this.editorContent = editorContent;
         this.conversationTitle = conversationTitle;
         this.selectionEdits = null;
+        this.editorCommands = null;
     }
 
     public AiResponse(
@@ -38,6 +42,7 @@ public class AiResponse {
         String editorContent,
         String conversationTitle,
         List<AiSelectionEdit> selectionEdits,
+        List<AiEditorCommand> editorCommands,
         Object quizData,
         Object flashcardData
     ) {
@@ -46,6 +51,7 @@ public class AiResponse {
         this.editorContent = editorContent;
         this.conversationTitle = conversationTitle;
         this.selectionEdits = selectionEdits;
+        this.editorCommands = editorCommands;
         this.quizData = quizData;
         this.flashcardData = flashcardData;
     }

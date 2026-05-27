@@ -97,7 +97,7 @@ const ChevronIcon = () => (
 
 const Sidebar = ({ isOpen = false, onClose }) => {
   const { user, logout } = useAuth();
-  const { notebooks } = useNotebook();
+  const { recentlyEditedNotebooks } = useNotebook();
   const navigate = useNavigate();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -105,9 +105,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   const { openSettings } = useSettingsModal();
   const userMenuRef = useRef(null);
 
-  const recentNotebooks = [...notebooks]
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-    .slice(0, 3);
+  const recentNotebooks = recentlyEditedNotebooks.slice(0, 6);
 
   const initials = user?.username
     ? user.username.slice(0, 2).toUpperCase()

@@ -86,6 +86,109 @@ const hasEditIntent = (value, activeToolKey, mode, isToolTriggered = false) => {
   return EDIT_INTENT_PATTERN.test(value);
 };
 
+const getAiQueryErrorMessage = (errorOrResponse) => {
+  const status = errorOrResponse?.status;
+  const message = errorOrResponse?.message || errorOrResponse?.error?.message;
+
+  if (status === 0) {
+    return message || 'Could not reach the BrainBox backend. Check that the API server is running.';
+  }
+
+  if (status === 401) {
+    return 'Your session expired. Sign in again and retry the AI request.';
+  }
+
+  if (status === 403) {
+    return 'You do not have access to this notebook.';
+  }
+
+  if (typeof message === 'string' && message.trim()) {
+    return message.trim();
+  }
+
+  return 'Failed to reach AI service. Please try again.';
+};
+
+const getEditorApplyFailureMessage = (result) => {
+  if (result?.reason === 'editor_unavailable') {
+    return 'AI replied, but the editor was not ready to receive the update. Reload the notebook and try again.';
+  }
+
+  if (result?.reason === 'empty_response') {
+    return 'AI replied, but it did not return note content to insert.';
+  }
+
+  if (result?.reason === 'editor_rejected_content') {
+    return 'AI replied, but the editor could not read the generated content.';
+  }
+
+  return 'AI replied, but the editor could not update the note.';
+};
+
+const EDITOR_CONTENT_ACTIONS = new Set(['add_to_editor', 'replace_editor', 'replace_selection']);
+
+const getContentLength = (value) => (typeof value === 'string' ? value.length : 0);
+
+const hasUsableEditorContent = (value) => (typeof value === 'string' ? value.trim().length > 0 : Boolean(value));
+
+const containsTableTags = (value) => typeof value === 'string' && /<\/?table[\s>]/i.test(value);
+
+const getErrorDiagnostics = (error) => (
+  error
+    ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      }
+    : null
+);
+
+const logEditorApplyFailure = ({ action, editorContent, reply, result, error }) => {
+  if (!import.meta.env?.DEV) {
+    return;
+  }
+
+  const caughtError = error || result?.error || null;
+
+  console.warn('AI editor application failed.', {
+    action,
+    editorContentLength: getContentLength(editorContent),
+    replyLength: getContentLength(reply),
+    containsTableTags: containsTableTags(editorContent),
+    reason: result?.reason,
+    error: getErrorDiagnostics(caughtError),
+  });
+};
+
+const logAiResponsePayload = ({ payload, normalizedAction, editorAction }) => {
+  const editorContent = payload?.editorContent;
+  const reply = payload?.response;
+  const diagnostics = {
+    action: payload?.action,
+    normalizedAction,
+    editorAction,
+    willApplyToEditor: Boolean(editorAction),
+    editorContentLength: getContentLength(editorContent),
+    replyLength: getContentLength(reply),
+    containsTableTags: containsTableTags(editorContent),
+    hasSelectionEdits: Array.isArray(payload?.selectionEdits) && payload.selectionEdits.length > 0,
+    hasEditorCommands: Array.isArray(payload?.editorCommands) && payload.editorCommands.length > 0,
+  };
+
+  if (typeof console.groupCollapsed === 'function') {
+    console.groupCollapsed('[BrainBox AI DEBUG] response payload');
+    console.log('diagnostics', diagnostics);
+    console.log('raw payload', payload);
+    console.groupEnd();
+    return;
+  }
+
+  console.info('[BrainBox AI DEBUG] response payload', {
+    diagnostics,
+    payload,
+  });
+};
+
 const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   const diff = Date.now() - new Date(isoString).getTime();
@@ -348,6 +451,7 @@ const AiAssistantSidebar = ({
   onToolHelpClose,
   contained = false,
   onApplyEditorContent,
+  onApplyEditorCommands,
   hasProposedChanges = false,
   pendingProposalSourceId = null,
   acceptedCheckpointEvent = null,
@@ -387,6 +491,7 @@ const AiAssistantSidebar = ({
   const activeTool = quickTools.find((tool) => tool.key === activeToolKey) || quickTools[0] || null;
   const ActiveToolIcon = activeTool?.icon;
   const messagesListRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const md = useMemo(() => new MarkdownIt({ html: false, linkify: true, typographer: true }), []);
   const renderMarkdown = useCallback((value) => {
@@ -587,6 +692,23 @@ const AiAssistantSidebar = ({
     return Array.isArray(nextSelections) ? nextSelections : [];
   }, [getAiSelections]);
 
+  const INPUT_TEXTAREA_MAX_HEIGHT = 120; // px - matches CSS max-height
+
+  const resizeTextarea = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+
+    // reset to allow correct measurement
+    ta.style.height = 'auto';
+    const newHeight = Math.min(ta.scrollHeight, INPUT_TEXTAREA_MAX_HEIGHT);
+    ta.style.height = `${newHeight}px`;
+    ta.style.overflowY = ta.scrollHeight > INPUT_TEXTAREA_MAX_HEIGHT ? 'auto' : 'hidden';
+  }, []);
+
+  useEffect(() => {
+    resizeTextarea();
+  }, [message, resizeTextarea]);
+
   const handleSendMessage = async (textOverride, options = {}) => {
     const text = textOverride !== undefined ? textOverride : message;
     const selectedText = options.selectedText !== undefined
@@ -644,7 +766,12 @@ const AiAssistantSidebar = ({
       );
 
       if (!response.success) {
-        throw new Error(response.message || 'Failed to get AI response');
+        setError(getAiQueryErrorMessage(response));
+        return;
+      }
+
+      if (!response.data) {
+        throw new Error('AI service returned an empty response.');
       }
 
       const {
@@ -653,12 +780,22 @@ const AiAssistantSidebar = ({
         editorContent,
         conversationTitle: aiConversationTitle,
         selectionEdits,
+        editorCommands,
       } = response.data;
       const normalizedQuizDraft = resolveGeneratedQuizDraft(response.data, notebookUuid);
       const normalizedFlashcardDraft = resolveGeneratedFlashcardDraft(response.data, notebookUuid);
       const normalizedGenerationAction = normalizeGeneratedAction(action, {
         quizDraft: normalizedQuizDraft,
         flashcardDraft: normalizedFlashcardDraft,
+      });
+      const editorAction = EDITOR_CONTENT_ACTIONS.has(normalizedGenerationAction)
+        ? normalizedGenerationAction
+        : '';
+
+      logAiResponsePayload({
+        payload: response.data,
+        normalizedAction: normalizedGenerationAction,
+        editorAction,
       });
 
       const finalMessages = [
@@ -673,71 +810,127 @@ const AiAssistantSidebar = ({
       const nextConversationTitle = sanitizeConversationTitle(aiConversationTitle, finalMessages);
       setConversationTitle(nextConversationTitle);
 
-      if (
-        onApplyEditorContent
-        && action === 'add_to_editor'
-        && editorContent
-      ) {
-        onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
-      } else if (
-        onApplyEditorContent
-        && action === 'replace_editor'
-        && editorContent
-      ) {
-        const replaceResult = onApplyEditorContent(editorContent, 'replace', {
-          sourceMessageId: userMessage.id,
-          clearAllAiSelections: true,
-        });
-        if (replaceResult?.applied === false) {
-          addNotification('The AI\'s response didn\'t produce any changes to the note.', 'info', 3500);
+      try {
+        if (editorAction && !hasUsableEditorContent(editorContent)) {
+          const emptyResult = { applied: false, reason: 'empty_response' };
+          logEditorApplyFailure({ action: editorAction, editorContent, reply, result: emptyResult });
+          const applyMessage = getEditorApplyFailureMessage(emptyResult);
+          setError(applyMessage);
+          addNotification(applyMessage, 'error', 3500);
+        } else if (editorAction && !onApplyEditorContent) {
+          const unavailableResult = { applied: false, reason: 'editor_unavailable' };
+          logEditorApplyFailure({ action: editorAction, editorContent, reply, result: unavailableResult });
+          const applyMessage = getEditorApplyFailureMessage(unavailableResult);
+          setError(applyMessage);
+          addNotification(applyMessage, 'error', 3500);
+        } else if (
+          onApplyEditorContent
+          && editorAction === 'add_to_editor'
+        ) {
+          const appendResult = onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
+          if (appendResult?.applied === false) {
+            logEditorApplyFailure({ action: editorAction, editorContent, reply, result: appendResult });
+            const applyMessage = getEditorApplyFailureMessage(appendResult);
+            setError(applyMessage);
+            addNotification(applyMessage, 'error', 3500);
+          }
+        } else if (
+          onApplyEditorContent
+          && editorAction === 'replace_editor'
+        ) {
+          const replaceResult = onApplyEditorContent(editorContent, 'replace', {
+            sourceMessageId: userMessage.id,
+            clearAllAiSelections: true,
+          });
+          if (replaceResult?.applied === false) {
+            logEditorApplyFailure({ action: editorAction, editorContent, reply, result: replaceResult });
+            if (replaceResult?.reason === 'editor_rejected_content' || replaceResult?.reason === 'editor_unavailable') {
+              const applyMessage = getEditorApplyFailureMessage(replaceResult);
+              setError(applyMessage);
+              addNotification(applyMessage, 'error', 3500);
+            } else {
+              addNotification('The AI\'s response didn\'t produce any changes to the note.', 'info', 3500);
+            }
+          }
+        } else if (
+          onApplyEditorContent
+          && editorAction === 'replace_selection'
+        ) {
+          const selectionResult = onApplyEditorContent(editorContent, 'replace_selection', {
+            sourceMessageId: userMessage.id,
+            aiSelectionIds: aiSelections.map((selection) => selection.id),
+          });
+          if (selectionResult?.applied === false) {
+            logEditorApplyFailure({ action: editorAction, editorContent, reply, result: selectionResult });
+            if (selectionResult?.reason === 'editor_rejected_content' || selectionResult?.reason === 'editor_unavailable') {
+              const applyMessage = getEditorApplyFailureMessage(selectionResult);
+              setError(applyMessage);
+              addNotification(applyMessage, 'error', 3500);
+            } else {
+              addNotification(
+                selectionResult?.reason === 'no_changes'
+                ? 'The rephrased text is the same as the original — no changes were made.'
+                : 'No text was selected in the editor. Highlight the text you want to change first.',
+                'info',
+                3500,
+              );
+            }
+          }
+        } else if (
+          onApplyEditorContent
+          && normalizedGenerationAction === 'replace_ai_selections'
+          && Array.isArray(selectionEdits)
+          && selectionEdits.length > 0
+        ) {
+          const aiSelResult = onApplyEditorContent('', 'replace_ai_selections', {
+            sourceMessageId: userMessage.id,
+            aiSelectionIds: selectionEdits.map((selection) => selection.id),
+            selectionEdits,
+          });
+          if (aiSelResult?.applied === false) {
+            logEditorApplyFailure({ action: normalizedGenerationAction, editorContent, reply, result: aiSelResult });
+            addNotification(
+              'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
+              'info',
+              3500,
+            );
+          }
+        } else if (
+          onApplyEditorCommands
+          && normalizedGenerationAction === 'apply_editor_commands'
+          && Array.isArray(editorCommands)
+          && editorCommands.length > 0
+        ) {
+          const commandResult = onApplyEditorCommands(editorCommands, {
+            sourceMessageId: userMessage.id,
+          });
+          if (commandResult?.applied === false) {
+            addNotification(
+              commandResult?.reason === 'blocked_by_proposal'
+                ? 'Accept or reject the current AI proposal before applying toolbar commands.'
+                : 'The AI toolbar command could not be applied in the current editor state.',
+              'info',
+              3500,
+            );
+          }
+        } else if (normalizedGenerationAction === 'create_quiz' && normalizedQuizDraft) {
+          setPendingQuiz(normalizedQuizDraft);
+          setPendingFlashcard(null);
+        } else if (normalizedGenerationAction === 'create_flashcard' && normalizedFlashcardDraft) {
+          setPendingFlashcard(normalizedFlashcardDraft);
+          setPendingQuiz(null);
         }
-      } else if (
-        onApplyEditorContent
-        && action === 'replace_selection'
-        && editorContent
-      ) {
-        const selectionResult = onApplyEditorContent(editorContent, 'replace_selection', {
-          sourceMessageId: userMessage.id,
-          aiSelectionIds: aiSelections.map((selection) => selection.id),
-        });
-        if (selectionResult?.applied === false) {
-          addNotification(
-            selectionResult?.reason === 'no_changes'
-              ? 'The rephrased text is the same as the original — no changes were made.'
-              : 'No text was selected in the editor. Highlight the text you want to change first.',
-            'info',
-            3500,
-          );
-        }
-      } else if (
-        onApplyEditorContent
-        && action === 'replace_ai_selections'
-        && Array.isArray(selectionEdits)
-        && selectionEdits.length > 0
-      ) {
-        const aiSelResult = onApplyEditorContent('', 'replace_ai_selections', {
-          sourceMessageId: userMessage.id,
-          aiSelectionIds: selectionEdits.map((selection) => selection.id),
-          selectionEdits,
-        });
-        if (aiSelResult?.applied === false) {
-          addNotification(
-            'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
-            'info',
-            3500,
-          );
-        }
-      } else if (normalizedGenerationAction === 'create_quiz' && normalizedQuizDraft) {
-        setPendingQuiz(normalizedQuizDraft);
-        setPendingFlashcard(null);
-      } else if (normalizedGenerationAction === 'create_flashcard' && normalizedFlashcardDraft) {
-        setPendingFlashcard(normalizedFlashcardDraft);
-        setPendingQuiz(null);
+      } catch (applyError) {
+        logEditorApplyFailure({ action: editorAction || normalizedGenerationAction || action, editorContent, reply, error: applyError });
+        const applyMessage = getEditorApplyFailureMessage();
+        setError(applyMessage);
+        addNotification(applyMessage, 'error', 3500);
       }
 
       void persistConversation(finalMessages, nextConversationTitle);
-    } catch {
-      setError('Failed to reach AI service. Please try again.');
+    } catch (requestError) {
+      console.error('AI request failed:', requestError);
+      setError(getAiQueryErrorMessage(requestError));
     } finally {
       setIsTyping(false);
     }
@@ -1234,6 +1427,8 @@ const AiAssistantSidebar = ({
                 <div className="ai-chat-input-wrapper">
                   <div className="ai-chat-input-container">
                     <textarea
+                      ref={textareaRef}
+                      aria-label="AI message input"
                       placeholder={
                         mode === 'review'
                           ? 'Ask about this note...'
@@ -1243,6 +1438,7 @@ const AiAssistantSidebar = ({
                       }
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
+                      onInput={() => resizeTextarea()}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault();

@@ -1,4 +1,5 @@
 import { Editor as CoreEditor } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 import { EditorContent, useEditor } from '@tiptap/react';
 import {
   forwardRef,
@@ -25,10 +26,28 @@ import {
 } from '../../tiptap/createEditorExtensions';
 import { findRangeIndexForOffset } from '../../../../common/audio/playbackModel';
 import { isAndroidHost } from '../../../../app/host/brainBoxHost';
+import { normalizeEditorHtmlStructure } from '../../utils/normalizeAiGeneratedHtml';
 import TableBubbleMenu from '../TableBubbleMenu/TableBubbleMenu';
 import './NoteEditorContent.css';
 
 const TABLE_CELL_MIN_WIDTH = 96;
+const shouldLogEditorContentWarnings = () => Boolean(import.meta.env?.DEV);
+
+const warnEditorContentApplyFailure = (message, error, details = {}) => {
+  if (!shouldLogEditorContentWarnings()) {
+    return;
+  }
+
+  console.warn(message, {
+    ...details,
+    error: {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+    },
+  });
+};
+
 const createAiSelectionId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -117,7 +136,11 @@ const NoteEditorContent = forwardRef(({
   const viewportRef = useRef(null);
   const paperRef = useRef(null);
   const resizeObserverRef = useRef(null);
-  const lastKnownContentRef = useRef(content || '');
+  const normalizedContent = useMemo(
+    () => normalizeEditorHtmlStructure(content || ''),
+    [content],
+  );
+  const lastKnownContentRef = useRef(normalizedContent);
   const lastAppliedContentSyncTokenRef = useRef(contentSyncToken);
   const suppressExternalUpdateRef = useRef(false);
   const isEmbeddedAndroidHost = useMemo(() => isAndroidHost(), []);
@@ -184,7 +207,7 @@ const NoteEditorContent = forwardRef(({
 
   const editor = useEditor({
     extensions: editorExtensions,
-    content: content || '',
+    content: normalizedContent,
     editable: isEditable,
     onCreate: ({ editor: currentEditor }) => {
       lastKnownContentRef.current = currentEditor.getHTML();
@@ -259,11 +282,16 @@ const NoteEditorContent = forwardRef(({
     },
   }, [editorExtensions, emitSelectionState, isEditable, storageKey, updateOutline]);
 
-  const insertEquation = useCallback((kind = 'auto') => {
+  const insertEquation = useCallback((options = 'auto') => {
     if (!editor) {
       return;
     }
 
+    const normalizedOptions = typeof options === 'string'
+      ? { kind: options }
+      : (options || {});
+    const kind = normalizedOptions.kind || 'auto';
+    const latex = typeof normalizedOptions.latex === 'string' ? normalizedOptions.latex : '';
     const { selection } = editor.state;
     const emptyParagraphRange = selection.$from.depth > 0
       ? {
@@ -290,29 +318,74 @@ const NoteEditorContent = forwardRef(({
 
     if (shouldInsertBlock) {
       editor.chain().focus().insertBlockMath({
-        latex: '',
+        latex,
         range,
         moveSelectionAfterInsert: isOnlyRootParagraph,
       }).run();
       return;
     }
 
-    editor.chain().focus().insertInlineMath({ latex: '', range }).run();
+    editor.chain().focus().insertInlineMath({ latex, range }).run();
   }, [editor]);
+
+  const normalizeTablesSafely = useCallback((currentEditor, context) => {
+    if (!currentEditor?.commands?.normalizeTables) {
+      return false;
+    }
+
+    try {
+      return currentEditor.commands.normalizeTables();
+    } catch (error) {
+      warnEditorContentApplyFailure('Table normalization failed after editor content update.', error, {
+        context,
+      });
+      return false;
+    }
+  }, []);
 
   const applyExternalContent = useCallback((nextContent) => {
     if (!editor || editor.isDestroyed) {
-      return;
+      return false;
     }
 
+    const normalizedNextContent = normalizeEditorHtmlStructure(nextContent || '');
     suppressExternalUpdateRef.current = true;
-    editor.commands.setContent(nextContent, false);
-    editor.commands.normalizeTables?.();
+    try {
+      editor.view.dispatch(
+        editor.state.tr
+          .setSelection(TextSelection.atStart(editor.state.doc))
+          .setMeta('preventUpdate', true),
+      );
+      const didSetContent = editor.commands.setContent(normalizedNextContent, {
+        emitUpdate: false,
+        errorOnInvalidContent: false,
+      });
 
-    window.setTimeout(() => {
-      suppressExternalUpdateRef.current = false;
-    }, 0);
-  }, [editor]);
+      editor.view.dispatch(
+        editor.state.tr
+          .setSelection(TextSelection.atStart(editor.state.doc))
+          .setMeta('preventUpdate', true),
+      );
+      normalizeTablesSafely(editor, 'external_content');
+
+      if (didSetContent !== false) {
+        updateOutline(editor);
+        emitSelectionState(editor);
+      }
+
+      return didSetContent;
+    } catch (error) {
+      warnEditorContentApplyFailure('Failed to apply external editor content.', error, {
+        contentLength: typeof nextContent === 'string' ? nextContent.length : 0,
+        containsTableTags: typeof nextContent === 'string' && /<\/?table[\s>]/i.test(nextContent),
+      });
+      return false;
+    } finally {
+      window.setTimeout(() => {
+        suppressExternalUpdateRef.current = false;
+      }, 0);
+    }
+  }, [editor, emitSelectionState, normalizeTablesSafely, updateOutline]);
 
   useEffect(() => {
     if (editor) {
@@ -321,12 +394,12 @@ const NoteEditorContent = forwardRef(({
   }, [editor, isEditable]);
 
   useEffect(() => {
-    if (!editor || content === undefined || editor.isDestroyed) {
+    if (!editor || editor.isDestroyed) {
       return;
     }
 
     const isSyncedToCurrentToken = lastAppliedContentSyncTokenRef.current === contentSyncToken;
-    const shouldApplyReadOnlyContent = readOnly && content !== lastKnownContentRef.current;
+    const shouldApplyReadOnlyContent = readOnly && normalizedContent !== lastKnownContentRef.current;
 
     if (isSyncedToCurrentToken && !shouldApplyReadOnlyContent) {
       return;
@@ -334,15 +407,15 @@ const NoteEditorContent = forwardRef(({
 
     const liveHtml = editor.getHTML();
 
-    if (content !== liveHtml) {
-      applyExternalContent(content);
-    }
+    const didApplyContent = normalizedContent !== liveHtml && applyExternalContent(normalizedContent) !== false;
 
     lastKnownContentRef.current = editor.getHTML();
     lastAppliedContentSyncTokenRef.current = contentSyncToken;
-    updateOutline(editor);
-    emitSelectionState(editor);
-  }, [applyExternalContent, content, contentSyncToken, editor, emitSelectionState, readOnly, updateOutline]);
+    if (!didApplyContent) {
+      updateOutline(editor);
+      emitSelectionState(editor);
+    }
+  }, [applyExternalContent, contentSyncToken, editor, emitSelectionState, normalizedContent, readOnly, updateOutline]);
 
   useEffect(() => {
     if (!editor) {
@@ -370,11 +443,11 @@ const NoteEditorContent = forwardRef(({
     }
 
     const frame = window.requestAnimationFrame(() => {
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'resize');
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [editor, paperWidth, readOnly]);
+  }, [editor, normalizeTablesSafely, paperWidth, readOnly]);
 
   useEffect(() => {
     const paper = paperRef.current;
@@ -403,7 +476,7 @@ const NoteEditorContent = forwardRef(({
       resizeObserverRef.current?.disconnect();
       resizeObserverRef.current = null;
     };
-  }, [content, paperHeight, paperWidth, zoom]);
+  }, [normalizedContent, paperHeight, paperWidth, zoom]);
 
   // ── TTS word highlight (review mode only) ─────────────────────────────
   const ttsPositionMapRef = useRef([]);
@@ -414,7 +487,7 @@ const NoteEditorContent = forwardRef(({
       return;
     }
     ttsPositionMapRef.current = buildTtsPositionMap(editor);
-  }, [editor, reviewMode, content]);
+  }, [editor, reviewMode, normalizedContent]);
 
   useEffect(() => {
     if (!editor?.view || !reviewMode) return;
@@ -617,16 +690,20 @@ const NoteEditorContent = forwardRef(({
 
       editor.commands.focus('end');
       editor.commands.insertContentAt(editor.state.doc.content.size, newContent);
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'append_content');
     },
     setContent: (newContent) => {
       if (!editor) {
-        return;
+        return false;
       }
 
-      applyExternalContent(newContent);
+      const didSetContent = applyExternalContent(newContent);
       lastKnownContentRef.current = editor.getHTML() || newContent || '';
-      emitSelectionState(editor);
+      if (didSetContent === false) {
+        updateOutline(editor);
+        emitSelectionState(editor);
+      }
+      return didSetContent;
     },
     insertPageBreak: () => {
       editor?.chain().focus().insertPageBreak().run();
@@ -637,7 +714,7 @@ const NoteEditorContent = forwardRef(({
       }
 
       editor.chain().focus().insertTable({ rows, cols, withHeaderRow }).run();
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'insert_table');
     },
     insertEquation,
     getSelectedText: () => {
@@ -726,7 +803,7 @@ const NoteEditorContent = forwardRef(({
       }
 
       editor.chain().focus().deleteRange({ from, to }).insertContentAt(from, html).run();
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'replace_selection');
     },
     insertPlainText: (text) => {
       if (!editor || !text) {
@@ -781,7 +858,10 @@ const NoteEditorContent = forwardRef(({
             .insertContentAt(from, nextContent)
             .run();
         } else {
-          scratchEditor.commands.setContent(nextContent, false);
+          scratchEditor.commands.setContent(nextContent, {
+            emitUpdate: false,
+            errorOnInvalidContent: false,
+          });
         }
 
         return scratchEditor.getHTML();
@@ -913,9 +993,11 @@ const NoteEditorContent = forwardRef(({
     emitSelectionState,
     getTopLevelBlockRanges,
     insertEquation,
+    normalizeTablesSafely,
     resolveAiSelectionTargets,
     scratchExtensions,
     scrollToHeading,
+    updateOutline,
   ]);
 
   const effectiveZoom = zoom;

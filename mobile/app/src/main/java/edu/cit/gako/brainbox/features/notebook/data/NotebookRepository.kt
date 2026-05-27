@@ -134,6 +134,11 @@ class NotebookRepository(
             .requireData("We couldn't create that category.")
     }
 
+    suspend fun updateCategory(categoryId: Long, name: String): CategoryDetail {
+        return apiService.updateCategoryEnvelope(categoryId, CategoryCreateRequest(name))
+            .requireData("We couldn't rename that category.")
+    }
+
     suspend fun deleteCategory(categoryId: Long, deleteNotebooks: Boolean = false) {
         apiService.deleteCategoryEnvelope(
             categoryId,

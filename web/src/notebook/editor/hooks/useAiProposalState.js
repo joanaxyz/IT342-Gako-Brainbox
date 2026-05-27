@@ -20,6 +20,22 @@ const clampChangeIndex = (value, maxLength) => {
   return Math.min(Math.max(value, 0), maxLength - 1);
 };
 
+const normalizeEditorContentForAi = (content) => {
+  try {
+    return {
+      content: normalizeAiGeneratedHtml(content),
+      normalizationError: null,
+    };
+  } catch (error) {
+    const fallbackContent = typeof content === 'string' ? content.trim() : '';
+
+    return {
+      content: fallbackContent,
+      normalizationError: error,
+    };
+  }
+};
+
 const createScopedState = (scopeKey) => ({
   scopeKey,
   aiOriginalContent: null,
@@ -84,6 +100,7 @@ export const useAiProposalState = ({
   editorRef,
   currentNotebookUuid,
   isPreviewMode,
+  onDirectApplyContent,
 }) => {
   const scopeKey = `${currentNotebookUuid ?? 'none'}:${isPreviewMode ? 'preview' : 'document'}`;
   const [state, setState] = useState(() => createScopedState(scopeKey));
@@ -116,10 +133,13 @@ export const useAiProposalState = ({
 
   const handleAiUpdateContent = useCallback((content, mode = 'replace', options = {}) => {
     if (!editorRef.current) {
-      return;
+      return { applied: false, reason: 'editor_unavailable' };
     }
 
-    const normalizedContent = normalizeAiGeneratedHtml(content);
+    const {
+      content: normalizedContent,
+      normalizationError,
+    } = normalizeEditorContentForAi(content);
     const normalizedOptions = {
       ...options,
       selectionEdits: Array.isArray(options?.selectionEdits)
@@ -127,19 +147,50 @@ export const useAiProposalState = ({
         : [],
     };
     const originalContent = editorRef.current.getHTML();
-    const proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
     const sourceMessageId = options?.sourceMessageId ?? null;
+    const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/g, ' ').trim();
+
+    if (!normalizedContent && mode !== 'replace_ai_selections') {
+      return {
+        applied: false,
+        reason: normalizationError ? 'editor_rejected_content' : 'empty_response',
+        error: normalizationError,
+      };
+    }
+
+    // Empty documents do not need a comparison session. Applying directly also
+    // avoids scratch-editor parsing failures from blocking first-generation notes.
+    if (!strippedOriginal && (mode === 'append' || mode === 'replace')) {
+      let didSetContent = false;
+
+      try {
+        didSetContent = editorRef.current.setContent?.(normalizedContent);
+      } catch (error) {
+        return { applied: false, reason: 'editor_rejected_content', error };
+      }
+
+      if (didSetContent === false) {
+        return { applied: false, reason: 'editor_rejected_content', error: normalizationError };
+      }
+
+      const appliedContent = editorRef.current.getHTML?.() || normalizedContent;
+      onDirectApplyContent?.(appliedContent, {
+        sourceMessageId,
+        clearAllAiSelections: Boolean(normalizedOptions.clearAllAiSelections),
+      });
+      return { applied: true, direct: true };
+    }
+
+    let proposedContent = normalizedContent;
+
+    try {
+      proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
+    } catch (error) {
+      return { applied: false, reason: 'editor_rejected_content', error };
+    }
 
     if (proposedContent === originalContent) {
       return { applied: false, reason: 'identical' };
-    }
-
-    // If the notebook is empty (no meaningful content), skip the comparison modal
-    // and apply content directly
-    const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').trim();
-    if (!strippedOriginal) {
-      editorRef.current.setContent?.(proposedContent);
-      return { applied: true };
     }
 
     // Pre-build the comparison session so we can detect no-op proposals before
@@ -170,7 +221,7 @@ export const useAiProposalState = ({
     });
 
     return { applied: true };
-  }, [editorRef, scopeKey, updateScopedState]);
+  }, [editorRef, onDirectApplyContent, scopeKey, updateScopedState]);
 
   const clearProposalState = useCallback((baseState) => ({
     ...baseState,

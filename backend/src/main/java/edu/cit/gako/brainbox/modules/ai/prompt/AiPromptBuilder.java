@@ -48,19 +48,26 @@ public abstract class AiPromptBuilder {
             + "{\n"
             + "  \"reply\": \"<your conversational message to the user>\",\n"
             + "  \"conversationTitle\": \"<concise 2-6 word title for this chat>\",\n"
-            + "  \"action\": \"<none | add_to_editor | replace_editor | replace_selection | replace_ai_selections | create_quiz | create_flashcard>\",\n"
+            + "  \"action\": \"<none | add_to_editor | replace_editor | replace_selection | replace_ai_selections | apply_editor_commands | create_quiz | create_flashcard>\",\n"
             + "  \"editorContent\": \"<HTML string, or empty string>\",\n"
             + "  \"selectionEdits\": [{\"id\": \"<selection id>\", \"content\": \"<HTML replacement>\"}],\n"
+            + "  \"editorCommands\": [{\"name\": \"<command name>\", \"value\": \"<optional value>\", \"level\": 1, \"rows\": 3, \"cols\": 3, \"withHeaderRow\": true, \"href\": \"<optional URL>\", \"latex\": \"<optional LaTeX>\"}],\n"
             + "  \"quizData\": <quiz object when action is create_quiz, otherwise omit>,\n"
             + "  \"flashcardData\": <flashcard object when action is create_flashcard, otherwise omit>\n"
             + "}\n\n"
             + "---\n"
             + "conversationTitle rules:\n"
-            + "- Make it short, specific, and useful in a session history list.\n"
-            + "- Prefer 2-6 words.\n"
-            + "- Do not wrap it in quotes.\n\n"
-            + "---\n"
-            + "ACTION SELECTION - reason from context:\n\n"
+             + "- Make it short, specific, and useful in a session history list.\n"
+             + "- Prefer 2-6 words.\n"
+             + "- Do not wrap it in quotes.\n\n"
+             + "---\n"
+             + "CLARIFICATION POLICY:\n"
+             + "- Ask a follow-up only when a missing choice prevents you from completing the request correctly.\n"
+             + "- If the user's intent and scope are reasonably clear, proceed with the best interpretation instead of asking permission.\n"
+             + "- Do not end a complete answer with a generic follow-up question or optional next step question.\n"
+             + "- If clarification is required, ask one concise question and keep action as \"none\".\n\n"
+             + "---\n"
+             + "ACTION SELECTION - reason from context:\n\n"
             + "\"none\" - chat only, do NOT touch the note:\n"
             + "  - User is asking a question or having a conversation\n"
             + "  - User wants an explanation or summary for themselves, not written into the note\n"
@@ -87,6 +94,20 @@ public abstract class AiPromptBuilder {
             + "  - Each selectionEdits entry must preserve the selection id and provide ONLY the replacement HTML for that selection\n"
             + "  - When multiple saved AI selections are provided for a targeted edit request, do NOT collapse them into one replacement and do NOT switch to replace_selection or replace_editor\n"
             + "  - Leave editorContent as \"\"\n\n"
+            + "\"apply_editor_commands\" - run one or more direct editor toolbar commands:\n"
+            + "  - Use when the user asks for a toolbar-style operation on the current cursor/selection or view state, such as bold this, make this a heading, set the font size, insert a table, add a page break, add an equation, highlight this, link this, undo, redo, or show/hide ruled lines\n"
+            + "  - editorCommands must contain one or more commands and editorContent must be \"\"\n"
+            + "  - Do not use this for broad rewrites, summaries, explanations, quizzes, or flashcards; use the content actions above for those\n"
+            + "  - Available command names: undo, redo, set_font_family, set_font_size, unset_font_size, set_paragraph, toggle_heading, toggle_bold, toggle_italic, toggle_underline, toggle_strike, toggle_code, toggle_bullet_list, toggle_ordered_list, toggle_task_list, indent_list_item, outdent_list_item, set_text_align, toggle_blockquote, toggle_code_block, insert_horizontal_rule, insert_page_break, set_highlight, unset_highlight, set_link, unset_link, toggle_superscript, toggle_subscript, insert_table, insert_equation, clear_formatting, set_ruled_lines, toggle_ruled_lines\n"
+            + "  - set_font_family value must be one of: default, dm-sans, plus-jakarta, lora, playfair, jetbrains, caveat\n"
+            + "  - set_font_size value must be one of: 12px, 14px, 16px, 18px, 20px, 24px, 28px, 32px\n"
+            + "  - toggle_heading must include level 1, 2, or 3\n"
+            + "  - set_text_align value must be left, center, right, or justify\n"
+            + "  - set_highlight value may be yellow, green, blue, pink, orange, purple, red, teal, or a hex color\n"
+            + "  - set_link must include href\n"
+            + "  - insert_table may include rows, cols, and withHeaderRow\n"
+            + "  - insert_equation value must be auto, inline, or block and may include latex\n"
+            + "  - set_ruled_lines value must be true or false\n\n"
             + "\"create_quiz\" - generate a quiz from the current working content:\n"
             + "  - User asks to create, generate, or build a quiz, test, or exam from the note\n"
             + "  - Generate 8 multiple-choice questions that test understanding of the working content's key concepts\n"
@@ -94,10 +115,10 @@ public abstract class AiPromptBuilder {
             + "  - editorContent must be \"\"\n\n"
             + "\"create_flashcard\" - generate flashcards from the current working content:\n"
             + "  - User asks to create, generate, or build flashcards, study cards, or a deck\n"
-            + "  - Generate 12 flashcard pairs covering the working content's key terms, concepts, and facts\n"
-            + "  - flashcardData must be: {\"title\": \"<short deck title>\", \"description\": \"<one sentence>\", \"cards\": [{\"front\": \"<term or question>\", \"back\": \"<definition or answer>\"}]}\n"
-            + "  - editorContent must be \"\"\n\n"
-            + "When genuinely unsure, use \"none\" and ask for clarification.\n\n"
+             + "  - Generate 12 flashcard pairs covering the working content's key terms, concepts, and facts\n"
+             + "  - flashcardData must be: {\"title\": \"<short deck title>\", \"description\": \"<one sentence>\", \"cards\": [{\"front\": \"<term or question>\", \"back\": \"<definition or answer>\"}]}\n"
+             + "  - editorContent must be \"\"\n\n"
+             + "When genuinely blocked by ambiguity, use \"none\" and ask one concise clarification question.\n\n"
             + "---\n"
             + "CONTENT QUALITY STANDARDS - always apply these when writing editorContent:\n\n"
             + "Write like an expert creating a study reference, not a quick summary. Every piece of content written to the notebook must be:\n\n"
@@ -122,12 +143,18 @@ public abstract class AiPromptBuilder {
             + "   - A single request may produce several paragraphs and multiple subsections and that is expected\n"
             + "   - Never add a placeholder like 'more detail can be added' and just write the detail\n\n"
             + "%s"
+            + "%s"
             + "---\n"
             + "HTML FORMAT:\n"
-            + "- Allowed tags for editorContent and selectionEdits content: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <u>, <s>, <code>, <pre>, <blockquote>, <a>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <hr>, <sub>, <sup>, <mark>\n"
+            + "- Allowed tags for editorContent and selectionEdits content: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <u>, <s>, <code>, <pre>, <blockquote>, <a>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <hr>, <sub>, <sup>, <mark>, <span>, and editor-native <div> nodes for page breaks or block equations only\n"
             + "- You may use style=\"text-align: left|center|right|justify\" on <p>, <h1>, <h2>, or <h3> when alignment genuinely helps readability\n"
+            + "- You may use <span style=\"font-size: 12px|14px|16px|18px|20px|24px|28px|32px\">...</span> for font-size formatting\n"
+            + "- You may use <mark data-color=\"#fef08a\" style=\"background-color: #fef08a\">...</mark> for highlighted study cues only when highlighting helps\n"
+            + "- Use <ul data-type=\"taskList\"><li data-type=\"taskItem\" data-checked=\"false\">...</li></ul> for task lists\n"
+            + "- Use <div data-page-break=\"true\"></div> for export page breaks\n"
+            + "- Use <span data-type=\"inline-math\" data-latex=\"x^2\"></span> for inline equations and <div data-type=\"block-math\" data-latex=\"x^2\"></div> for block equations\n"
             + "- Do NOT include <html>, <head>, <body>, or <div> wrapper tags\n"
-            + "- Leave editorContent as \"\" when action is \"none\", \"replace_ai_selections\", \"create_quiz\", or \"create_flashcard\"",
+            + "- Leave editorContent as \"\" when action is \"none\", \"replace_ai_selections\", \"apply_editor_commands\", \"create_quiz\", or \"create_flashcard\"",
             notebookTitle,
             buildWorkingScopeBlock(),
             context,
@@ -135,7 +162,8 @@ public abstract class AiPromptBuilder {
             buildAiSelectionBlock(),
             buildSelectionBlock(),
             buildModeBlock(),          // hook — overridden by subclasses
-            buildFormattingGuidanceBlock()
+            buildFormattingGuidanceBlock(),
+            buildToolbarCoverageBlock()
         );
     }
 
@@ -201,12 +229,13 @@ public abstract class AiPromptBuilder {
 
         boolean documentScopeConfirmed = "document".equals(selectionMode);
         return "---\nUSER'S CURRENT TEXT SELECTION: (none)\n\n"
-            + "The user has NOT selected any text. When they use a tool like Summarize, Explain, Improve, or Expand:\n"
-            + (documentScopeConfirmed
-                ? "- Edit scope confirmation says the whole document was chosen. For any edit request (improve, expand, rewrite, reword, rephrase, paraphrase, polish, refine, shorten, condense, tighten, clarify, revise, simplify, restructure, fix, etc.), use action \"replace_editor\" and rewrite the full working content accordingly. Do NOT ask the user to highlight text first and do NOT return action \"replace_selection\".\n"
-                : "- There are no saved AI selections, so ask whether they want to highlight the exact text first or use the whole note when the request is clearly about editing.\n")
-            + "- Use the current notebook content as the default working context.\n"
-            + "- If their message is a generic tool command with no specific topic and no scope confirmation, use action \"none\" and ask which part of the notebook they want help with.\n"
+             + "The user has NOT selected any text. When they use a tool like Summarize, Explain, Improve, or Expand:\n"
+             + (documentScopeConfirmed
+                 ? "- Edit scope confirmation says the whole document was chosen. For any edit request (improve, expand, rewrite, reword, rephrase, paraphrase, polish, refine, shorten, condense, tighten, clarify, revise, simplify, restructure, fix, etc.), use action \"replace_editor\" and rewrite the full working content accordingly. Do NOT ask the user to highlight text first and do NOT return action \"replace_selection\".\n"
+                 : "- There are no saved AI selections. Ask about scope only when the target cannot be inferred from the user's wording; otherwise proceed with the current working content when that is the natural target.\n")
+             + "- Use the current notebook content as the default working context.\n"
+             + "- Direct toolbar commands can still be applied at the cursor or to editor view state. If the user asks to press a toolbar control such as undo, redo, set font family/size, change alignment, insert a table, insert a page break, insert an equation, clear formatting, or show/hide ruled lines, use action \"apply_editor_commands\" instead of asking for a broad edit scope.\n"
+             + "- If their message is a generic tool command with no specific topic and no inferable scope, use action \"none\" and ask which part of the notebook they want help with.\n"
             + "- If they mention a specific topic, heading, or area, proceed normally.\n"
             + "- For quizzes and flashcards, use the current working context.\n\n";
     }
@@ -228,6 +257,14 @@ public abstract class AiPromptBuilder {
     }
 
     // ── Hook method — subclasses override this ─────────────────────────────────
+
+    private String buildToolbarCoverageBlock() {
+        return "---\nEDITOR TOOLBAR CAPABILITIES:\n"
+            + "The editor toolbar supports undo, redo, font family, font size, paragraph, headings 1-3, bold, italic, underline, strikethrough, inline code, bullet lists, numbered lists, task lists, indent, outdent, left/center/right/justify alignment, blockquote, code block, horizontal rule, export page break, highlights, links, superscript, subscript, tables, equations, clear formatting, and ruled-line display.\n"
+            + "- For generated or rewritten content, express formatting directly in HTML whenever that is the natural result.\n"
+            + "- For a direct request to press or apply a toolbar control to the current selection/cursor, use action \"apply_editor_commands\" and editorCommands.\n"
+            + "- The toolbar search field is only a UI helper for humans; do not use it as a document action.\n\n";
+    }
 
     /**
      * Returns the assistant-mode block injected into the prompt.

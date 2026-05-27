@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -83,6 +84,7 @@ internal fun CategoryManagerPanel(
     onQueryChange: (String) -> Unit,
     onSelectCategory: (String) -> Unit,
     onCreateCategory: () -> Unit,
+    onEditCategory: (CategoryDetail) -> Unit,
     onDeleteCategory: (CategoryDetail) -> Unit,
     onSortName: () -> Unit,
     onSortCount: () -> Unit
@@ -158,6 +160,7 @@ internal fun CategoryManagerPanel(
                         selected = selectedCategoryId == category.id.toString(),
                         canDelete = true,
                         onClick = { onSelectCategory(category.id.toString()) },
+                        onEdit = { onEditCategory(category) },
                         onDelete = { onDeleteCategory(category) }
                     )
                 }
@@ -187,6 +190,7 @@ private fun CategoryRow(
     selected: Boolean,
     canDelete: Boolean = false,
     onClick: () -> Unit,
+    onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null
 ) {
     Surface(
@@ -215,7 +219,17 @@ private fun CategoryRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Ink3)
+            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Ink3)
+            }
+            if (canDelete && onEdit != null) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Edit category",
+                        tint = Ink3,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
             if (canDelete && onDelete != null) {
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
@@ -384,6 +398,41 @@ internal fun CreateCategoryDialog(
                 enabled = name.isNotBlank() && !isBusy
             ) {
                 Text(if (isBusy) "Creating" else "Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isBusy) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+internal fun EditCategoryDialog(
+    category: CategoryDetail,
+    isBusy: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var name by rememberSaveable(category.id) { mutableStateOf(category.name) }
+    val trimmedName = name.trim()
+    AlertDialog(
+        onDismissRequest = { if (!isBusy) onDismiss() },
+        title = { Text("Edit category") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Category name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (trimmedName.isNotBlank()) onSave(trimmedName) },
+                enabled = trimmedName.isNotBlank() && trimmedName != category.name && !isBusy
+            ) {
+                Text(if (isBusy) "Saving" else "Save")
             }
         },
         dismissButton = {

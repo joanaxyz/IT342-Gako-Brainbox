@@ -7,36 +7,56 @@ import edu.cit.gako.brainbox.platform.persistence.SessionStore
 
 class SessionManager(context: Context) {
     private val sessionStore: SessionStore = EncryptedSessionStore(context.applicationContext)
+    @Volatile
+    private var cachedCredentials: SessionCredentials? = null
 
     fun saveAuthToken(token: String) {
         sessionStore.saveAccessToken(token)
+        cachedCredentials = readCredentials().copy(accessToken = token)
     }
 
     fun fetchAuthToken(): String? {
-        return sessionStore.read().accessToken
+        return readCredentials().accessToken
     }
 
     fun saveRefreshToken(token: String) {
         sessionStore.saveRefreshToken(token)
+        cachedCredentials = readCredentials().copy(refreshToken = token)
     }
 
     fun fetchRefreshToken(): String? {
-        return sessionStore.read().refreshToken
+        return readCredentials().refreshToken
     }
 
     fun saveUsername(username: String) {
         sessionStore.saveUsername(username)
+        cachedCredentials = readCredentials().copy(username = username)
     }
 
     fun fetchUsername(): String? {
-        return sessionStore.read().username
+        return readCredentials().username
     }
 
     fun replace(credentials: SessionCredentials) {
         sessionStore.save(credentials)
+        cachedCredentials = credentials
     }
 
     fun clearSession() {
         sessionStore.clear()
+        cachedCredentials = SessionCredentials()
+    }
+
+    private fun readCredentials(): SessionCredentials {
+        val cached = cachedCredentials
+        if (cached != null) {
+            return cached
+        }
+
+        return synchronized(this) {
+            cachedCredentials ?: sessionStore.read().also { credentials ->
+                cachedCredentials = credentials
+            }
+        }
     }
 }

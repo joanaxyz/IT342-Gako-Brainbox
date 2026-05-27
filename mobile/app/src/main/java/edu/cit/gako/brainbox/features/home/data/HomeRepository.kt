@@ -110,7 +110,13 @@ class HomeRepository(
                 playbackPlaylistUuid = playbackQueue?.playlistUuid,
                 playbackPlaylistTitle = playbackQueue?.playlistTitle,
                 playbackPlaylistCurrentIndex = playbackQueue?.currentIndex ?: 0
-            )
+            ),
+            sectionErrors = buildList {
+                quizzesResult.exceptionOrNull()?.let { add("Couldn't load quizzes: ${it.userFacingMessage()}") }
+                notebooksResult.exceptionOrNull()?.let { add("Couldn't load notebooks: ${it.userFacingMessage()}") }
+                flashcardsResult.exceptionOrNull()?.let { add("Couldn't load flashcards: ${it.userFacingMessage()}") }
+                playlistsResult.exceptionOrNull()?.let { add("Couldn't load playlists: ${it.userFacingMessage()}") }
+            }
         )
     }
 
@@ -123,6 +129,9 @@ class HomeRepository(
             createdAt = null
         )
     }
+
+    private fun Throwable.userFacingMessage(): String =
+        message?.takeIf { it.isNotBlank() } ?: "Check the API connection and try again."
 
 }
 

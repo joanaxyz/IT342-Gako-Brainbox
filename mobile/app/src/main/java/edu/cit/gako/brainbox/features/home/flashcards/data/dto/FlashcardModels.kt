@@ -46,3 +46,36 @@ data class FlashcardAttemptRequest(
     @SerializedName("clientMutationId") val clientMutationId: String? = null
 )
 
+data class NetworkFlashcardDeckSummary(
+    @SerializedName("uuid") val uuid: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("notebookUuid") val notebookUuid: String? = null,
+    @SerializedName("notebookTitle") val notebookTitle: String? = null,
+    @SerializedName("cardCount") val cardCount: Int? = null,
+    @SerializedName("bestMastery") val bestMastery: Int? = null,
+    @SerializedName("attempts") val attempts: Long? = null,
+    @SerializedName("cards") val cards: List<NetworkFlashcardCard?>? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null
+)
+
+data class NetworkFlashcardCard(
+    @SerializedName("front") val front: String? = null,
+    @SerializedName("back") val back: String? = null
+)
+
+data class NetworkFlashcardDeckDetail(
+    @SerializedName("uuid") val uuid: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("notebookUuid") val notebookUuid: String? = null,
+    @SerializedName("notebookTitle") val notebookTitle: String? = null,
+    @SerializedName("cardCount") val cardCount: Int? = null,
+    @SerializedName("bestMastery") val bestMastery: Int? = null,
+    @SerializedName("attempts") val attempts: Long? = null,
+    @SerializedName("cards") val cards: List<NetworkFlashcardCard?>? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null
+)
+

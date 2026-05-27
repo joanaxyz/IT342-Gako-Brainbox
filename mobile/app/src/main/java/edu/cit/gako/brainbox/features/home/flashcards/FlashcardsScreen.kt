@@ -65,6 +65,7 @@ import edu.cit.gako.brainbox.shared.ui.theme.Ink2
 import edu.cit.gako.brainbox.shared.ui.theme.Ink3
 import edu.cit.gako.brainbox.shared.ui.theme.White
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private const val DECK_SORT_UPDATED_AT = "updatedAt"
@@ -110,6 +111,18 @@ internal fun FlashcardsScreen(
     }
     val categoryOptions = remember(localDecks, notebooksByUuid) {
         buildCategoryFilterOptions(localDecks.map { it.notebookUuid }, notebooksByUuid)
+    }
+
+    LaunchedEffect(Unit) {
+        runCatching { repository.getFlashcards() }
+            .onSuccess { latestDecks ->
+                localDecks = latestDecks
+            }
+            .onFailure {
+                if (it !is CancellationException) {
+                    onFeatureRequest("Couldn't refresh flashcards: ${it.message ?: "Check the API connection."}")
+                }
+            }
     }
 
     LaunchedEffect(notebookOptions, selectedNotebookId) {

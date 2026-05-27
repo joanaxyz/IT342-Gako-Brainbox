@@ -1,0 +1,1814 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BrainBox Final Project Presentation</title>
+  <style>
+    :root {
+      --paper: #f6f1e9;
+      --paper-deep: #ede5d8;
+      --ink: #191715;
+      --muted: #655d54;
+      --rule: rgba(58, 42, 24, 0.18);
+      --rule-strong: rgba(58, 42, 24, 0.34);
+      --accent: #9a5d36;
+      --accent-soft: rgba(154, 93, 54, 0.12);
+      --forest: #233532;
+      --surface: rgba(255, 255, 255, 0.78);
+      --surface-strong: rgba(255, 255, 255, 0.9);
+      --shadow: 0 20px 48px rgba(45, 34, 21, 0.08);
+      --display: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --body: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      --mono: "Cascadia Code", "Consolas", "Courier New", monospace;
+      --pad-x: clamp(2rem, 3.2vw, 3.8rem);
+      --pad-y: clamp(1.7rem, 2.7vw, 3rem);
+      --transition: 420ms cubic-bezier(.22, .61, .36, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--body);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(154, 93, 54, 0.11), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(35, 53, 50, 0.09), transparent 28%),
+        linear-gradient(145deg, #f7f2eb 0%, #f6f0e8 58%, #ece4d7 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.28;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0,
+          transparent 33px,
+          rgba(25, 23, 21, 0.025) 33px,
+          rgba(25, 23, 21, 0.025) 34px
+        );
+    }
+
+    .deck {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .slides {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform var(--transition);
+      will-change: transform;
+    }
+
+    .slide {
+      position: relative;
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+      min-width: 100%;
+      padding: var(--pad-y) var(--pad-x);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 1.25rem;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      top: 18px;
+      left: var(--pad-x);
+      right: var(--pad-x);
+      height: 1px;
+      background: linear-gradient(90deg, var(--rule-strong), rgba(58, 42, 24, 0));
+      pointer-events: none;
+    }
+
+    .slide-head {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .head-copy {
+      max-width: 76%;
+    }
+
+    .kicker {
+      display: inline-block;
+      color: var(--accent);
+      font: 700 0.82rem/1 var(--mono);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .slide-number {
+      color: var(--accent);
+      font: 700 0.84rem/1 var(--mono);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding-top: 0.2rem;
+    }
+
+    h1, h2 {
+      margin: 0;
+      font-family: var(--display);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 0.95;
+    }
+
+    h1 {
+      font-size: clamp(3.2rem, 6vw, 6.2rem);
+    }
+
+    h2 {
+      font-size: clamp(2.2rem, 4vw, 4.5rem);
+      max-width: 13ch;
+    }
+
+    .compact h2 {
+      font-size: clamp(1.75rem, 2.55vw, 2.7rem);
+      max-width: 17ch;
+      line-height: 0.98;
+    }
+
+    .subtitle {
+      margin: 0.8rem 0 0;
+      max-width: 68ch;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.3vw, 1.14rem);
+      line-height: 1.68;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 1rem;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2rem;
+      padding: 0.38rem 0.78rem;
+      border-radius: 999px;
+      border: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--forest);
+      font: 600 0.8rem/1 var(--mono);
+    }
+
+    .cover-layout {
+      display: grid;
+      grid-template-columns: 0.72fr 1.28fr;
+      gap: clamp(1.8rem, 3.5vw, 4rem);
+      align-items: center;
+      height: 100%;
+    }
+
+    .logo-stage {
+      height: min(54vh, 480px);
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--rule);
+      background:
+        radial-gradient(circle at center, rgba(154, 93, 54, 0.08), transparent 56%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.42));
+      box-shadow: var(--shadow);
+    }
+
+    .logo-stage img {
+      width: clamp(160px, 20vw, 280px);
+      height: auto;
+      filter: drop-shadow(0 14px 26px rgba(25, 23, 21, 0.08));
+    }
+
+    .cover-copy .project-line {
+      margin: 1rem 0 0;
+      color: var(--forest);
+      font: 700 clamp(1rem, 1.3vw, 1.16rem)/1.45 var(--body);
+      letter-spacing: 0.02em;
+    }
+
+    .cover-copy .deck-intro {
+      margin: 1rem 0 0;
+      max-width: 58ch;
+      color: var(--muted);
+      font-size: clamp(1.02rem, 1.38vw, 1.18rem);
+      line-height: 1.75;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.3rem 2rem;
+      align-content: start;
+      padding-top: 0.25rem;
+    }
+
+    .overview-item {
+      padding-top: 0.85rem;
+      border-top: 2px solid var(--rule);
+    }
+
+    .overview-item h3,
+    .feature-item h3,
+    .proof-panel h3,
+    .integration-panel h3,
+    .structure-note h3,
+    .sequence-note h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .overview-item p,
+    .feature-item p,
+    .proof-panel p,
+    .integration-panel p,
+    .structure-note p,
+    .sequence-note p,
+    .summary-line {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.62;
+      font-size: 0.98rem;
+    }
+
+    .feature-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 2rem;
+      height: 100%;
+    }
+
+    .feature-lead {
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+    }
+
+    .feature-lead .statement {
+      margin: 0;
+      max-width: 34ch;
+      font-size: clamp(1.06rem, 1.45vw, 1.22rem);
+      line-height: 1.78;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 0.95rem;
+      align-content: start;
+    }
+
+    .feature-item {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 0.95rem;
+      padding-top: 0.7rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .feature-index {
+      color: var(--accent);
+      font: 700 1.05rem/1 var(--mono);
+      letter-spacing: 0.08em;
+      padding-top: 0.05rem;
+    }
+
+    .classification-table {
+      display: grid;
+      gap: 0.85rem;
+      align-content: start;
+    }
+
+    .classification-row {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 0.95rem;
+      padding: 0.65rem 0 0.78rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .classification-label {
+      color: var(--forest);
+      font: 700 0.92rem/1.4 var(--mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .classification-value {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .classification-plain {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 2px solid var(--rule-strong);
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.72;
+      max-width: 70ch;
+    }
+
+    .diagram-frame {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 0.7rem;
+    }
+
+    .diagram-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    .diagram-meta h3 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+
+    .diagram-meta .path {
+      color: var(--accent);
+      font: 700 0.75rem/1 var(--mono);
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .diagram-stage {
+      min-height: 0;
+      border: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      padding: 0.75rem;
+    }
+
+    .diagram-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: white;
+    }
+
+    .diagram-caption {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.56;
+      max-width: 72ch;
+    }
+
+    .diagram-full {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 0.85rem;
+    }
+
+    .diagram-full .diagram-stage {
+      padding: 0.45rem;
+    }
+
+    .diagram-support {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .diagram-support p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.56;
+      max-width: 72ch;
+    }
+
+    .diagram-support .path {
+      color: var(--accent);
+      font: 700 0.75rem/1.2 var(--mono);
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding-top: 0.15rem;
+    }
+
+    .structure-grid {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 2rem;
+      height: 100%;
+    }
+
+    .tree-shell {
+      min-height: 0;
+      border: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+      padding: 1rem 1.1rem;
+      overflow: auto;
+    }
+
+    .tree-shell h3 {
+      margin: 0 0 0.7rem;
+      font-size: 1rem;
+    }
+
+    pre.tree {
+      margin: 0;
+      white-space: pre-wrap;
+      font: 600 0.79rem/1.55 var(--mono);
+      color: var(--forest);
+    }
+
+    .structure-notes {
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+    }
+
+    .structure-note,
+    .proof-panel,
+    .integration-panel,
+    .sequence-note {
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .structure-note .path,
+    .proof-panel .path,
+    .integration-panel .path {
+      display: inline-block;
+      margin-bottom: 0.45rem;
+      color: var(--accent);
+      font: 700 0.72rem/1 var(--mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .proof-layout {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 1rem;
+      height: 100%;
+    }
+
+    .flow-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .flow-step {
+      padding: 0.65rem 0.8rem;
+      border-top: 2px solid var(--accent);
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 0.18rem;
+      font-size: 0.95rem;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem 1.3rem;
+      align-content: start;
+      min-height: 0;
+    }
+
+    .code-box {
+      min-height: 0;
+      border: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: var(--shadow);
+      padding: 0.9rem 1rem 1rem;
+    }
+
+    .code-box h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+    }
+
+    .code-box .path {
+      display: inline-block;
+      margin-bottom: 0.55rem;
+      color: var(--accent);
+      font: 700 0.72rem/1.2 var(--mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .code-box pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font: 600 0.73rem/1.45 var(--mono);
+      color: #243431;
+    }
+
+    .proof-summary {
+      padding-top: 0.9rem;
+      border-top: 2px solid var(--rule);
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.58;
+      max-width: 75ch;
+    }
+
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.2rem;
+      height: 100%;
+      align-content: start;
+    }
+
+    .integration-panel pre {
+      margin: 0.6rem 0 0;
+      white-space: pre-wrap;
+      font: 600 0.75rem/1.48 var(--mono);
+      color: #243431;
+    }
+
+    .integration-summary {
+      margin-top: 1rem;
+      padding-top: 0.9rem;
+      border-top: 2px solid var(--rule);
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 74ch;
+    }
+
+    .sequence-layout {
+      display: grid;
+      grid-template-columns: 0.7fr 1.3fr;
+      gap: 1.7rem;
+      height: 100%;
+    }
+
+    .sequence-notes {
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+    }
+
+    .sequence-stage {
+      min-height: 0;
+      border: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      padding: 0.7rem;
+    }
+
+    .sequence-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: white;
+    }
+
+    .demo-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 1rem;
+    }
+
+    .video-shell {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      border: 1px dashed rgba(255, 255, 255, 0.38);
+      background:
+        linear-gradient(180deg, rgba(12, 13, 15, 0.92), rgba(24, 26, 30, 0.95)),
+        radial-gradient(circle at top left, rgba(154, 93, 54, 0.28), transparent 34%);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .video-shell::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      pointer-events: none;
+    }
+
+    .video-placeholder {
+      text-align: center;
+      color: #f5eee4;
+      max-width: 62ch;
+      padding: 1rem;
+    }
+
+    .play-icon {
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 1rem;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+    }
+
+    .play-icon::before {
+      content: "";
+      width: 0;
+      height: 0;
+      border-left: 22px solid #f5eee4;
+      border-top: 14px solid transparent;
+      border-bottom: 14px solid transparent;
+      margin-left: 5px;
+    }
+
+    .video-title {
+      margin: 0 0 0.55rem;
+      font-family: var(--display);
+      font-size: clamp(2rem, 3vw, 2.9rem);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .video-copy {
+      margin: 0;
+      color: rgba(245, 238, 228, 0.82);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    .demo-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .demo-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.74rem;
+      border-radius: 999px;
+      border: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.64);
+      color: var(--forest);
+      font: 600 0.78rem/1 var(--mono);
+    }
+
+    .closing-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 2rem;
+      height: 100%;
+      align-items: start;
+    }
+
+    .closing-copy {
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+    }
+
+    .closing-statement {
+      margin: 0;
+      max-width: 40ch;
+      font-size: clamp(1.12rem, 1.55vw, 1.28rem);
+      line-height: 1.82;
+    }
+
+    .closing-points {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .closing-point {
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .closing-point strong {
+      display: block;
+      margin-bottom: 0.28rem;
+      font-size: 0.98rem;
+    }
+
+    .closing-mark {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--rule);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.48));
+      box-shadow: var(--shadow);
+    }
+
+    .closing-mark img {
+      width: clamp(110px, 15vw, 180px);
+      height: auto;
+    }
+
+    .appendix-note {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.56;
+    }
+
+
+    /* Modern visual polish layer.
+       Image src paths and existing image sizing rules are intentionally left unchanged. */
+    .deck {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0)),
+        radial-gradient(circle at 18% 16%, rgba(154, 93, 54, 0.16), transparent 28%),
+        radial-gradient(circle at 84% 80%, rgba(35, 53, 50, 0.13), transparent 30%);
+    }
+
+    .deck::after {
+      content: "";
+      position: fixed;
+      inset: clamp(0.6rem, 1vw, 1rem);
+      border: 1px solid rgba(58, 42, 24, 0.12);
+      border-radius: clamp(1.2rem, 2.4vw, 2rem);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .slides {
+      position: relative;
+      z-index: 2;
+    }
+
+    .slide {
+      isolation: isolate;
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      right: -10vw;
+      bottom: -18vh;
+      width: 42vw;
+      height: 42vw;
+      min-width: 420px;
+      min-height: 420px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.18) 38%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(1px);
+    }
+
+    .slide-head {
+      padding-bottom: 0.35rem;
+    }
+
+    .kicker {
+      padding: 0.52rem 0.72rem;
+      border: 1px solid rgba(154, 93, 54, 0.18);
+      border-radius: 999px;
+      background: rgba(154, 93, 54, 0.09);
+      box-shadow: 0 8px 20px rgba(45, 34, 21, 0.04);
+    }
+
+    .slide-number {
+      padding: 0.55rem 0.7rem;
+      border: 1px solid rgba(58, 42, 24, 0.12);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.62);
+      box-shadow: 0 10px 24px rgba(45, 34, 21, 0.05);
+      backdrop-filter: blur(12px);
+    }
+
+    h1, h2 {
+      text-wrap: balance;
+    }
+
+    .subtitle,
+    .cover-copy .deck-intro,
+    .feature-lead .statement,
+    .closing-statement {
+      text-wrap: pretty;
+    }
+
+    .tag,
+    .demo-chip {
+      border-color: rgba(58, 42, 24, 0.14);
+      background: rgba(255, 255, 255, 0.68);
+      box-shadow: 0 8px 18px rgba(45, 34, 21, 0.035);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo-stage,
+    .diagram-stage,
+    .sequence-stage,
+    .tree-shell,
+    .code-box,
+    .video-shell,
+    .closing-mark {
+      border-color: rgba(58, 42, 24, 0.14);
+      border-radius: clamp(1rem, 1.8vw, 1.65rem);
+      box-shadow:
+        0 22px 60px rgba(45, 34, 21, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+    }
+
+    .logo-stage,
+    .closing-mark {
+      background:
+        radial-gradient(circle at 50% 44%, rgba(154, 93, 54, 0.12), transparent 58%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.48));
+    }
+
+    .diagram-stage,
+    .sequence-stage,
+    .tree-shell,
+    .code-box {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82));
+    }
+
+    .overview-item,
+    .feature-item,
+    .classification-row,
+    .structure-note,
+    .proof-panel,
+    .integration-panel,
+    .sequence-note,
+    .closing-point {
+      position: relative;
+      border-top-color: rgba(58, 42, 24, 0.13);
+    }
+
+    .overview-item::before,
+    .feature-item::before,
+    .classification-row::before,
+    .structure-note::before,
+    .integration-panel::before,
+    .closing-point::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 0;
+      width: 3.5rem;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(154, 93, 54, 0.9), rgba(154, 93, 54, 0));
+    }
+
+    .flow-step {
+      border-radius: 1rem;
+      border: 1px solid rgba(58, 42, 24, 0.12);
+      border-top: 3px solid var(--accent);
+      background: rgba(255, 255, 255, 0.66);
+      box-shadow: 0 12px 28px rgba(45, 34, 21, 0.045);
+    }
+
+    .code-box pre,
+    .integration-panel pre,
+    pre.tree {
+      border-radius: 0.85rem;
+      background: rgba(35, 53, 50, 0.045);
+      padding: 0.72rem 0.78rem;
+    }
+
+    .video-shell {
+      border-style: solid;
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .image-expand-host {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .image-expand-host img {
+      cursor: zoom-in;
+    }
+
+    .expand-image-button {
+      position: absolute;
+      right: 0.9rem;
+      top: 0.9rem;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      border-radius: 999px;
+      padding: 0.52rem 0.78rem;
+      background: rgba(18, 20, 23, 0.74);
+      color: #fff;
+      font: 700 0.76rem/1 var(--body);
+      letter-spacing: 0.02em;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+      transition: opacity 180ms ease, transform 180ms ease, background 180ms ease;
+      cursor: pointer;
+    }
+
+    .image-expand-host:hover .expand-image-button,
+    .image-expand-host:focus-within .expand-image-button {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .expand-image-button:hover {
+      background: rgba(154, 93, 54, 0.92);
+    }
+
+    .image-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      padding: clamp(1rem, 2vw, 2rem);
+      background: rgba(8, 9, 11, 0.9);
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 180ms ease, visibility 180ms ease;
+    }
+
+    .image-lightbox.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .image-lightbox__figure {
+      margin: 0;
+      display: grid;
+      gap: 0.8rem;
+      justify-items: center;
+      max-width: 96vw;
+      max-height: 92vh;
+    }
+
+    .image-lightbox__figure img {
+      display: block;
+      max-width: min(94vw, 1680px);
+      max-height: 86vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 0.7rem;
+      background: #fff;
+      box-shadow: 0 26px 84px rgba(0, 0, 0, 0.45);
+    }
+
+    .image-lightbox__caption {
+      margin: 0;
+      max-width: min(94vw, 1100px);
+      color: rgba(255, 255, 255, 0.82);
+      font: 600 0.9rem/1.4 var(--body);
+      text-align: center;
+    }
+
+    .image-lightbox__close {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: 2.8rem;
+      height: 2.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font: 700 1.4rem/1 var(--body);
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: background 160ms ease, transform 160ms ease;
+    }
+
+    .image-lightbox__close:hover {
+      background: rgba(154, 93, 54, 0.92);
+      transform: scale(1.04);
+    }
+
+    .deck-progress {
+      position: fixed;
+      left: 50%;
+      bottom: 1.1rem;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: min(480px, calc(100vw - 2rem));
+      transform: translateX(-50%);
+      padding: 0.62rem 0.78rem;
+      border: 1px solid rgba(58, 42, 24, 0.12);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 16px 40px rgba(45, 34, 21, 0.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .deck-progress__track {
+      position: relative;
+      flex: 1;
+      height: 0.42rem;
+      border-radius: 999px;
+      background: rgba(58, 42, 24, 0.12);
+      overflow: hidden;
+    }
+
+    .deck-progress__fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--forest));
+      transition: width var(--transition);
+    }
+
+    .deck-progress__label {
+      color: var(--forest);
+      font: 700 0.76rem/1 var(--mono);
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1240px) {
+      .cover-layout,
+      .feature-layout,
+      .structure-grid,
+      .sequence-layout,
+      .closing-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .integration-grid,
+      .proof-grid,
+      .overview-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-strip {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .head-copy {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 840px) {
+      .slide {
+        padding: 1.3rem 1.1rem;
+      }
+
+      .slide::before {
+        left: 1.1rem;
+        right: 1.1rem;
+      }
+
+      .slide-head {
+        flex-direction: column;
+      }
+
+      .classification-row {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-strip,
+      .proof-grid,
+      .integration-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      html, body {
+        overflow: visible;
+        background: white;
+      }
+
+      body::before,
+      .deck::after,
+      .image-lightbox,
+      .deck-progress,
+      .expand-image-button {
+        display: none;
+      }
+
+      .deck {
+        overflow: visible;
+      }
+
+      .slides {
+        display: block;
+        transform: none !important;
+      }
+
+      .slide {
+        min-height: 100vh;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <div class="slides" id="slides">
+
+      <section class="slide">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Final Project Presentation</span>
+          </div>
+          <div class="slide-number">Slide 01</div>
+        </header>
+
+        <div class="content">
+          <div class="cover-layout">
+            <div class="logo-stage">
+              <img src="assets/logo.svg" alt="BrainBox logo">
+            </div>
+
+            <div class="cover-copy">
+              <h1>BrainBox</h1>
+              <p class="project-line">Integrated Study Platform</p>
+              <p class="deck-intro">A web and mobile learning system that combines notebooks, AI assistance, quizzes, flashcards, playlists, playback, and version history into one connected study workflow.</p>
+              <div class="tag-row">
+                <span class="tag">Joana Carla Gako</span>
+                <span class="tag">IT342-G5</span>
+                <span class="tag">Systems Integration and Architecture</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">System Project Introduction</span>
+            <h2>What BrainBox Is and Why It Was Built</h2>
+            <p class="subtitle">This slide answers the four questions your instructor expects first: purpose, problem, users, and overall goal.</p>
+          </div>
+          <div class="slide-number">Slide 02</div>
+        </header>
+
+        <div class="content">
+          <div class="overview-grid">
+            <article class="overview-item">
+              <h3>Purpose of the system</h3>
+              <p>BrainBox is designed to centralize study activities inside one integrated platform instead of making users depend on separate tools for note-taking, recall practice, and content organization.</p>
+            </article>
+            <article class="overview-item">
+              <h3>Problem it addresses</h3>
+              <p>Many learners switch between disconnected apps for notes, flashcards, quizzes, and playback. That fragmented workflow slows study sessions and makes content harder to manage consistently.</p>
+            </article>
+            <article class="overview-item">
+              <h3>Intended users</h3>
+              <p>The primary users are students and self-directed learners who want one system for managing study content, reviewing material, and using AI-assisted learning support.</p>
+            </article>
+            <article class="overview-item">
+              <h3>Overall project goal</h3>
+              <p>The project goal is to deliver a secure, cross-platform study environment where content creation, revision history, AI support, and active recall tools work together through a unified backend architecture.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Main Features</span>
+            <h2>Implemented Features of the System</h2>
+            <p class="subtitle">Only implemented features are shown here, grouped by what they contribute to the user workflow.</p>
+          </div>
+          <div class="slide-number">Slide 03</div>
+        </header>
+
+        <div class="content">
+          <div class="feature-layout">
+            <div class="feature-lead">
+              <p class="statement">BrainBox is not only a notebook app. It combines secure access, learning-content management, AI-assisted study support, active recall tools, and guided playback inside one system connected to the same backend API.</p>
+              <div class="tag-row">
+                <span class="tag">React Web Client</span>
+                <span class="tag">Spring Boot Backend</span>
+                <span class="tag">Android Mobile App</span>
+              </div>
+            </div>
+
+            <div class="feature-list">
+              <article class="feature-item">
+                <div class="feature-index">01</div>
+                <div>
+                  <h3>Access and account security</h3>
+                  <p>Registration, email verification, login, logout, refresh token handling, forgot password, reset password, and Google sign-in.</p>
+                </div>
+              </article>
+
+              <article class="feature-item">
+                <div class="feature-index">02</div>
+                <div>
+                  <h3>Notebook and category management</h3>
+                  <p>Notebook CRUD operations, categorized content, recently edited tracking, recently reviewed tracking, and persistent notebook content saving.</p>
+                </div>
+              </article>
+
+              <article class="feature-item">
+                <div class="feature-index">03</div>
+                <div>
+                  <h3>AI-assisted study workflows</h3>
+                  <p>Notebook-based AI prompting, configurable AI provider settings, AI conversations, and generation support for study content.</p>
+                </div>
+              </article>
+
+              <article class="feature-item">
+                <div class="feature-index">04</div>
+                <div>
+                  <h3>Active recall and content delivery</h3>
+                  <p>Quizzes, flashcards, playlist organization, playback queue management, and review or listening flows connected to notebook content.</p>
+                </div>
+              </article>
+
+              <article class="feature-item">
+                <div class="feature-index">05</div>
+                <div>
+                  <h3>History and cross-platform support</h3>
+                  <p>Notebook version snapshots, restore version capability, and access from both the web client and the Android mobile client through the same backend API.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">System Architecture</span>
+            <h2>BrainBox Architecture</h2>
+            <p class="subtitle">This slide summarizes the architecture styles and design patterns used by the web client, mobile app, backend API, database, and external services.</p>
+          </div>
+          <div class="slide-number">Slide 04</div>
+        </header>
+
+        <div class="content">
+          <div class="classification-table">
+            <div class="classification-row">
+              <div class="classification-label">System style</div>
+              <div class="classification-value">Client-server architecture. The React web client and the Android mobile app both communicate with one backend API.</div>
+            </div>
+            <div class="classification-row">
+              <div class="classification-label">Backend deployment</div>
+              <div class="classification-value">Modular monolith. BrainBox runs one Spring Boot backend application with one main PostgreSQL database, while business logic is divided into feature modules.</div>
+            </div>
+            <div class="classification-row">
+              <div class="classification-label">API communication</div>
+              <div class="classification-value">REST API architecture using HTTP endpoints, JSON payloads, bearer access tokens, and refresh-token flows.</div>
+            </div>
+            <div class="classification-row">
+              <div class="classification-label">Backend processing</div>
+              <div class="classification-value">Layered backend architecture where requests move through auth interception, controllers, services, repositories, and database persistence.</div>
+            </div>
+            <div class="classification-row">
+              <div class="classification-label">Applicable patterns</div>
+              <div class="classification-value">Spring MVC is used for backend request handling. Repository-based data access appears in the backend and mobile app, while the Android client also uses coordinators to manage feature flows.</div>
+            </div>
+            <div class="classification-row">
+              <div class="classification-label">Client architecture</div>
+              <div class="classification-value">The web client is a React single-page application organized by feature folders, routes, hooks, contexts, and API services, while the mobile client is a Jetpack Compose app organized by feature slices, scenes or screens, coordinators, repositories, and Retrofit services.</div>
+            </div>
+            <div class="classification-row">
+              <div class="classification-label">Integration scope</div>
+              <div class="classification-value">The architecture connects web, mobile, backend, database, Google sign-in, email delivery, and AI provider calls through backend-controlled integration flows.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Architecture Diagram</span>
+            <h2>BrainBox Architecture</h2>
+          </div>
+          <div class="slide-number">Slide 05</div>
+        </header>
+
+        <div class="content">
+          <div class="diagram-full">
+            <div class="diagram-stage">
+              <img src="assets/architecture-rendered-manual-tight.png" alt="BrainBox architecture diagram">
+            </div>
+            <div class="diagram-support">
+              <p>This diagram summarizes the web client, Android mobile app, Spring Boot backend, security layer, feature modules, PostgreSQL database, and external services in one system view.</p>
+              <div class="path">Source: custom PlantUML architecture rendering</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Proof of Implementation</span>
+            <h2>Codebase Organization</h2>
+            <p class="subtitle">The repository is separated by platform at the top level, while the backend and mobile app organize business logic inside feature modules and packages.</p>
+          </div>
+          <div class="slide-number">Slide 06</div>
+        </header>
+
+        <div class="content">
+          <div class="structure-grid">
+            <div class="tree-shell">
+              <h3>Condensed repository structure</h3>
+              <pre class="tree">brainbox/
+|-- web/
+|   `-- src/
+|       |-- auth/
+|       |-- home/
+|       |-- notebook/
+|       |-- ai/
+|       `-- common/
+|-- backend/
+|   `-- src/main/java/edu/cit/gako/brainbox/
+|       |-- modules/{auth, notebook, quiz, flashcard,
+|       |            playlist, playbackqueue, ai, user, category}
+|       |-- platform/
+|       `-- shared/
+|-- mobile/
+|   `-- app/src/main/java/edu/cit/gako/brainbox/
+|       |-- app/
+|       |-- features/{auth, home, notebook, playback}
+|       |-- platform/
+|       `-- shared/
+`-- docs/</pre>
+            </div>
+
+            <div class="structure-notes">
+              <article class="structure-note">
+                <span class="path">Repository level</span>
+                <h3>Platform separation</h3>
+                <p>The root of the project clearly separates the web client, backend API, Android mobile app, and project documentation, which supports multi-platform development and maintenance.</p>
+              </article>
+
+              <article class="structure-note">
+                <span class="path">web/src</span>
+                <h3>Feature folders inside the web client</h3>
+                <p>The React client is grouped into <code>auth</code>, <code>home</code>, <code>notebook</code>, <code>ai</code>, <code>app</code>, and <code>common</code>. Those folders contain the routes, components, hooks, contexts, and API services used by each feature or shared layer.</p>
+              </article>
+
+              <article class="structure-note">
+                <span class="path">backend/src/main/java/edu/cit/gako/brainbox/modules</span>
+                <h3>Feature modules inside the backend</h3>
+                <p>The backend is organized by feature. Each module keeps related endpoints, services, repositories, DTOs, and entities close together, so notebook logic stays inside the notebook slice, auth logic stays inside auth, and the same pattern applies to quiz, flashcard, playlist, playback queue, AI, user, and category.</p>
+              </article>
+
+              <article class="structure-note">
+                <span class="path">mobile/app/src/main/java/edu/cit/gako/brainbox</span>
+                <h3>Feature packages inside the mobile app</h3>
+                <p>The Android project follows the same feature-oriented idea through <code>features</code>, supported by <code>app</code>, <code>platform</code>, and <code>shared</code>. This keeps mobile flows readable while shared infrastructure remains reusable.</p>
+              </article>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Proof of Implementation</span>
+            <h2>Notebook Save Flow in Code</h2>
+            <p class="subtitle">This is the concrete request path from the web client to the backend service, database write, and version snapshot listener.</p>
+          </div>
+          <div class="slide-number">Slide 07</div>
+        </header>
+
+        <div class="content">
+          <div class="proof-layout">
+            <div class="flow-strip">
+              <div class="flow-step">
+                <strong>1. Web client</strong>
+                <span>Frontend issues a <code>PUT /notebooks/{uuid}/content</code> request.</span>
+              </div>
+              <div class="flow-step">
+                <strong>2. Controller</strong>
+                <span>Spring MVC route accepts the request and forwards it to the notebook service.</span>
+              </div>
+              <div class="flow-step">
+                <strong>3. Service + repository</strong>
+                <span>Business logic validates the mutation, then persists the notebook content.</span>
+              </div>
+              <div class="flow-step">
+                <strong>4. Event-based versioning</strong>
+                <span>A saved-content event triggers snapshot creation for version history.</span>
+              </div>
+            </div>
+
+            <div class="proof-grid">
+              <article class="code-box">
+                <div class="path">web/src/notebook/shared/api/notebookService.js</div>
+                <h3>Frontend API call</h3>
+                <pre>saveContent: (notebookUuid, content) =&gt;
+  apiCall(
+    `/notebooks/${notebookUuid}/content`,
+    'PUT',
+    { content }
+  )</pre>
+              </article>
+
+              <article class="code-box">
+                <div class="path">backend/.../modules/notebook/controller/NotebookController.java</div>
+                <h3>Controller route</h3>
+                <pre>@RequireAuth
+@PutMapping("/{uuid}/content")
+public ResponseEntity&lt;ApiResponse&lt;NotebookFullResponse&gt;&gt; saveContent(...) {
+  return ResponseEntity.ok(ApiResponse.success(
+    notebookService.saveContent(notebookUuid, userId, body.getContent(), ...)));
+}</pre>
+              </article>
+
+              <article class="code-box">
+                <div class="path">backend/.../modules/notebook/service/NotebookService.java</div>
+                <h3>Business logic and persistence</h3>
+                <pre>notebook.setContent(nextContent);
+Notebook savedNotebook = notebookRepository.saveAndFlush(notebook);
+eventPublisher.publishEvent(
+  new NotebookContentSavedEvent(this, savedNotebook, savedNotebook.getContent())
+);</pre>
+              </article>
+
+              <article class="code-box">
+                <div class="path">backend/.../modules/notebook/event/NotebookVersionSnapshotListener.java</div>
+                <h3>Version snapshot listener</h3>
+                <pre>@EventListener
+public void onNotebookContentSaved(NotebookContentSavedEvent event) {
+  notebookVersionSnapshotService.createSnapshot(
+    event.getNotebook(), event.getContent()
+  );
+}</pre>
+              </article>
+            </div>
+
+            <div class="proof-summary">This code path proves the interaction between frontend API integration, Spring MVC routing, backend service logic, repository persistence, and event-driven notebook versioning in the working application.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Proof of Integration</span>
+            <h2>External Integrations in the Actual Code</h2>
+            <p class="subtitle">Sensitive integrations are coordinated through backend controllers and services rather than direct client-side calls.</p>
+          </div>
+          <div class="slide-number">Slide 08</div>
+        </header>
+
+        <div class="content">
+          <div class="integration-grid">
+            <article class="integration-panel">
+              <div class="path">AuthController.java + AuthService.java</div>
+              <h3>Google identity integration</h3>
+              <p>The backend exposes a dedicated authentication endpoint, then validates Google tokens on the server side before creating or linking a user.</p>
+              <pre>@PostMapping("/google")
+public ResponseEntity&lt;ApiResponse&lt;LoginResponse&gt;&gt; googleAuth(...) {
+  return ResponseEntity.ok(ApiResponse.success(
+    authService.googleLogin(...)
+  ));
+}
+
+.uri(URI.create(
+  "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken
+))</pre>
+            </article>
+
+            <article class="integration-panel">
+              <div class="path">AuthService.java + EmailService.java</div>
+              <h3>Email verification and reset flow</h3>
+              <p>Verification links and password-reset messages are generated and sent through backend email services, not by the client directly.</p>
+              <pre>String verificationLink =
+  baseUrl + "/api/auth/verify-email?token=" + token;
+
+emailService.sendEmail(
+  request.getEmail(),
+  "Account Verification",
+  emailTemplateService.buildVerificationEmail(username, verificationLink)
+);</pre>
+            </article>
+
+            <article class="integration-panel">
+              <div class="path">AiController.java + AiService.java</div>
+              <h3>AI provider config flow</h3>
+              <p>The backend checks notebook ownership, loads the saved AI configuration, decrypts the API key, builds the prompt, and only then makes the server-side provider call.</p>
+              <pre>notebookService.getNotebookByUuidAndUserId(
+  aiRequest.getNotebookUuid(), userId
+);
+
+AiConfig config = aiConfigService.getConfigEntity(userId);
+String apiKey = aiConfigService.decryptApiKey(config);
+
+String aiMessage = aiProvider.generateResponse(
+  config.getProxyUrl(), apiKey, config.getModel(), messages, 0.4
+);</pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Database Design</span>
+            <h2>Database Model</h2>
+          </div>
+          <div class="slide-number">Slide 09</div>
+        </header>
+
+        <div class="content">
+          <div class="diagram-full">
+            <div class="diagram-stage">
+              <img src="assets/erd-frs-cropped.png" alt="BrainBox entity relationship diagram">
+            </div>
+            <div class="diagram-support">
+              <p>The ERD shows how users, notebooks, notebook versions, AI configuration, conversations, quizzes, flashcards, playlists, playback queues, refresh tokens, categories, and study attempts are stored as related persistent records.</p>
+              <div class="path">Source: entity relationship diagram</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Component Interaction</span>
+            <h2>Notebook Save Sequence Diagram</h2>
+          </div>
+          <div class="slide-number">Slide 10</div>
+        </header>
+
+        <div class="content">
+          <div class="diagram-full">
+            <div class="diagram-stage">
+              <img src="assets/sequence-diagram-main-flow.png" alt="Notebook save sequence diagram main flow">
+            </div>
+            <div class="diagram-support">
+              <p>This sequence focuses on the main success path: client request, JWT validation, controller forwarding, service checks, repository persistence, event publication, snapshot creation, and response return.</p>
+              <div class="path">Source: notebook save sequence diagram</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide compact">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">System Demonstration</span>
+            <h2>System Demonstration</h2>
+            <p class="subtitle">Insert your recorded walkthrough of the working BrainBox system here.</p>
+          </div>
+          <div class="slide-number">Slide 11</div>
+        </header>
+
+        <div class="content">
+          <div class="demo-layout" style="grid-template-rows: 1fr;">
+            <div class="video-shell">
+              <div class="video-placeholder">
+                <div class="play-icon"></div>
+                <p class="video-title">Insert Recorded Demo Video Here</p>
+                <p class="video-copy">Replace this placeholder with your final recorded system walkthrough.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header class="slide-head">
+          <div class="head-copy">
+            <span class="kicker">Closing Summary</span>
+            <h2>Final Technical Takeaways</h2>
+            <p class="subtitle">End the presentation by summarizing the system as an integrated architecture, not only as a collection of features.</p>
+          </div>
+          <div class="slide-number">Slide 12</div>
+        </header>
+
+        <div class="content">
+          <div class="closing-layout">
+            <div class="closing-copy">
+              <p class="closing-statement">BrainBox demonstrates systems integration through a multi-client architecture, a modular monolith backend, layered REST request handling, secure authentication, database-backed persistence, and controlled communication with external services.</p>
+
+              <div class="closing-points">
+                <div class="closing-point">
+                  <strong>Client-server design</strong>
+                  <p class="summary-line">Both the web client and Android mobile app connect to the same backend API and share core backend capabilities.</p>
+                </div>
+                <div class="closing-point">
+                  <strong>Architecture reflected in code</strong>
+                  <p class="summary-line">Controllers, services, repositories, feature modules, and shared infrastructure are visible in the actual project structure and code files.</p>
+                </div>
+                <div class="closing-point">
+                  <strong>Integration proven by implementation</strong>
+                  <p class="summary-line">Notebook saving, version snapshots, Google sign-in, email delivery, and AI provider access are all implemented through actual code paths, not only diagrams.</p>
+                </div>
+                <div class="closing-point">
+                  <strong>System goal achieved</strong>
+                  <p class="summary-line">The project delivers one integrated study platform that supports content creation, review, recall practice, and guided playback across multiple clients.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="closing-mark">
+              <img src="assets/logo.svg" alt="BrainBox logo">
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+
+  <div class="image-lightbox" id="imageLightbox" aria-hidden="true" role="dialog" aria-label="Expanded image preview">
+    <button class="image-lightbox__close" id="imageLightboxClose" type="button" aria-label="Close expanded image">×</button>
+    <figure class="image-lightbox__figure">
+      <img id="imageLightboxImage" src="" alt="">
+      <figcaption class="image-lightbox__caption" id="imageLightboxCaption"></figcaption>
+    </figure>
+  </div>
+
+  <div class="deck-progress" aria-hidden="true">
+    <div class="deck-progress__track">
+      <div class="deck-progress__fill" id="deckProgressFill"></div>
+    </div>
+    <div class="deck-progress__label" id="deckProgressLabel">01 / 12</div>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const track = document.getElementById('slides');
+    const progressFill = document.getElementById('deckProgressFill');
+    const progressLabel = document.getElementById('deckProgressLabel');
+    const imageLightbox = document.getElementById('imageLightbox');
+    const imageLightboxImage = document.getElementById('imageLightboxImage');
+    const imageLightboxCaption = document.getElementById('imageLightboxCaption');
+    const imageLightboxClose = document.getElementById('imageLightboxClose');
+    let currentSlide = 0;
+
+    const updateSlides = () => {
+      track.style.transform = `translateX(-${currentSlide * 100}%)`;
+      const progress = ((currentSlide + 1) / slides.length) * 100;
+      progressFill.style.width = `${progress}%`;
+      progressLabel.textContent = `${String(currentSlide + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+
+      const params = new URLSearchParams(window.location.search);
+      params.set('slide', String(currentSlide + 1));
+      history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+    };
+
+    const goToSlide = (index) => {
+      currentSlide = Math.max(0, Math.min(index, slides.length - 1));
+      updateSlides();
+    };
+
+    const parseInitialSlide = () => {
+      const params = new URLSearchParams(window.location.search);
+      const raw = Number.parseInt(params.get('slide') || '1', 10);
+      if (Number.isFinite(raw) && raw >= 1 && raw <= slides.length) {
+        currentSlide = raw - 1;
+      }
+    };
+
+    parseInitialSlide();
+    updateSlides();
+
+    const closeExpandedImage = () => {
+      imageLightbox.classList.remove('is-open');
+      imageLightbox.setAttribute('aria-hidden', 'true');
+      imageLightboxImage.src = '';
+      imageLightboxImage.alt = '';
+      imageLightboxCaption.textContent = '';
+    };
+
+    const openExpandedImage = (sourceImage) => {
+      imageLightboxImage.src = sourceImage.currentSrc || sourceImage.src;
+      imageLightboxImage.alt = sourceImage.alt || 'Expanded presentation image';
+      imageLightboxCaption.textContent = sourceImage.alt || '';
+      imageLightbox.classList.add('is-open');
+      imageLightbox.setAttribute('aria-hidden', 'false');
+      imageLightboxClose.focus();
+    };
+
+    document.querySelectorAll('.logo-stage img, .diagram-stage img, .sequence-stage img, .closing-mark img').forEach((image) => {
+      const host = image.parentElement;
+      host.classList.add('image-expand-host');
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'expand-image-button';
+      button.innerHTML = '⤢ <span>Expand</span>';
+      button.setAttribute('aria-label', `Expand ${image.alt || 'image'}`);
+      host.appendChild(button);
+
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openExpandedImage(image);
+      });
+
+      image.addEventListener('click', () => openExpandedImage(image));
+    });
+
+    imageLightboxClose.addEventListener('click', closeExpandedImage);
+    imageLightbox.addEventListener('click', (event) => {
+      if (event.target === imageLightbox) closeExpandedImage();
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (imageLightbox.classList.contains('is-open')) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeExpandedImage();
+        }
+
+        if (['ArrowRight', 'PageDown', ' ', 'Enter', 'ArrowLeft', 'PageUp', 'Backspace', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault();
+        }
+
+        return;
+      }
+
+      if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(event.key)) {
+        event.preventDefault();
+        goToSlide(currentSlide + 1);
+      }
+
+      if (['ArrowLeft', 'PageUp', 'Backspace'].includes(event.key)) {
+        event.preventDefault();
+        goToSlide(currentSlide - 1);
+      }
+
+      if (event.key === 'Home') {
+        event.preventDefault();
+        goToSlide(0);
+      }
+
+      if (event.key === 'End') {
+        event.preventDefault();
+        goToSlide(slides.length - 1);
+      }
+
+      if (event.key.toLowerCase() === 'f') {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.();
+        } else {
+          document.exitFullscreen?.();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

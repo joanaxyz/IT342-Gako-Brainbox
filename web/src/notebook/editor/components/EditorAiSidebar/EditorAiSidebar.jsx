@@ -34,6 +34,8 @@ const EditorAiSidebar = ({
 
   onAiUpdateContent,
 
+  onApplyEditorCommands,
+
   hasProposedChanges = false,
 
   pendingProposalSourceId,
@@ -85,6 +87,8 @@ const EditorAiSidebar = ({
         onToolHelpClose={onToolHelpClose}
 
         onAiUpdateContent={onAiUpdateContent}
+
+        onApplyEditorCommands={onApplyEditorCommands}
 
         hasProposedChanges={hasProposedChanges}
 

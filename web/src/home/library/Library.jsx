@@ -1,10 +1,11 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { FolderOpen, Plus } from 'lucide-react';
+import { FolderOpen, Pencil, Plus } from 'lucide-react';
 import Modal from '../../common/components/Modal';
 import PaginationControls from '../../common/components/PaginationControls';
 import { useNotification } from '../../common/hooks/hooks';
 import usePagination from '../../common/hooks/usePagination';
 import { useNotebook, useCategory } from '../../notebook/shared/hooks/hooks';
+import EditCategoryModal from '../shared/components/EditCategoryModal';
 import NewCategoryModal from '../shared/components/NewCategoryModal';
 import NewNoteBookModal from '../shared/components/NewNotebookModal';
 import HomeTabHero from '../shared/components/HomeTabHero';
@@ -197,6 +198,7 @@ const Library = () => {
   const [categorySortDirection, setCategorySortDirection] = useState(DEFAULT_SORT_DIRECTIONS.name);
   const [showNewNotebookModal, setShowNewNotebookModal] = useState(false);
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState(null);
   const [pendingNotebookForCategory, setPendingNotebookForCategory] = useState(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedNotebookUuids, setSelectedNotebookUuids] = useState(() => new Set());
@@ -748,6 +750,12 @@ const Library = () => {
                   Show all notebooks
                 </button>
               )}
+              {selectedCategory && !selectionMode && (
+                <button className="btn btn-ghost" onClick={() => setCategoryToEdit(selectedCategory)}>
+                  <Pencil size={16} />
+                  Edit category
+                </button>
+              )}
               <button
                 className="btn btn-ghost"
                 onClick={() => {
@@ -985,6 +993,11 @@ const Library = () => {
         isOpen={showNewCategoryModal}
         onClose={handleCloseCategoryModal}
         onCreated={handleCategoryCreated}
+      />
+      <EditCategoryModal
+        category={categoryToEdit}
+        isOpen={Boolean(categoryToEdit)}
+        onClose={() => setCategoryToEdit(null)}
       />
       <NewNoteBookModal
         isOpen={showNewNotebookModal}

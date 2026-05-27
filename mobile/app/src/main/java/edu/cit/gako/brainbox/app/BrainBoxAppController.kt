@@ -23,6 +23,7 @@ class BrainBoxAppController(
     private val quizRepository = appGraph.quizRepository
     private val flashcardRepository = appGraph.flashcardRepository
     private var lastAutomaticRefreshAtMillis = 0L
+    private var lastHomeSectionErrorMessage: String? = null
 
     private val playbackCoordinator = PlaybackCoordinator(
         appContext = appGraph.context,
@@ -178,22 +179,27 @@ class BrainBoxAppController(
 
         try {
             val bundle = homeRepository.loadHome()
+            val homeData = bundle.homeData
+                .withLatestQuizzes()
+                .withLatestFlashcards()
+                .withPlaybackQueueFallback()
             state = state.copy(
                 isBootstrapping = false,
                 isBusy = false,
                 isAuthenticated = true,
                 user = bundle.user,
-                homeData = bundle.homeData,
-                playbackQueue = bundle.homeData.playbackQueue,
-                playbackPlaylistUuid = bundle.homeData.playbackPlaylistUuid,
-                playbackPlaylistTitle = bundle.homeData.playbackPlaylistTitle,
-                playbackPlaylistCurrentIndex = bundle.homeData.playbackPlaylistCurrentIndex
+                homeData = homeData,
+                playbackQueue = homeData.playbackQueue,
+                playbackPlaylistUuid = homeData.playbackPlaylistUuid,
+                playbackPlaylistTitle = homeData.playbackPlaylistTitle,
+                playbackPlaylistCurrentIndex = homeData.playbackPlaylistCurrentIndex
             )
             playbackCoordinator.installPlaylistPlaybackContext(
-                bundle.homeData.playbackPlaylistUuid,
-                bundle.homeData.playbackQueue,
-                bundle.homeData.playbackQueue
+                homeData.playbackPlaylistUuid,
+                homeData.playbackQueue,
+                homeData.playbackQueue
             )
+            reportHomeSectionErrors(bundle.sectionErrors)
         } catch (error: HttpException) {
             if (error.code() == 401) {
                 authRepository.logout()
@@ -218,9 +224,22 @@ class BrainBoxAppController(
             runCatching {
                 notebookRepository.markNotebookReviewed(notebookUuid)
                 val bundle = homeRepository.loadHome()
+                val homeData = bundle.homeData
+                    .withLatestQuizzes()
+                    .withLatestFlashcards()
+                    .withPlaybackQueueFallback()
                 state = state.copy(
                     user = bundle.user,
-                    homeData = bundle.homeData
+                    homeData = homeData,
+                    playbackQueue = homeData.playbackQueue,
+                    playbackPlaylistUuid = homeData.playbackPlaylistUuid,
+                    playbackPlaylistTitle = homeData.playbackPlaylistTitle,
+                    playbackPlaylistCurrentIndex = homeData.playbackPlaylistCurrentIndex
+                )
+                playbackCoordinator.installPlaylistPlaybackContext(
+                    homeData.playbackPlaylistUuid,
+                    homeData.playbackQueue,
+                    homeData.playbackQueue
                 )
             }
         }
@@ -244,6 +263,65 @@ class BrainBoxAppController(
 
     private fun showMessage(message: String) {
         onMessage(message)
+    }
+
+    private suspend fun HomeData.withLatestQuizzes(): HomeData {
+        val latestQuizzes = runCatching { quizRepository.getQuizzes() }
+            .onFailure {
+                showMessage("Couldn't load quizzes: ${it.message ?: "Check the API connection and try again."}")
+            }
+            .getOrNull()
+
+        return if (latestQuizzes != null) {
+            copy(quizzes = latestQuizzes)
+        } else {
+            this
+        }
+    }
+
+    private suspend fun HomeData.withLatestFlashcards(): HomeData {
+        val latestFlashcards = runCatching { flashcardRepository.getFlashcards() }
+            .onFailure {
+                showMessage("Couldn't load flashcards: ${it.message ?: "Check the API connection and try again."}")
+            }
+            .getOrNull()
+
+        return if (latestFlashcards != null) {
+            copy(flashcards = latestFlashcards)
+        } else {
+            this
+        }
+    }
+
+    private fun HomeData.withPlaybackQueueFallback(): HomeData {
+        if (playbackQueue.isNotEmpty()) {
+            return this
+        }
+
+        val playlist = playbackPlaylistUuid
+            ?.let { uuid -> playlists.firstOrNull { it.uuid == uuid } }
+            ?.takeIf { it.queue.isNotEmpty() }
+            ?: playlists.firstOrNull { it.queue.isNotEmpty() }
+            ?: return this
+
+        return copy(
+            playbackQueue = playlist.queue,
+            playbackPlaylistUuid = playbackPlaylistUuid ?: playlist.uuid,
+            playbackPlaylistTitle = playbackPlaylistTitle ?: playlist.title,
+            playbackPlaylistCurrentIndex = playlist.currentIndex.coerceIn(0, playlist.queue.lastIndex)
+        )
+    }
+
+    private fun reportHomeSectionErrors(errors: List<String>) {
+        val message = errors.firstOrNull() ?: run {
+            lastHomeSectionErrorMessage = null
+            return
+        }
+
+        if (message != lastHomeSectionErrorMessage) {
+            lastHomeSectionErrorMessage = message
+            showMessage(message)
+        }
     }
 
     private companion object {

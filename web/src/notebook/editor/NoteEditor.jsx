@@ -13,6 +13,7 @@ import useEditorNavigation from './hooks/useEditorNavigation';
 import EditorNavbar from './components/EditorNavbar/EditorNavbar';
 import ExportMenu from './components/ExportMenu/ExportMenu';
 import FormatToolbar from './components/FormatToolbar/FormatToolbar';
+import { EDITOR_FONTS } from './editorFonts';
 import NoteEditorContent from './components/NoteEditorContent/NoteEditorContent';
 import OutlineNav from './components/OutlineNav/OutlineNav';
 import { EDITOR_AI_TOOLS, REVIEW_AI_TOOLS } from './components/AiSidebar/editorAiTools';
@@ -25,6 +26,12 @@ import PlayerBar from '../../home/shared/components/PlayerBar';
 import { useAudioPlayer, useNotification } from '../../common/hooks/hooks';
 import { buildPlaybackModel } from '../../common/audio/playbackModel';
 import { isAndroidHost, reportHostReady } from '../../app/host/brainBoxHost';
+import {
+  importedHtmlToPlainTextHtml,
+  NOTEBOOK_IMPORT_ACCEPT,
+  readNotebookImportFile,
+} from './utils/importUtils';
+import { isEquivalentNotebookHtml } from '../shared/utils/notebookPages';
 import './components/ReviewMode/ReviewMode.css';
 import './editor.css';
 
@@ -32,6 +39,7 @@ const EditorMobileDockActions = ({
   notebookTitle,
   showDocumentActions = true,
   onImportContent,
+  onImportError,
   getExportContent,
   getExportLayout,
   isAiSidebarOpen,
@@ -39,20 +47,22 @@ const EditorMobileDockActions = ({
 }) => {
   const fileInputRef = useRef(null);
 
-  const handleFileChange = useCallback((event) => {
+  const handleFileChange = useCallback(async (event) => {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      onImportContent?.(file.name, loadEvent.target.result);
-    };
-    reader.readAsText(file, 'utf-8');
-    event.target.value = '';
-  }, [onImportContent]);
+    try {
+      const imported = await readNotebookImportFile(file);
+      onImportContent?.(imported.filename, imported.html);
+    } catch (error) {
+      onImportError?.(error?.message || 'Failed to import document.');
+    } finally {
+      event.target.value = '';
+    }
+  }, [onImportContent, onImportError]);
 
   return (
     <>
@@ -61,7 +71,7 @@ const EditorMobileDockActions = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".txt,.html,.htm"
+            accept={NOTEBOOK_IMPORT_ACCEPT}
             hidden
             onChange={handleFileChange}
           />
@@ -100,6 +110,51 @@ const EditorMobileDockActions = ({
       )}
     </>
   );
+};
+
+const AI_FONT_VALUES = new Set(EDITOR_FONTS.map((font) => font.value));
+const AI_FONT_SIZES = new Set(['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']);
+const AI_TEXT_ALIGN_VALUES = new Set(['left', 'center', 'right', 'justify']);
+const AI_HIGHLIGHT_COLORS = new Map([
+  ['yellow', '#fef08a'],
+  ['green', '#bbf7d0'],
+  ['blue', '#bfdbfe'],
+  ['pink', '#fbcfe8'],
+  ['orange', '#fed7aa'],
+  ['purple', '#ddd6fe'],
+  ['red', '#fecaca'],
+  ['teal', '#99f6e4'],
+]);
+
+const normalizeAiCommandValue = (value) => (
+  typeof value === 'string' ? value.trim().toLowerCase() : ''
+);
+
+const normalizeAiFontSize = (value) => {
+  let normalized = normalizeAiCommandValue(value);
+  if (/^\d{1,2}$/.test(normalized)) {
+    normalized = `${normalized}px`;
+  }
+  return AI_FONT_SIZES.has(normalized) ? normalized : '';
+};
+
+const normalizeAiHighlightColor = (value) => {
+  const normalized = normalizeAiCommandValue(value);
+  if (!normalized) {
+    return AI_HIGHLIGHT_COLORS.get('yellow');
+  }
+  if (AI_HIGHLIGHT_COLORS.has(normalized)) {
+    return AI_HIGHLIGHT_COLORS.get(normalized);
+  }
+  return /^#[0-9a-f]{6}$/i.test(normalized) ? normalized : '';
+};
+
+const clampAiTableDimension = (value, fallback = 3) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(8, Math.max(1, parsed));
 };
 
 const NoteEditor = () => {
@@ -215,6 +270,25 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
     updateNotebookContent,
   });
 
+  const handleDirectAiContentApply = useCallback((content) => {
+    handleDocumentChange(content);
+    const saveResponse = saveDocument(content);
+
+    if (saveResponse && typeof saveResponse.then === 'function') {
+      saveResponse
+        .then((response) => {
+          if (response && !response.success) {
+            addNotification(response.message || 'Failed to save AI changes', 'error', 3000);
+          }
+        })
+        .catch(() => {
+          addNotification('Failed to save AI changes', 'error', 3000);
+        });
+    }
+
+    return saveResponse;
+  }, [addNotification, handleDocumentChange, saveDocument]);
+
   const {
     aiOriginalContent,
     aiProposedContent,
@@ -237,6 +311,7 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
     editorRef,
     currentNotebookUuid: routeNotebook?.uuid,
     isPreviewMode: false,
+    onDirectApplyContent: handleDirectAiContentApply,
   });
 
   const { paperWidth, paperHeight } = useEditorResize(editorContainerRef, zoomLevel);
@@ -273,7 +348,7 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
 
   const hasUnsavedDocumentChanges = useCallback(() => {
     if (!routeNotebook?.uuid) return false;
-    return getCurrentDocumentContent() !== (routeNotebook.content ?? '');
+    return !isEquivalentNotebookHtml(getCurrentDocumentContent(), routeNotebook.content ?? '');
   }, [getCurrentDocumentContent, routeNotebook]);
 
   const handleSaveNotebook = useCallback(async () => {
@@ -542,21 +617,260 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
     setIsAiToolHelpOpen(false);
   }, [aiToolKey, setAiSidebarOpen]);
 
+  const handleAiEditorCommands = useCallback((commands = []) => {
+    if (isAiProposalOpen) {
+      return { applied: false, reason: 'blocked_by_proposal' };
+    }
+
+    const editor = editorRef.current?.getEditor?.() || activeEditor;
+    let appliedCount = 0;
+    const failedCommands = [];
+
+    const runEditorCommand = (command, runner) => {
+      if (!editor) {
+        failedCommands.push(command.name);
+        return;
+      }
+
+      try {
+        const didRun = runner(editor);
+        if (didRun === false) {
+          failedCommands.push(command.name);
+          return;
+        }
+        editor.commands.normalizeTables?.();
+        appliedCount += 1;
+      } catch {
+        failedCommands.push(command.name);
+      }
+    };
+
+    commands.forEach((command) => {
+      const name = typeof command?.name === 'string'
+        ? command.name.trim().toLowerCase().replace(/[-\s]+/g, '_')
+        : '';
+
+      switch (name) {
+        case 'set_font_family': {
+          const fontValue = normalizeAiCommandValue(command.value);
+          if (!AI_FONT_VALUES.has(fontValue)) {
+            failedCommands.push(name);
+            return;
+          }
+          setEditorFont(fontValue);
+          appliedCount += 1;
+          return;
+        }
+        case 'set_ruled_lines': {
+          const state = normalizeAiCommandValue(command.value);
+          if (!['true', 'false'].includes(state)) {
+            failedCommands.push(name);
+            return;
+          }
+          setShowLines(state === 'true');
+          appliedCount += 1;
+          return;
+        }
+        case 'toggle_ruled_lines':
+          setShowLines((current) => !current);
+          appliedCount += 1;
+          return;
+        case 'undo':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().undo().run());
+          return;
+        case 'redo':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().redo().run());
+          return;
+        case 'set_font_size': {
+          const size = normalizeAiFontSize(command.value);
+          runEditorCommand({ name }, (currentEditor) => (
+            size ? currentEditor.chain().focus().setFontSize(size).run() : false
+          ));
+          return;
+        }
+        case 'unset_font_size':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().unsetFontSize().run());
+          return;
+        case 'set_paragraph':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().setParagraph().run());
+          return;
+        case 'toggle_heading': {
+          const level = Number.parseInt(command.level ?? command.value, 10);
+          runEditorCommand({ name }, (currentEditor) => (
+            [1, 2, 3].includes(level)
+              ? currentEditor.chain().focus().toggleHeading({ level }).run()
+              : false
+          ));
+          return;
+        }
+        case 'toggle_bold':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleBold().run());
+          return;
+        case 'toggle_italic':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleItalic().run());
+          return;
+        case 'toggle_underline':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleUnderline().run());
+          return;
+        case 'toggle_strike':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleStrike().run());
+          return;
+        case 'toggle_code':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleCode().run());
+          return;
+        case 'toggle_bullet_list':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleBulletList().run());
+          return;
+        case 'toggle_ordered_list':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleOrderedList().run());
+          return;
+        case 'toggle_task_list':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleTaskList().run());
+          return;
+        case 'indent_list_item':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().sinkListItem('listItem').run());
+          return;
+        case 'outdent_list_item':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().liftListItem('listItem').run());
+          return;
+        case 'set_text_align': {
+          const align = normalizeAiCommandValue(command.value);
+          runEditorCommand({ name }, (currentEditor) => (
+            AI_TEXT_ALIGN_VALUES.has(align)
+              ? currentEditor.chain().focus().setTextAlign(align).run()
+              : false
+          ));
+          return;
+        }
+        case 'toggle_blockquote':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleBlockquote().run());
+          return;
+        case 'toggle_code_block':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleCodeBlock().run());
+          return;
+        case 'insert_horizontal_rule':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().setHorizontalRule().run());
+          return;
+        case 'insert_page_break':
+          runEditorCommand({ name }, (currentEditor) => {
+            if (editorRef.current?.insertPageBreak) {
+              editorRef.current.insertPageBreak();
+              return true;
+            }
+            return currentEditor.chain().focus().insertPageBreak().run();
+          });
+          return;
+        case 'set_highlight': {
+          const color = normalizeAiHighlightColor(command.value);
+          runEditorCommand({ name }, (currentEditor) => (
+            color ? currentEditor.chain().focus().toggleHighlight({ color }).run() : false
+          ));
+          return;
+        }
+        case 'unset_highlight':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().unsetHighlight().run());
+          return;
+        case 'set_link': {
+          const href = typeof command.href === 'string' && command.href.trim()
+            ? command.href.trim()
+            : (typeof command.value === 'string' ? command.value.trim() : '');
+          runEditorCommand({ name }, (currentEditor) => (
+            href
+              ? currentEditor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+              : false
+          ));
+          return;
+        }
+        case 'unset_link':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().unsetLink().run());
+          return;
+        case 'toggle_superscript':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleSuperscript().run());
+          return;
+        case 'toggle_subscript':
+          runEditorCommand({ name }, (currentEditor) => currentEditor.chain().focus().toggleSubscript().run());
+          return;
+        case 'insert_table':
+          runEditorCommand({ name }, (currentEditor) => {
+            const didInsert = currentEditor.chain().focus().insertTable({
+              rows: clampAiTableDimension(command.rows),
+              cols: clampAiTableDimension(command.cols),
+              withHeaderRow: command.withHeaderRow !== false,
+            }).run();
+            return didInsert;
+          });
+          return;
+        case 'insert_equation': {
+          const kind = normalizeAiCommandValue(command.value);
+          runEditorCommand({ name }, () => {
+            if (!editorRef.current?.insertEquation) {
+              return false;
+            }
+            editorRef.current.insertEquation({
+              kind: ['inline', 'block', 'auto'].includes(kind) ? kind : 'auto',
+              latex: typeof command.latex === 'string' ? command.latex : '',
+            });
+            return true;
+          });
+          return;
+        }
+        case 'clear_formatting':
+          runEditorCommand({ name }, (currentEditor) => (
+            currentEditor.chain().focus().unsetAllMarks().clearNodes().run()
+          ));
+          return;
+        default:
+          failedCommands.push(name || 'unknown');
+      }
+    });
+
+    return {
+      applied: appliedCount > 0,
+      appliedCount,
+      failedCommands,
+    };
+  }, [
+    activeEditor,
+    isAiProposalOpen,
+    setEditorFont,
+    setShowLines,
+  ]);
+
   const handleToggleAiToolHelp = useCallback(() => {
     setAiSidebarOpen(true);
     setIsAiToolHelpOpen((v) => !v);
   }, [setAiSidebarOpen]);
 
-  const handleImportContent = useCallback((filename, rawText) => {
+  const handleImportContent = useCallback((filename, html) => {
     if (!editorRef.current) return;
-    const isHtml = filename.endsWith('.html') || filename.endsWith('.htm');
-    const html = isHtml
-      ? (() => { const m = rawText.match(/<body[^>]*>([\s\S]*?)<\/body>/i); return m ? m[1].trim() : rawText; })()
-      : rawText.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, '<br />')}</p>`).join('');
-    editorRef.current.setContent(html);
-    handleDocumentChange(html);
-    addNotification(`"${filename}" imported successfully`, 'success', 3000);
+    if (!html?.trim()) {
+      addNotification(`"${filename}" did not contain readable content`, 'error', 3000);
+      return;
+    }
+
+    try {
+      editorRef.current.setContent(html);
+      const importedContent = editorRef.current.getHTML?.() || html;
+      handleDocumentChange(importedContent);
+      addNotification(`"${filename}" imported successfully`, 'success', 3000);
+    } catch {
+      const fallbackHtml = importedHtmlToPlainTextHtml(html);
+
+      if (!fallbackHtml.trim()) {
+        addNotification(`"${filename}" could not be imported`, 'error', 4000);
+        return;
+      }
+
+      editorRef.current.setContent(fallbackHtml);
+      const importedContent = editorRef.current.getHTML?.() || fallbackHtml;
+      handleDocumentChange(importedContent);
+      addNotification(`"${filename}" imported with simplified formatting`, 'success', 4000);
+    }
   }, [addNotification, handleDocumentChange]);
+
+  const handleImportError = useCallback((message) => {
+    addNotification(message || 'Failed to import document.', 'error', 4000);
+  }, [addNotification]);
 
   const navigatorOutline = isReviewModeOpen ? reviewOutline : outline;
 
@@ -565,6 +879,7 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
       notebookTitle={notebookTitle}
       showDocumentActions={!isReviewModeOpen}
       onImportContent={handleImportContent}
+      onImportError={handleImportError}
       getExportContent={getCurrentDocumentContent}
       getExportLayout={getCurrentExportLayout}
       isAiSidebarOpen={aiSidebarOpen}
@@ -637,6 +952,7 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
           if (!res.success) addNotification('Failed to update category', 'error', 3000);
         }}
         onImportContent={handleImportContent}
+        onImportError={handleImportError}
         getExportContent={getCurrentDocumentContent}
         getExportLayout={getCurrentExportLayout}
         isAiSidebarOpen={aiSidebarOpen}
@@ -813,6 +1129,7 @@ const NoteEditorWorkspace = ({ notebookUuid, locationState, search }) => {
               mode="editor"
               quickTools={EDITOR_AI_TOOLS}
               onAiUpdateContent={handleAiUpdateContent}
+              onApplyEditorCommands={handleAiEditorCommands}
               hasProposedChanges={isAiProposalOpen}
               notebookUuid={routeNotebook?.uuid ?? null}
               getSelectionText={getEditorSelection}

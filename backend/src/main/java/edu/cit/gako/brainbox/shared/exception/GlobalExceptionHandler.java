@@ -1,5 +1,6 @@
 package edu.cit.gako.brainbox.shared.exception;
 
+import edu.cit.gako.brainbox.modules.ai.exception.AiServiceException;
 import edu.cit.gako.brainbox.shared.controller.ApiResponse;
 import java.util.NoSuchElementException;
 import org.slf4j.Logger;
@@ -42,6 +43,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleNotebookVersionConflictException(NotebookVersionConflictException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error("VERSION_CONFLICT", ex.getMessage(), ex.getLatestNotebook()));
+    }
+
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiServiceException(AiServiceException ex) {
+        log.warn("AI service error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.error("AI_SERVICE_ERROR", ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)

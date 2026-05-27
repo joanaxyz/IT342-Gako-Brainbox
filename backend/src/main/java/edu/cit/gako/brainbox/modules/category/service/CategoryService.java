@@ -9,6 +9,7 @@ import edu.cit.gako.brainbox.modules.notebook.entity.Notebook;
 import edu.cit.gako.brainbox.modules.user.service.UserService;
 import edu.cit.gako.brainbox.modules.user.entity.User;
 import java.util.List;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,8 +44,16 @@ public class CategoryService {
     public CategoryResponse createCategory(CategoryRequest request, Long userId) {
         User user = userService.findById(userId);
         Category category = new Category();
-        category.setName(request.getName());
+        category.setName(normalizeCategoryName(request));
         category.setUser(user);
+        return mapToResponse(categoryRepository.save(category));
+    }
+
+    @Transactional
+    public CategoryResponse updateCategory(Long categoryId, CategoryRequest request, Long userId) {
+        Category category = getCategoryById(categoryId);
+        category.assertOwnedBy(userId);
+        category.setName(normalizeCategoryName(request));
         return mapToResponse(categoryRepository.save(category));
     }
 
@@ -54,7 +63,7 @@ public class CategoryService {
 
     public Category getCategoryById(Long categoryId) {
         return categoryRepository.findById(categoryId)
-            .orElseThrow(() -> new RuntimeException("Category not found"));
+            .orElseThrow(() -> new NoSuchElementException("Category not found"));
     }
 
     @Transactional
@@ -79,6 +88,14 @@ public class CategoryService {
         }
 
         categoryRepository.delete(category);
+    }
+
+    private String normalizeCategoryName(CategoryRequest request) {
+        if (request == null || request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category name is required");
+        }
+
+        return request.getName().trim();
     }
 
     private CategoryResponse mapToResponse(Category category) {

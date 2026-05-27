@@ -1,6 +1,7 @@
 package edu.cit.gako.brainbox.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import edu.cit.gako.brainbox.features.home.HomeDependencies
 import edu.cit.gako.brainbox.features.auth.AuthScene
 import edu.cit.gako.brainbox.features.home.HomeScene
@@ -53,22 +54,25 @@ fun BrainBoxApp(
             onAuthStageChange = onAuthStageChange,
             onFeatureRequest = onFeatureRequest
         )
-        state.activeNotebookUuid != null -> NotebookEditorScreen(
-            notebookUuid = state.activeNotebookUuid,
-            onClose = onCloseNotebookEditor,
-            onOpenQuiz = onOpenQuizFromNotebook,
-            onOpenFlashcardDeck = onOpenFlashcardDeckFromNotebook
-        )
-        state.activeQuiz != null -> QuizStudyScreen(
-            quiz = state.activeQuiz,
-            onExit = onExitStudySession,
-            onRecordAttempt = onRecordQuizAttempt
-        )
-        state.activeFlashcardDeck != null -> FlashcardStudyScreen(
-            deck = state.activeFlashcardDeck,
-            onExit = onExitStudySession,
-            onRecordAttempt = onRecordFlashcardAttempt
-        )
+        state.activeNotebookUuid != null ->
+            NotebookEditorScreen(
+                notebookUuid = state.activeNotebookUuid,
+                onClose = onCloseNotebookEditor,
+                onOpenQuiz = onOpenQuizFromNotebook,
+                onOpenFlashcardDeck = onOpenFlashcardDeckFromNotebook
+            )
+        state.activeQuiz != null ->
+            QuizStudyScreen(
+                quiz = state.activeQuiz,
+                onExit = onExitStudySession,
+                onRecordAttempt = onRecordQuizAttempt
+            )
+        state.activeFlashcardDeck != null ->
+            FlashcardStudyScreen(
+                deck = state.activeFlashcardDeck,
+                onExit = onExitStudySession,
+                onRecordAttempt = onRecordFlashcardAttempt
+            )
         else -> HomeScene(
             state = state,
             dependencies = homeDependencies,
@@ -89,4 +93,3 @@ fun BrainBoxApp(
         )
     }
 }
-

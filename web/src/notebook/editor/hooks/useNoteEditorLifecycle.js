@@ -15,14 +15,16 @@ export const useNoteEditorLifecycle = ({
         return;
       }
 
-      const isModEnter = event.key === 'Enter' && (event.ctrlKey || event.metaKey);
-      const isModSave = event.key.toLowerCase() === 's' && (event.ctrlKey || event.metaKey);
+      const key = typeof event.key === 'string' ? event.key : '';
+      const keyLower = key.toLowerCase();
+      const isModEnter = key === 'Enter' && (event.ctrlKey || event.metaKey);
+      const isModSave = keyLower === 's' && (event.ctrlKey || event.metaKey);
       const editor = editorRef.current?.getEditor?.();
       const isEditorFocused = editorRef.current?.isFocused?.();
       const isToolShortcut = event.altKey && (event.ctrlKey || event.metaKey);
 
       if (aiProposedContent !== null) {
-        if (event.key === 'Escape') {
+        if (key === 'Escape') {
           event.preventDefault();
           event.stopPropagation();
           onRevertAiChange();
@@ -48,32 +50,32 @@ export const useNoteEditorLifecycle = ({
         return;
       }
 
-      if (event.key.toLowerCase() === 'b' && (event.ctrlKey || event.metaKey)) {
+      if (keyLower === 'b' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         editor.chain().focus().toggleBold().run();
         return;
       }
 
-      if (event.key.toLowerCase() === 'i' && (event.ctrlKey || event.metaKey)) {
+      if (keyLower === 'i' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         editor.chain().focus().toggleItalic().run();
         return;
       }
 
-      if (isToolShortcut && ['1', '2', '3'].includes(event.key)) {
+      if (isToolShortcut && ['1', '2', '3'].includes(key)) {
         event.preventDefault();
-        editor.chain().focus().toggleHeading({ level: Number(event.key) }).run();
+        editor.chain().focus().toggleHeading({ level: Number(key) }).run();
         return;
       }
 
-      if (isToolShortcut && event.key.toLowerCase() === 't') {
+      if (isToolShortcut && keyLower === 't') {
         event.preventDefault();
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
         editor.commands.normalizeTables?.();
         return;
       }
 
-      if (isToolShortcut && event.key.toLowerCase() === 'm') {
+      if (isToolShortcut && keyLower === 'm') {
         event.preventDefault();
         onInsertEquation?.();
         return;

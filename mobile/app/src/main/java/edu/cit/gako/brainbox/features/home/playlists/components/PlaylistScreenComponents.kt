@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -713,67 +714,52 @@ internal fun QueueNotebookRow(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(if (isActive) AccentBg else Color.Transparent)
             .padding(horizontal = 16.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = if (isActive) White else Cream2
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isActive) White else Cream2
             ) {
-                Icon(
-                    imageVector = Icons.Filled.GraphicEq,
-                    contentDescription = null,
-                    tint = if (isActive) Accent else Ink3,
-                    modifier = Modifier.size(14.dp)
-                )
-                Text(
-                    text = position.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isActive) Accent else Ink3
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.GraphicEq,
+                        contentDescription = null,
+                        tint = if (isActive) Accent else Ink3,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = position.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isActive) Accent else Ink3
+                    )
+                }
             }
-        }
 
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
             Text(
                 text = notebook.title,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (isActive) Accent else Ink,
                 fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                MetaPill(text = notebook.categoryName ?: "Uncategorized")
-                Text(
-                    text = "${formatWordCount(notebook.wordCount ?: 0)} words",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Ink3
-                )
-            }
-        }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onPlay, modifier = Modifier.size(34.dp)) {
+            IconButton(onClick = onPlay, modifier = Modifier.size(40.dp)) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
@@ -785,15 +771,39 @@ internal fun QueueNotebookRow(
                         imageVector = if (isPlaying) Icons.Filled.GraphicEq else Icons.Filled.PlayArrow,
                         contentDescription = if (isPlaying) "Playing" else "Play notebook",
                         tint = if (isActive) Accent else Ink2,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
             }
+        }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MetaPill(
+                text = notebook.categoryName ?: "Uncategorized",
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            Text(
+                text = "${formatWordCount(notebook.wordCount ?: 0)} words",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink3,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(
                 onClick = onMoveUp,
                 enabled = position > 1,
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.ArrowUpward,
@@ -806,7 +816,7 @@ internal fun QueueNotebookRow(
             IconButton(
                 onClick = onMoveDown,
                 enabled = position < total,
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.ArrowDownward,
@@ -816,7 +826,7 @@ internal fun QueueNotebookRow(
                 )
             }
 
-            IconButton(onClick = onRemove, modifier = Modifier.size(34.dp)) {
+            IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
                     contentDescription = "Remove from playlist",
@@ -829,8 +839,12 @@ internal fun QueueNotebookRow(
 }
 
 @Composable
-private fun MetaPill(text: String) {
+private fun MetaPill(
+    text: String,
+    modifier: Modifier = Modifier
+) {
     Surface(
+        modifier = modifier.widthIn(max = 160.dp),
         shape = RoundedCornerShape(999.dp),
         color = Cream2
     ) {
@@ -839,7 +853,8 @@ private fun MetaPill(text: String) {
             style = MaterialTheme.typography.labelSmall,
             color = Ink2,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

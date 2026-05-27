@@ -38,11 +38,12 @@ export const aiAPI = {
 
   listAiConfigs: () => apiCall('/ai/configs', 'GET'),
 
-  saveAiConfig: ({ id, name, model, proxyUrl, apiKey }) => apiCall('/ai/configs', 'PUT', {
+  saveAiConfig: ({ id, name, model, baseUrl, proxyUrl, apiKey }) => apiCall('/ai/configs', 'PUT', {
     id: id ?? null,
     name,
     model,
-    proxyUrl,
+    baseUrl: baseUrl ?? proxyUrl,
+    proxyUrl: proxyUrl ?? baseUrl,
     apiKey: apiKey || null,
   }),
 

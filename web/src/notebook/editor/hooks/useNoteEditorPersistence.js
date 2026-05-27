@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { notebookAPI } from '../../shared/api/notebookService';
 import { broadcastResourceInvalidation } from '../../../common/query/resourceInvalidation';
+import { isEquivalentNotebookHtml } from '../../shared/utils/notebookPages';
 
 const getSaveErrorMessage = (response) => {
   if (response?.status === 0 || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
@@ -67,7 +68,8 @@ export const useNoteEditorPersistence = ({
   const syncSaveStatus = useCallback(() => {
     const inFlightSave = inFlightSaveRef.current;
     const hasPendingSave = pendingSaveRef.current !== null && pendingSaveRef.current !== undefined;
-    const hasUnsavedChanges = liveContentRef.current !== lastSavedContentRef.current || hasPendingSave;
+    const hasUnsavedChanges = !isEquivalentNotebookHtml(liveContentRef.current, lastSavedContentRef.current)
+      || hasPendingSave;
     const isCurrentContentBeingSaved = (
       Boolean(inFlightSave)
       && inFlightSave.content === liveContentRef.current
@@ -133,7 +135,7 @@ export const useNoteEditorPersistence = ({
       return null;
     }
 
-    if (content === lastSavedContentRef.current && !inFlightSaveRef.current) {
+    if (isEquivalentNotebookHtml(content, lastSavedContentRef.current) && !inFlightSaveRef.current) {
       pendingSaveRef.current = null;
       syncSaveStatus();
       return null;
@@ -176,7 +178,7 @@ export const useNoteEditorPersistence = ({
           && saveErrorRef.current === false
           && pendingContent !== null
           && pendingContent !== undefined
-          && pendingContent !== lastSavedContentRef.current
+          && !isEquivalentNotebookHtml(pendingContent, lastSavedContentRef.current)
         ) {
           if (inFlightSaveRef.current?.requestId === requestId) {
             inFlightSaveRef.current = null;
@@ -298,12 +300,12 @@ export const useNoteEditorPersistence = ({
       });
     }
 
-    if (serverContent === lastSavedContentRef.current) {
+    if (isEquivalentNotebookHtml(serverContent, lastSavedContentRef.current)) {
       return;
     }
 
     const hasLocalChanges = (
-      liveContentRef.current !== lastSavedContentRef.current
+      !isEquivalentNotebookHtml(liveContentRef.current, lastSavedContentRef.current)
       || inFlightSaveRef.current
       || pendingSaveRef.current !== null
     );

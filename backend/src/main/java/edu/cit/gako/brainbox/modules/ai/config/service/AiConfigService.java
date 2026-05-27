@@ -10,6 +10,7 @@ import edu.cit.gako.brainbox.modules.user.entity.User;
 import edu.cit.gako.brainbox.shared.util.EncryptionUtil;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -106,9 +107,7 @@ public class AiConfigService {
         if (request.getModel() == null || request.getModel().isBlank()) {
             throw new IllegalArgumentException("Model is required");
         }
-        if (request.getProxyUrl() == null || request.getProxyUrl().isBlank()) {
-            throw new IllegalArgumentException("Proxy URL is required");
-        }
+        String normalizedBaseUrl = normalizeBaseUrl(resolveRequestedBaseUrl(request));
 
         User user = userService.findById(userId);
         AiConfig config;
@@ -123,7 +122,7 @@ public class AiConfigService {
 
         config.setName(request.getName().trim());
         config.setModel(request.getModel().trim());
-        config.setProxyUrl(normalizeProxyUrl(request.getProxyUrl().trim()));
+        config.setProxyUrl(normalizedBaseUrl);
 
         if (request.getApiKey() != null && !request.getApiKey().isBlank()) {
             config.setApiKey(encryptionUtil.encrypt(request.getApiKey().trim()));
@@ -202,8 +201,40 @@ public class AiConfigService {
         return encryptionUtil.decrypt(config.getApiKey());
     }
 
-    private String normalizeProxyUrl(String url) {
-        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    private String resolveRequestedBaseUrl(AiConfigRequest request) {
+        if (request.getBaseUrl() != null && !request.getBaseUrl().isBlank()) {
+            return request.getBaseUrl();
+        }
+        return request.getProxyUrl();
+    }
+
+    private String normalizeBaseUrl(String url) {
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("API Base URL is required");
+        }
+
+        String normalized = url.trim();
+        if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+            throw new IllegalArgumentException("API Base URL must start with http:// or https://");
+        }
+
+        normalized = stripTrailingSlashes(normalized);
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        String chatCompletionsSuffix = "/chat/completions";
+        if (lower.endsWith(chatCompletionsSuffix)) {
+            normalized = normalized.substring(0, normalized.length() - chatCompletionsSuffix.length());
+            normalized = stripTrailingSlashes(normalized);
+        }
+
+        return normalized;
+    }
+
+    private String stripTrailingSlashes(String value) {
+        String stripped = value;
+        while (stripped.endsWith("/")) {
+            stripped = stripped.substring(0, stripped.length() - 1);
+        }
+        return stripped;
     }
 
     private AiConfigResponse mapToResponse(AiConfig config) {
@@ -211,6 +242,7 @@ public class AiConfigService {
         response.setId(config.getId());
         response.setName(config.getName());
         response.setModel(config.getModel());
+        response.setBaseUrl(config.getProxyUrl());
         response.setProxyUrl(config.getProxyUrl());
         response.setHasApiKey(config.getApiKey() != null && !config.getApiKey().isBlank());
         response.setCreatedAt(config.getCreatedAt());

@@ -33,6 +33,36 @@ const normalizeNotebook = (notebook) => {
   };
 };
 
+const parseTimestamp = (value) => {
+  const timestamp = Date.parse(value || '');
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
+const wasEditedAfterCreation = (notebook) => {
+  const updatedAt = parseTimestamp(notebook?.updatedAt);
+  const createdAt = parseTimestamp(notebook?.createdAt);
+
+  if (updatedAt === null) {
+    return false;
+  }
+
+  return createdAt === null || updatedAt > createdAt;
+};
+
+const isRecentlyEditedNotebook = (notebook) => {
+  const normalizedNotebook = normalizeNotebook(notebook);
+  return Boolean(normalizedNotebook?.uuid)
+    && (normalizedNotebook.wordCount ?? 0) > 0
+    && wasEditedAfterCreation(normalizedNotebook);
+};
+
+const normalizeRecentlyEditedItems = (items = []) => (
+  items
+    .map(normalizeNotebook)
+    .filter(isRecentlyEditedNotebook)
+    .slice(0, RECENT_EDITED_LIMIT)
+);
+
 const sortByUpdatedAtDesc = (items) => [...items].sort(
   (leftItem, rightItem) => new Date(rightItem.updatedAt || 0) - new Date(leftItem.updatedAt || 0)
 );
@@ -77,7 +107,8 @@ const normalizePlaylistIndex = (playlist) => {
 };
 
 const getNotebookListData = () => unwrapApiResponse(() => notebookAPI.getNotebooks());
-const getRecentlyEditedData = () => unwrapApiResponse(() => notebookAPI.getRecentlyEditedNotebooks());
+const getRecentlyEditedData = () => unwrapApiResponse(() => notebookAPI.getRecentlyEditedNotebooks())
+  .then(normalizeRecentlyEditedItems);
 const getRecentlyReviewedData = () => unwrapApiResponse(() => notebookAPI.getRecentlyReviewedNotebooks());
 const hasPatchValue = (patch, key) => Object.prototype.hasOwnProperty.call(patch || {}, key);
 
@@ -215,7 +246,7 @@ export const NotebookProvider = ({ children }) => {
     ));
 
     queryClient.setQueryData(queryKeys.notebooks.recentEdited, (currentItems = []) => {
-      if (remove) {
+      if (remove || !isRecentlyEditedNotebook(normalizedNotebook)) {
         return removeNotebookFromList(currentItems, notebookUuid);
       }
 

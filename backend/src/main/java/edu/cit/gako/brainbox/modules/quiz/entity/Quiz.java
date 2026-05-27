@@ -31,11 +31,11 @@ public class Quiz implements UserOwned {
 
     private String difficulty;
 
-    @ManyToOne(optional = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "notebook_id", nullable = true)
     private Notebook notebook;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 

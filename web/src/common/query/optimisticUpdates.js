@@ -36,6 +36,12 @@ export const removeCategory = (categories = [], categoryId) => (
   categories.filter((category) => category.id !== categoryId)
 );
 
+export const renameCategory = (categories = [], categoryId, name) => sortCategoriesByName(
+  categories.map((category) => (
+    category.id === categoryId ? { ...category, name } : category
+  ))
+);
+
 export const resolveNotebookPatch = (patch = {}, categories = []) => {
   if (!hasOwn(patch, 'categoryId')) {
     return patch;
@@ -91,6 +97,14 @@ export const applyCategoryDeleteToNotebooks = (
   ));
 };
 
+export const applyCategoryRenameToNotebooks = (items = [], categoryId, name) => (
+  items.map((notebook) => (
+    notebook.categoryId === categoryId
+      ? { ...notebook, categoryName: name }
+      : notebook
+  ))
+);
+
 export const normalizePlaylistIndex = (playlist) => {
   const queueLength = playlist?.queue?.length ?? 0;
   if (queueLength === 0) {
@@ -113,6 +127,15 @@ export const applyCategoryDeleteToPlaylists = (
     currentIndex: normalizePlaylistIndex({ ...playlist, queue: nextQueue }),
   };
 });
+
+export const applyCategoryRenameToPlaylists = (
+  playlists = [],
+  categoryId,
+  name,
+) => playlists.map((playlist) => ({
+  ...playlist,
+  queue: applyCategoryRenameToNotebooks(playlist.queue || [], categoryId, name),
+}));
 
 export const replacePlaylistInList = (playlists = [], playlist) => {
   const existingIndex = playlists.findIndex((currentPlaylist) => currentPlaylist.uuid === playlist.uuid);

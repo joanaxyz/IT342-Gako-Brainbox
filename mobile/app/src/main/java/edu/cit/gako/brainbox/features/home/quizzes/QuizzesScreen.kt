@@ -66,6 +66,7 @@ import edu.cit.gako.brainbox.shared.ui.theme.Ink2
 import edu.cit.gako.brainbox.shared.ui.theme.Ink3
 import edu.cit.gako.brainbox.shared.ui.theme.White
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private const val QUIZ_SORT_UPDATED_AT = "updatedAt"
@@ -111,6 +112,18 @@ internal fun QuizzesScreen(
     }
     val categoryOptions = remember(localQuizzes, notebooksByUuid) {
         buildCategoryFilterOptions(localQuizzes.map { it.notebookUuid }, notebooksByUuid)
+    }
+
+    LaunchedEffect(Unit) {
+        runCatching { repository.getQuizzes() }
+            .onSuccess { latestQuizzes ->
+                localQuizzes = latestQuizzes
+            }
+            .onFailure {
+                if (it !is CancellationException) {
+                    onFeatureRequest("Couldn't refresh quizzes: ${it.message ?: "Check the API connection."}")
+                }
+            }
     }
 
     LaunchedEffect(notebookOptions, selectedNotebookId) {

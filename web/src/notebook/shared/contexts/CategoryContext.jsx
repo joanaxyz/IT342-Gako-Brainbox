@@ -9,10 +9,13 @@ import { queryKeys } from '../../../common/query/queryKeys';
 import { broadcastResourceInvalidation } from '../../../common/query/resourceInvalidation';
 import {
   addCategory,
+  applyCategoryRenameToNotebooks,
+  applyCategoryRenameToPlaylists,
   applyCategoryDeleteToNotebooks,
   applyCategoryDeleteToPlaylists,
   captureQuerySnapshot,
   removeCategory,
+  renameCategory,
   replaceCategory,
   restoreQuerySnapshot,
 } from '../../../common/query/optimisticUpdates';
@@ -103,6 +106,35 @@ export const CategoryProvider = ({ children }) => {
     ));
   }, [getAffectedNotebookUuids, queryClient]);
 
+  const applyOptimisticCategoryRename = useCallback((categoryId, name) => {
+    const affectedNotebookUuids = getAffectedNotebookUuids(categoryId);
+
+    queryClient.setQueryData(queryKeys.categories.all, (currentCategories = []) => (
+      renameCategory(currentCategories, categoryId, name)
+    ));
+    [
+      queryKeys.notebooks.list,
+      queryKeys.notebooks.recentEdited,
+      queryKeys.notebooks.recentReviewed,
+    ].forEach((queryKey) => {
+      queryClient.setQueryData(queryKey, (currentNotebooks = []) => (
+        applyCategoryRenameToNotebooks(currentNotebooks, categoryId, name)
+      ));
+    });
+    affectedNotebookUuids.forEach((uuid) => {
+      queryClient.setQueryData(queryKeys.notebooks.detail(uuid), (currentNotebook) => {
+        if (!currentNotebook?.uuid) {
+          return currentNotebook;
+        }
+
+        return applyCategoryRenameToNotebooks([currentNotebook], categoryId, name)[0];
+      });
+    });
+    queryClient.setQueryData(queryKeys.playlists.all, (currentPlaylists = []) => (
+      applyCategoryRenameToPlaylists(currentPlaylists, categoryId, name)
+    ));
+  }, [getAffectedNotebookUuids, queryClient]);
+
   const fetchCategories = useCallback((showSpinner = true, forceRefresh = false) => withLoading(
     async () => {
       if (forceRefresh) {
@@ -145,6 +177,30 @@ export const CategoryProvider = ({ children }) => {
     showSpinner
   ), [queryClient, withLoading]);
 
+  const updateCategory = useCallback((categoryId, name, showSpinner = true) => withLoading(
+    async () => {
+      const trimmedName = name.trim();
+      const snapshot = getCategoryMutationSnapshot(categoryId);
+      applyOptimisticCategoryRename(categoryId, trimmedName);
+
+      const response = await categoryAPI.updateCategory(categoryId, trimmedName);
+      if (!response.success) {
+        restoreQuerySnapshot(queryClient, snapshot);
+        return response;
+      }
+
+      queryClient.setQueryData(queryKeys.categories.all, (currentCategories = []) => (
+        replaceCategory(currentCategories, categoryId, response.data)
+      ));
+      applyOptimisticCategoryRename(categoryId, response.data.name);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.quizzes.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.flashcards.all });
+      broadcastResourceInvalidation(['categories', 'notebook-derived']);
+      return response;
+    },
+    showSpinner
+  ), [applyOptimisticCategoryRename, getCategoryMutationSnapshot, queryClient, withLoading]);
+
   const deleteCategory = useCallback((categoryId, options = {}, showSpinner = true) => withLoading(
     async () => {
       const snapshot = getCategoryMutationSnapshot(categoryId);
@@ -181,9 +237,10 @@ export const CategoryProvider = ({ children }) => {
     categories,
     fetchCategories,
     createCategory,
+    updateCategory,
     deleteCategory,
     setCategories,
-  }), [categories, fetchCategories, createCategory, deleteCategory, setCategories]);
+  }), [categories, fetchCategories, createCategory, updateCategory, deleteCategory, setCategories]);
 
   return (
     <CategoryContext.Provider value={value}>

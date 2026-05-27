@@ -10,6 +10,7 @@ public class AiConfigResponse {
     private Long id;
     private String name;
     private String model;
+    private String baseUrl;
     private String proxyUrl;
     private boolean hasApiKey;
     private Instant createdAt;

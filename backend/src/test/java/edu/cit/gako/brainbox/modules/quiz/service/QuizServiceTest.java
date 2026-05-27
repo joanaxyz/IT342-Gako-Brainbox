@@ -65,7 +65,7 @@ class QuizServiceTest {
         request.setQuestions(List.of(question));
 
         when(userService.findById(11L)).thenReturn(user);
-        when(notebookService.getNotebookByUuid("nb-1")).thenReturn(notebook);
+        when(notebookService.getNotebookByUuidAndUserId("nb-1", 11L)).thenReturn(notebook);
         when(quizRepository.save(any(Quiz.class))).thenAnswer((invocation) -> {
             Quiz quiz = invocation.getArgument(0);
             quiz.setId(90L);

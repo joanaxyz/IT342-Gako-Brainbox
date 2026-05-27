@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, File, FileText, FileType, X } from 'lucide-react';
+import { Download, File, FileText, FileType, LoaderCircle, X } from 'lucide-react';
 import { useNotification } from '../../../../common/hooks/hooks';
 import { exportToDocx, exportToPdf, exportToText } from '../../utils/exportUtils';
 import { isAndroidHost } from '../../../../app/host/brainBoxHost';
@@ -20,6 +20,30 @@ const MARGIN_OPTIONS = [
 ];
 
 const isEmbeddedAndroidHost = isAndroidHost();
+const EXPORT_MODAL_MIN_VISIBLE_MS = 450;
+
+const renderBodyPortal = (children) => (
+  typeof document !== 'undefined'
+    ? createPortal(children, document.body)
+    : children
+);
+
+const waitForExportModalPaint = async () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+};
+
+const waitForMinimumModalDuration = async (startedAt) => {
+  const elapsed = Date.now() - startedAt;
+  const remaining = EXPORT_MODAL_MIN_VISIBLE_MS - elapsed;
+
+  if (remaining > 0) {
+    await new Promise((resolve) => window.setTimeout(resolve, remaining));
+  }
+};
 
 const PdfOptionsModal = ({ onClose, onExport }) => {
   const [paperSizeValue, setPaperSizeValue] = useState('letter');
@@ -39,15 +63,16 @@ const PdfOptionsModal = ({ onClose, onExport }) => {
   return (
     <div
       className="pdf-options-overlay"
+      role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="pdf-options-modal">
+      <div className="pdf-options-modal" role="dialog" aria-modal="true" aria-labelledby="pdf-options-title">
         <div className="pdf-options-header">
-          <span>PDF export options</span>
+          <span id="pdf-options-title">PDF export options</span>
           <button type="button" className="pdf-options-close" onClick={onClose}>
             <X size={16} />
           </button>
@@ -90,6 +115,32 @@ const PdfOptionsModal = ({ onClose, onExport }) => {
             Print / Save as PDF
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ExportProgressModal = ({ format }) => {
+  const isWordExport = format === 'docx';
+  const title = isWordExport ? 'Exporting Word document' : 'Preparing PDF export';
+  const description = isWordExport
+    ? 'Creating your .docx file. This may take a moment for larger notebooks.'
+    : isEmbeddedAndroidHost
+      ? 'Preparing the notebook for PDF sharing.'
+      : 'Preparing the print dialog so you can save the notebook as a PDF.';
+  const Icon = isWordExport ? FileType : FileText;
+
+  return (
+    <div className="export-progress-overlay" role="presentation">
+      <div className="export-progress-modal" role="dialog" aria-modal="true" aria-labelledby="export-progress-title">
+        <div className="export-progress-icon" aria-hidden="true">
+          <Icon size={22} />
+        </div>
+        <div className="export-progress-copy">
+          <h2 id="export-progress-title">{title}</h2>
+          <p>{description}</p>
+        </div>
+        <LoaderCircle className="export-progress-spinner" size={24} aria-hidden="true" />
       </div>
     </div>
   );
@@ -173,8 +224,13 @@ const ExportMenu = ({
 
   const handleExport = async (format, pdfOptions = {}) => {
     setExporting(format);
+    const modalStartedAt = Date.now();
 
     try {
+      if (format === 'print' || format === 'docx') {
+        await waitForExportModalPaint();
+      }
+
       const html = getContent();
       const layout = getLayout?.();
 
@@ -188,6 +244,10 @@ const ExportMenu = ({
     } catch (error) {
       addNotification(error.message || 'Export failed. Please try again.', 'error', 4000);
     } finally {
+      if (format === 'print' || format === 'docx') {
+        await waitForMinimumModalDuration(modalStartedAt);
+      }
+
       setExporting(null);
       setOpen(false);
     }
@@ -244,10 +304,16 @@ const ExportMenu = ({
       </div>
 
       {!isEmbeddedAndroidHost && showPdfOptions && (
-        <PdfOptionsModal
-          onClose={() => setShowPdfOptions(false)}
-          onExport={(options) => handleExport('print', options)}
-        />
+        renderBodyPortal(
+          <PdfOptionsModal
+            onClose={() => setShowPdfOptions(false)}
+            onExport={(options) => handleExport('print', options)}
+          />
+        )
+      )}
+
+      {(exporting === 'print' || exporting === 'docx') && (
+        renderBodyPortal(<ExportProgressModal format={exporting} />)
       )}
     </>
   );

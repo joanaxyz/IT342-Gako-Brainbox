@@ -5,6 +5,7 @@ import edu.cit.gako.brainbox.modules.user.entity.User;
 import edu.cit.gako.brainbox.platform.security.interfaces.UserOwned;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -41,19 +42,20 @@ public class Notebook implements UserOwned {
 
     private Long version;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="category_id", nullable=true)
     private Category category;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @PrePersist
     private void prePersist(){
+        Instant now = Instant.now();
         if(uuid == null) uuid = UUID.randomUUID().toString();
-        if(createdAt == null) createdAt = Instant.now();
-        if(updatedAt == null) updatedAt = Instant.now();
+        if(createdAt == null) createdAt = now;
+        if(updatedAt == null) updatedAt = now;
         if(version == null) version = 0L;
     }
 

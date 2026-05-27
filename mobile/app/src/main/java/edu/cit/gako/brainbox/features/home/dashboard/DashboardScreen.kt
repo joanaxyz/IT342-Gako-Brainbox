@@ -7,17 +7,26 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import edu.cit.gako.brainbox.app.HomeData
 import edu.cit.gako.brainbox.app.HomeTab
@@ -31,17 +40,12 @@ import edu.cit.gako.brainbox.shared.study.StudyNotebookCardModel
 import edu.cit.gako.brainbox.shared.ui.OutlinedActionButton
 import edu.cit.gako.brainbox.shared.ui.SectionHeader
 import edu.cit.gako.brainbox.shared.study.StudyCard
-import edu.cit.gako.brainbox.shared.ui.TokenBadge
 import edu.cit.gako.brainbox.shared.ui.joinMeta
 import edu.cit.gako.brainbox.shared.ui.theme.Border
 import edu.cit.gako.brainbox.shared.ui.theme.Ink
 import edu.cit.gako.brainbox.shared.ui.theme.Ink2
 import edu.cit.gako.brainbox.shared.ui.theme.Ink3
 import edu.cit.gako.brainbox.shared.ui.theme.White
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 internal fun DashboardScreen(
@@ -56,17 +60,58 @@ internal fun DashboardScreen(
     onOpenFlashcardDeck: (String) -> Unit,
     onPlayNotebook: (NotebookSummary) -> Unit
 ) {
-    val quizzesWithScores = homeData.quizzes.mapNotNull { it.bestScore }
-    val decksWithMastery = homeData.flashcards.mapNotNull { it.bestMastery }
-    val avgQuiz = quizzesWithScores.takeIf { it.isNotEmpty() }?.average()?.toInt()
-    val avgMastery = decksWithMastery.takeIf { it.isNotEmpty() }?.average()?.toInt()
+    val avgQuiz = remember(homeData.quizzes) {
+        homeData.quizzes
+            .mapNotNull { quiz -> if (quiz.attempts > 0) quiz.bestScore else null }
+            .takeIf { scores -> scores.isNotEmpty() }
+            ?.average()
+            ?.toInt()
+    }
+    val avgMastery = remember(homeData.flashcards) {
+        homeData.flashcards
+            .mapNotNull { deck -> if (deck.attempts > 0) deck.bestMastery else null }
+            .takeIf { mastery -> mastery.isNotEmpty() }
+            ?.average()
+            ?.toInt()
+    }
     val displayName = user?.username?.ifBlank { "there" } ?: "there"
-    val stats = listOf(
-        DashboardStat("Notebooks", homeData.notebooks.size.toString(), "NB"),
-        DashboardStat("Avg Quiz Score", avgQuiz?.let { "$it%" } ?: "--", "QZ"),
-        DashboardStat("Avg Mastery", avgMastery?.let { "$it%" } ?: "--", "MS"),
-        DashboardStat("Decks", homeData.flashcards.size.toString(), "FC")
-    )
+
+    // Simple static greeting to avoid time API issues during composition
+    val timeGreeting = "Welcome"
+    val todayLabelText = "to Brainbox"
+
+    // Calculate top performers for study progress
+    val topDecks = remember(homeData.flashcards) {
+        homeData.flashcards
+            .filter { it.attempts > 0 && it.bestMastery != null }
+            .sortedByDescending { it.bestMastery }
+            .take(3)
+            .map { TopPerformer(it.title, it.notebookTitle ?: "Flashcards", it.bestMastery!!) }
+    }
+
+    val topQuizzes = remember(homeData.quizzes) {
+        homeData.quizzes
+            .filter { it.attempts > 0 && it.bestScore != null }
+            .sortedByDescending { it.bestScore }
+            .take(3)
+            .map { TopPerformer(it.title, it.notebookTitle ?: "Quiz", it.bestScore!!) }
+    }
+
+    val hasQuizAttempts = remember(homeData.quizzes) {
+        homeData.quizzes.any { it.attempts > 0 }
+    }
+    val hasFlashcardAttempts = remember(homeData.flashcards) {
+        homeData.flashcards.any { it.attempts > 0 }
+    }
+    val showStudyProgress = hasQuizAttempts || hasFlashcardAttempts
+    val stats = remember(homeData.notebooks.size, homeData.flashcards.size, avgQuiz, avgMastery) {
+        listOf(
+            DashboardStat("Notebooks", homeData.notebooks.size.toString(), Icons.Default.Book),
+            DashboardStat("Avg Quiz Score", avgQuiz?.let { "$it%" } ?: "--", Icons.Default.EmojiEvents),
+            DashboardStat("Avg Mastery", avgMastery?.let { "$it%" } ?: "--", Icons.Default.Psychology),
+            DashboardStat("Flashcard Decks", homeData.flashcards.size.toString(), Icons.Default.AutoAwesome)
+        )
+    }
 
     LazyColumn(
         contentPadding = contentPadding,
@@ -84,7 +129,7 @@ internal fun DashboardScreen(
                     modifier = Modifier.padding(22.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
-                    Text(joinMeta(todayLabel(), timeGreeting()), style = MaterialTheme.typography.labelMedium, color = Ink3)
+                    Text(joinMeta(todayLabelText, timeGreeting), style = MaterialTheme.typography.labelMedium, color = Ink3)
                     Text("Ready to learn, $displayName?", style = MaterialTheme.typography.headlineLarge, color = Ink)
                     Text(dashboardSubtitle(homeData), style = MaterialTheme.typography.bodyMedium, color = Ink2)
                     OutlinedActionButton("+ New Notebook") {
@@ -92,6 +137,20 @@ internal fun DashboardScreen(
                     }
                 }
             }
+        }
+        item {
+            StudyStreakCard(
+                reviewData = homeData.recentlyReviewed,
+                editData = homeData.recentlyEdited
+            )
+        }
+        item {
+            ProgressTrendsCard(
+                quizData = homeData.quizzes,
+                flashcardData = homeData.flashcards,
+                recentlyReviewed = homeData.recentlyReviewed,
+                recentlyEdited = homeData.recentlyEdited
+            )
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -112,13 +171,13 @@ internal fun DashboardScreen(
         }
         if (homeData.recentlyReviewed.isNotEmpty()) {
             item {
-                SectionHeader("Continue learning", "See library") {
+                SectionHeader("Recently reviewed", "See library") {
                     onGoToTab(HomeTab.LIBRARY)
                 }
             }
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(homeData.recentlyReviewed.take(4)) { notebook ->
+                    items(homeData.recentlyReviewed.take(4), key = { it.uuid }) { notebook ->
                         ContinueLearningCard(
                             notebook = notebook.toStudyNotebookCardModel(),
                             isPlaying = playbackState.notebookId == notebook.uuid && playbackState.isPlaying,
@@ -130,6 +189,29 @@ internal fun DashboardScreen(
                 }
             }
         }
+
+        item {
+            SectionHeader("Recently edited", "Open library") { onGoToTab(HomeTab.LIBRARY) }
+        }
+        item {
+            if (homeData.recentlyEdited.isEmpty()) {
+                EmptyStateCard("No notebooks yet", "Once your notebooks exist on the web, this area becomes the mobile handoff point.")
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    homeData.recentlyEdited.take(4).forEach { notebook ->
+                        NotebookCard(
+                            notebook = notebook.toStudyNotebookCardModel(),
+                            action = "Open notebook",
+                            isPlaying = playbackState.notebookId == notebook.uuid && playbackState.isPlaying,
+                            isActive = playbackState.notebookId == notebook.uuid && playbackState.isVisible,
+                            onPlay = { onPlayNotebook(notebook) },
+                            onClick = { onOpenNotebook(notebook.uuid) }
+                        )
+                    }
+                }
+            }
+        }
+
         item {
             SectionHeader("Quizzes", "View all") { onGoToTab(HomeTab.QUIZZES) }
         }
@@ -138,7 +220,7 @@ internal fun DashboardScreen(
                 EmptyStateCard("No quizzes yet", "Create quizzes on the web and they will land here in the same visual system.")
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(homeData.quizzes.take(4)) { quiz ->
+                    items(homeData.quizzes.take(4), key = { it.uuid }) { quiz ->
                         StudyCard(
                             title = quiz.title,
                             description = quiz.description,
@@ -165,7 +247,7 @@ internal fun DashboardScreen(
                 EmptyStateCard("No flashcard decks yet", "Decks you create on the web will show up here with the same warm card treatment.")
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(homeData.flashcards.take(4)) { deck ->
+                    items(homeData.flashcards.take(4), key = { it.uuid }) { deck ->
                         StudyCard(
                             title = deck.title,
                             description = deck.description,
@@ -180,25 +262,13 @@ internal fun DashboardScreen(
                 }
             }
         }
-        item {
-            SectionHeader("Recently edited", "Open library") { onGoToTab(HomeTab.LIBRARY) }
-        }
-        item {
-            if (homeData.recentlyEdited.isEmpty()) {
-                EmptyStateCard("No notebooks yet", "Once your notebooks exist on the web, this area becomes the mobile handoff point.")
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    homeData.recentlyEdited.take(4).forEach { notebook ->
-                        NotebookCard(
-                            notebook = notebook.toStudyNotebookCardModel(),
-                            action = "Open notebook",
-                            isPlaying = playbackState.notebookId == notebook.uuid && playbackState.isPlaying,
-                            isActive = playbackState.notebookId == notebook.uuid && playbackState.isVisible,
-                            onPlay = { onPlayNotebook(notebook) },
-                            onClick = { onOpenNotebook(notebook.uuid) }
-                        )
-                    }
-                }
+
+        if (showStudyProgress) {
+            item {
+                StudyProgressCard(
+                    topDecks = topDecks,
+                    topQuizzes = topQuizzes
+                )
             }
         }
     }
@@ -213,15 +283,24 @@ private fun StatCard(modifier: Modifier = Modifier, stat: DashboardStat) {
         border = BorderStroke(1.dp, Border),
         shadowElevation = 6.dp
     ) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            TokenBadge(stat.badge)
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = stat.icon,
+                contentDescription = null,
+                tint = Ink,
+                modifier = Modifier.size(28.dp)
+            )
             Text(stat.value, style = MaterialTheme.typography.headlineMedium, color = Ink)
             Text(stat.label, style = MaterialTheme.typography.bodySmall, color = Ink3)
         }
     }
 }
 
-private data class DashboardStat(val label: String, val value: String, val badge: String)
+private data class DashboardStat(val label: String, val value: String, val icon: ImageVector)
 
 private fun NotebookSummary.toStudyNotebookCardModel(): StudyNotebookCardModel =
     StudyNotebookCardModel(
@@ -246,20 +325,6 @@ private fun dashboardSubtitle(homeData: HomeData): String {
             deckAttempts.takeIf { it > 0 }?.let { "$it decks studied" }
         )
     } else {
-        "${homeData.notebooks.size} notebooks ready for your next review."
+        "You have ${homeData.notebooks.size} notebooks ready for your next review."
     }
 }
-
-private fun timeGreeting(): String {
-    val hour = LocalTime.now().hour
-    return when {
-        hour < 12 -> "Good morning"
-        hour < 18 -> "Good afternoon"
-        else -> "Good evening"
-    }
-}
-
-private fun todayLabel(): String =
-    LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.ENGLISH))
-
-

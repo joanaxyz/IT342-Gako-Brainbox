@@ -1,0 +1,105 @@
+@startuml
+title BrainBox System Architecture
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+skinparam ArrowThickness 1.2
+
+actor "Student / End User" as User
+
+cloud "Google Identity Provider" as Google
+cloud "Email Provider\n(Resend or SMTP)" as Email
+cloud "AI Provider / Proxy API" as AIProvider
+database "PostgreSQL Database\n(Supabase-hosted)" as DB
+
+package "Web Client\nReact 19 + Vite" as Web {
+  [Auth Pages]
+  [Dashboard, Library,\nQuizzes, Flashcards,\nPlaylists, Profile]
+  [Notebook Editor\nwith AI Sidebar\nand Version History]
+  [HTTP Client\nfetch + token refresh]
+}
+
+package "Mobile App\nAndroid + Kotlin" as Mobile {
+  [Auth and Home Screens]
+  [Playback UI + TTS]
+  [Retrofit API Client]
+  [Embedded Notebook Editor\nWebView Host Bridge]
+}
+
+package "Backend API\nSpring Boot REST" as API {
+  [Controllers]
+  [Auth Interceptor\n+ JWT Service]
+  [Business Services]
+  [Repositories]
+
+  package "Feature Modules" as Features {
+    [Authentication]
+    [User/Profile]
+    [Category]
+    [Notebook]
+    [Notebook Versioning]
+    [AI Config + AI Query]
+    [Quiz]
+    [Flashcard]
+    [Playlist]
+    [Playback Queue]
+    [Admin Endpoints]
+  }
+}
+
+User --> Web : Uses browser app
+User --> Mobile : Uses Android app
+
+[Auth Pages] --> [HTTP Client\nfetch + token refresh]
+[Dashboard, Library,\nQuizzes, Flashcards,\nPlaylists, Profile] --> [HTTP Client\nfetch + token refresh]
+[Notebook Editor\nwith AI Sidebar\nand Version History] --> [HTTP Client\nfetch + token refresh]
+[Auth and Home Screens] --> [Retrofit API Client]
+[Playback UI + TTS] --> [Retrofit API Client]
+[Embedded Notebook Editor\nWebView Host Bridge] --> [Retrofit API Client]
+
+[HTTP Client\nfetch + token refresh] --> API : HTTPS REST API\nBearer token + refresh token
+[Retrofit API Client] --> API : HTTPS REST API\nBearer token + refresh token
+[Embedded Notebook Editor\nWebView Host Bridge] ..> [Notebook Editor\nwith AI Sidebar\nand Version History] : Shares editor experience
+
+API --> [Auth Interceptor\n+ JWT Service] : Protected routes
+[Controllers] --> [Business Services]
+[Auth Interceptor\n+ JWT Service] ..> [Controllers]
+[Business Services] --> [Repositories]
+
+[Business Services] --> [Authentication]
+[Business Services] --> [User/Profile]
+[Business Services] --> [Category]
+[Business Services] --> [Notebook]
+[Business Services] --> [Notebook Versioning]
+[Business Services] --> [AI Config + AI Query]
+[Business Services] --> [Quiz]
+[Business Services] --> [Flashcard]
+[Business Services] --> [Playlist]
+[Business Services] --> [Playback Queue]
+[Business Services] --> [Admin Endpoints]
+
+[Repositories] --> DB : Spring Data JPA
+[Authentication] --> Google : Google sign-in
+[Authentication] --> Email : Verification + reset email
+[AI Config + AI Query] --> AIProvider : AI responses
+[AI Config + AI Query] ..> DB : Encrypted API key\nconfiguration storage
+[Notebook] ..> [Notebook Versioning] : Save event -> snapshot
+[Playlist] ..> [Playback Queue] : Selected playlist source
+[Quiz] ..> [Notebook] : Optional notebook-based study content
+[Flashcard] ..> [Notebook] : Optional notebook-based study content
+
+note bottom of API
+Layered flow:
+Controller -> Service -> Repository -> Database
+
+Security flow:
+Client token -> Auth Interceptor -> JWT validation
+
+Integration flow:
+AI, email, and Google services are invoked by backend services only
+end note
+
+@enduml

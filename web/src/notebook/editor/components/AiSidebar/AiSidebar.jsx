@@ -14,6 +14,7 @@ const AiSidebar = ({
   quickTools = [],
   contained = false,
   onAiUpdateContent,
+  onApplyEditorCommands,
   hasProposedChanges = false,
   pendingProposalSourceId,
   acceptedCheckpointEvent,
@@ -34,6 +35,7 @@ const AiSidebar = ({
     onToolHelpClose={onToolHelpClose}
     contained={contained}
     onApplyEditorContent={mode === 'editor' ? onAiUpdateContent : undefined}
+    onApplyEditorCommands={mode === 'editor' ? onApplyEditorCommands : undefined}
     hasProposedChanges={mode === 'editor' ? hasProposedChanges : false}
     pendingProposalSourceId={pendingProposalSourceId}
     acceptedCheckpointEvent={acceptedCheckpointEvent}

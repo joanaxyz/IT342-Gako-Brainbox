@@ -14,6 +14,9 @@ class LibraryRepository(
     suspend fun createCategory(name: String): CategoryDetail =
         notebooks.createCategory(name)
 
+    suspend fun updateCategory(categoryId: Long, name: String): CategoryDetail =
+        notebooks.updateCategory(categoryId, name)
+
     suspend fun deleteCategory(categoryId: Long, deleteNotebooks: Boolean) {
         notebooks.deleteCategory(categoryId, deleteNotebooks)
     }

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import EditableTitle from '../../../../common/components/EditableTitle';
 import ExportMenu from '../ExportMenu/ExportMenu';
 import brainboxLogo from '../../../../assets/logo.svg';
+import { NOTEBOOK_IMPORT_ACCEPT, readNotebookImportFile } from '../../utils/importUtils';
 
 const SaveStatus = ({ status, errorMessage }) => {
   const statusMeta = {
@@ -190,6 +191,7 @@ const EditorNavbar = ({
   getExportContent,
   getExportLayout,
   onImportContent,
+  onImportError,
   isAiSidebarOpen = false,
   onAiSidebarToggle,
   showHomeButton = true,
@@ -205,19 +207,21 @@ const EditorNavbar = ({
 }) => {
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      onImportContent?.(file.name, loadEvent.target.result);
-    };
-    reader.readAsText(file, 'utf-8');
-    event.target.value = '';
+    try {
+      const imported = await readNotebookImportFile(file);
+      onImportContent?.(imported.filename, imported.html);
+    } catch (error) {
+      onImportError?.(error?.message || 'Failed to import document.');
+    } finally {
+      event.target.value = '';
+    }
   };
 
   return (
@@ -268,7 +272,7 @@ const EditorNavbar = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".txt,.html,.htm"
+                accept={NOTEBOOK_IMPORT_ACCEPT}
                 hidden
                 onChange={handleFileChange}
               />

@@ -787,6 +787,7 @@ a.ai-btn-create {
   outline: none;
   resize: none;
   max-height: 120px;
+  overflow-y: auto;
   font-size: 0.875rem;
   color: var(--ink);
   padding: 4px 0;
@@ -1162,6 +1163,7 @@ a.ai-btn-create {
 
 .ai-tool-search input {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   outline: none;
@@ -1459,7 +1461,8 @@ a.ai-btn-create {
   top: 88px;
   right: 24px;
   width: min(352px, calc(100vw - 40px));
-  max-height: min(72vh, 640px);
+  max-width: calc(100vw - 32px);
+  max-height: min(calc(100dvh - 112px), 640px);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1481,18 +1484,41 @@ a.ai-btn-create {
 }
 
 .ai-history-modal-copy {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .ai-history-modal-copy strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.98rem;
   color: var(--ink);
 }
 
 .ai-history-search {
   flex-shrink: 0;
+  min-width: 0;
+}
+
+.ai-history-modal .ai-history-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ai-history-modal .ai-history-item-main,
+.ai-history-modal .ai-history-item-body {
+  width: 100%;
+}
+
+.ai-history-modal .ai-history-item-title {
+  max-width: 100%;
 }
 
 @media (max-width: 720px) {
@@ -1501,11 +1527,40 @@ a.ai-btn-create {
     }
 
   .ai-history-modal {
-      top: 72px;
-      left: 10px;
-      right: 10px;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(10px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      left: max(10px, env(safe-area-inset-left));
       width: auto;
-      max-height: min(78vh, 640px);
+      max-width: none;
+      max-height: none;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 18px;
+    }
+
+  .ai-history-modal .ai-history-item {
+      padding: 10px 40px 10px 10px;
+    }
+
+  .ai-history-modal .ai-history-item-delete {
+      opacity: 1;
+      pointer-events: auto;
+    }
+}
+
+@media (max-width: 420px) {
+  .ai-history-modal .ai-history-item-body {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+  .ai-history-modal .ai-history-item-time {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 }
 
