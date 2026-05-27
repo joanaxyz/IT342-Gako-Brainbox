@@ -31,6 +31,23 @@ import TableBubbleMenu from '../TableBubbleMenu/TableBubbleMenu';
 import './NoteEditorContent.css';
 
 const TABLE_CELL_MIN_WIDTH = 96;
+const shouldLogEditorContentWarnings = () => Boolean(import.meta.env?.DEV);
+
+const warnEditorContentApplyFailure = (message, error, details = {}) => {
+  if (!shouldLogEditorContentWarnings()) {
+    return;
+  }
+
+  console.warn(message, {
+    ...details,
+    error: {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+    },
+  });
+};
+
 const createAiSelectionId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -311,6 +328,21 @@ const NoteEditorContent = forwardRef(({
     editor.chain().focus().insertInlineMath({ latex, range }).run();
   }, [editor]);
 
+  const normalizeTablesSafely = useCallback((currentEditor, context) => {
+    if (!currentEditor?.commands?.normalizeTables) {
+      return false;
+    }
+
+    try {
+      return currentEditor.commands.normalizeTables();
+    } catch (error) {
+      warnEditorContentApplyFailure('Table normalization failed after editor content update.', error, {
+        context,
+      });
+      return false;
+    }
+  }, []);
+
   const applyExternalContent = useCallback((nextContent) => {
     if (!editor || editor.isDestroyed) {
       return false;
@@ -334,14 +366,26 @@ const NoteEditorContent = forwardRef(({
           .setSelection(TextSelection.atStart(editor.state.doc))
           .setMeta('preventUpdate', true),
       );
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'external_content');
+
+      if (didSetContent !== false) {
+        updateOutline(editor);
+        emitSelectionState(editor);
+      }
+
       return didSetContent;
+    } catch (error) {
+      warnEditorContentApplyFailure('Failed to apply external editor content.', error, {
+        contentLength: typeof nextContent === 'string' ? nextContent.length : 0,
+        containsTableTags: typeof nextContent === 'string' && /<\/?table[\s>]/i.test(nextContent),
+      });
+      return false;
     } finally {
       window.setTimeout(() => {
         suppressExternalUpdateRef.current = false;
       }, 0);
     }
-  }, [editor]);
+  }, [editor, emitSelectionState, normalizeTablesSafely, updateOutline]);
 
   useEffect(() => {
     if (editor) {
@@ -363,14 +407,14 @@ const NoteEditorContent = forwardRef(({
 
     const liveHtml = editor.getHTML();
 
-    if (normalizedContent !== liveHtml) {
-      applyExternalContent(normalizedContent);
-    }
+    const didApplyContent = normalizedContent !== liveHtml && applyExternalContent(normalizedContent) !== false;
 
     lastKnownContentRef.current = editor.getHTML();
     lastAppliedContentSyncTokenRef.current = contentSyncToken;
-    updateOutline(editor);
-    emitSelectionState(editor);
+    if (!didApplyContent) {
+      updateOutline(editor);
+      emitSelectionState(editor);
+    }
   }, [applyExternalContent, contentSyncToken, editor, emitSelectionState, normalizedContent, readOnly, updateOutline]);
 
   useEffect(() => {
@@ -399,11 +443,11 @@ const NoteEditorContent = forwardRef(({
     }
 
     const frame = window.requestAnimationFrame(() => {
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'resize');
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [editor, paperWidth, readOnly]);
+  }, [editor, normalizeTablesSafely, paperWidth, readOnly]);
 
   useEffect(() => {
     const paper = paperRef.current;
@@ -646,16 +690,19 @@ const NoteEditorContent = forwardRef(({
 
       editor.commands.focus('end');
       editor.commands.insertContentAt(editor.state.doc.content.size, newContent);
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'append_content');
     },
     setContent: (newContent) => {
       if (!editor) {
-        return;
+        return false;
       }
 
       const didSetContent = applyExternalContent(newContent);
       lastKnownContentRef.current = editor.getHTML() || newContent || '';
-      emitSelectionState(editor);
+      if (didSetContent === false) {
+        updateOutline(editor);
+        emitSelectionState(editor);
+      }
       return didSetContent;
     },
     insertPageBreak: () => {
@@ -667,7 +714,7 @@ const NoteEditorContent = forwardRef(({
       }
 
       editor.chain().focus().insertTable({ rows, cols, withHeaderRow }).run();
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'insert_table');
     },
     insertEquation,
     getSelectedText: () => {
@@ -756,7 +803,7 @@ const NoteEditorContent = forwardRef(({
       }
 
       editor.chain().focus().deleteRange({ from, to }).insertContentAt(from, html).run();
-      editor.commands.normalizeTables?.();
+      normalizeTablesSafely(editor, 'replace_selection');
     },
     insertPlainText: (text) => {
       if (!editor || !text) {
@@ -946,9 +993,11 @@ const NoteEditorContent = forwardRef(({
     emitSelectionState,
     getTopLevelBlockRanges,
     insertEquation,
+    normalizeTablesSafely,
     resolveAiSelectionTargets,
     scratchExtensions,
     scrollToHeading,
+    updateOutline,
   ]);
 
   const effectiveZoom = zoom;

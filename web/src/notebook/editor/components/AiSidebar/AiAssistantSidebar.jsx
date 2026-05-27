@@ -125,6 +125,41 @@ const getEditorApplyFailureMessage = (result) => {
   return 'AI replied, but the editor could not update the note.';
 };
 
+const EDITOR_CONTENT_ACTIONS = new Set(['add_to_editor', 'replace_editor', 'replace_selection']);
+
+const getContentLength = (value) => (typeof value === 'string' ? value.length : 0);
+
+const hasUsableEditorContent = (value) => (typeof value === 'string' ? value.trim().length > 0 : Boolean(value));
+
+const containsTableTags = (value) => typeof value === 'string' && /<\/?table[\s>]/i.test(value);
+
+const getErrorDiagnostics = (error) => (
+  error
+    ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      }
+    : null
+);
+
+const logEditorApplyFailure = ({ action, editorContent, reply, result, error }) => {
+  if (!import.meta.env?.DEV) {
+    return;
+  }
+
+  const caughtError = error || result?.error || null;
+
+  console.warn('AI editor application failed.', {
+    action,
+    editorContentLength: getContentLength(editorContent),
+    replyLength: getContentLength(reply),
+    containsTableTags: containsTableTags(editorContent),
+    reason: result?.reason,
+    error: getErrorDiagnostics(caughtError),
+  });
+};
+
 const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   const diff = Date.now() - new Date(isoString).getTime();
@@ -738,92 +773,117 @@ const AiAssistantSidebar = ({
       setConversationTitle(nextConversationTitle);
 
       try {
-      if (
-        onApplyEditorContent
-        && action === 'add_to_editor'
-        && editorContent
-      ) {
-        const appendResult = onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
-        if (appendResult?.applied === false) {
-          const applyMessage = getEditorApplyFailureMessage(appendResult);
+        if (EDITOR_CONTENT_ACTIONS.has(action) && !hasUsableEditorContent(editorContent)) {
+          const emptyResult = { applied: false, reason: 'empty_response' };
+          logEditorApplyFailure({ action, editorContent, reply, result: emptyResult });
+          const applyMessage = getEditorApplyFailureMessage(emptyResult);
           setError(applyMessage);
           addNotification(applyMessage, 'error', 3500);
+        } else if (EDITOR_CONTENT_ACTIONS.has(action) && !onApplyEditorContent) {
+          const unavailableResult = { applied: false, reason: 'editor_unavailable' };
+          logEditorApplyFailure({ action, editorContent, reply, result: unavailableResult });
+          const applyMessage = getEditorApplyFailureMessage(unavailableResult);
+          setError(applyMessage);
+          addNotification(applyMessage, 'error', 3500);
+        } else if (
+          onApplyEditorContent
+          && action === 'add_to_editor'
+        ) {
+          const appendResult = onApplyEditorContent(editorContent, 'append', { sourceMessageId: userMessage.id });
+          if (appendResult?.applied === false) {
+            logEditorApplyFailure({ action, editorContent, reply, result: appendResult });
+            const applyMessage = getEditorApplyFailureMessage(appendResult);
+            setError(applyMessage);
+            addNotification(applyMessage, 'error', 3500);
+          }
+        } else if (
+          onApplyEditorContent
+          && action === 'replace_editor'
+        ) {
+          const replaceResult = onApplyEditorContent(editorContent, 'replace', {
+            sourceMessageId: userMessage.id,
+            clearAllAiSelections: true,
+          });
+          if (replaceResult?.applied === false) {
+            logEditorApplyFailure({ action, editorContent, reply, result: replaceResult });
+            if (replaceResult?.reason === 'editor_rejected_content' || replaceResult?.reason === 'editor_unavailable') {
+              const applyMessage = getEditorApplyFailureMessage(replaceResult);
+              setError(applyMessage);
+              addNotification(applyMessage, 'error', 3500);
+            } else {
+              addNotification('The AI\'s response didn\'t produce any changes to the note.', 'info', 3500);
+            }
+          }
+        } else if (
+          onApplyEditorContent
+          && action === 'replace_selection'
+        ) {
+          const selectionResult = onApplyEditorContent(editorContent, 'replace_selection', {
+            sourceMessageId: userMessage.id,
+            aiSelectionIds: aiSelections.map((selection) => selection.id),
+          });
+          if (selectionResult?.applied === false) {
+            logEditorApplyFailure({ action, editorContent, reply, result: selectionResult });
+            if (selectionResult?.reason === 'editor_rejected_content' || selectionResult?.reason === 'editor_unavailable') {
+              const applyMessage = getEditorApplyFailureMessage(selectionResult);
+              setError(applyMessage);
+              addNotification(applyMessage, 'error', 3500);
+            } else {
+              addNotification(
+                selectionResult?.reason === 'no_changes'
+                ? 'The rephrased text is the same as the original — no changes were made.'
+                : 'No text was selected in the editor. Highlight the text you want to change first.',
+                'info',
+                3500,
+              );
+            }
+          }
+        } else if (
+          onApplyEditorContent
+          && action === 'replace_ai_selections'
+          && Array.isArray(selectionEdits)
+          && selectionEdits.length > 0
+        ) {
+          const aiSelResult = onApplyEditorContent('', 'replace_ai_selections', {
+            sourceMessageId: userMessage.id,
+            aiSelectionIds: selectionEdits.map((selection) => selection.id),
+            selectionEdits,
+          });
+          if (aiSelResult?.applied === false) {
+            logEditorApplyFailure({ action, editorContent, reply, result: aiSelResult });
+            addNotification(
+              'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
+              'info',
+              3500,
+            );
+          }
+        } else if (
+          onApplyEditorCommands
+          && action === 'apply_editor_commands'
+          && Array.isArray(editorCommands)
+          && editorCommands.length > 0
+        ) {
+          const commandResult = onApplyEditorCommands(editorCommands, {
+            sourceMessageId: userMessage.id,
+          });
+          if (commandResult?.applied === false) {
+            addNotification(
+              commandResult?.reason === 'blocked_by_proposal'
+                ? 'Accept or reject the current AI proposal before applying toolbar commands.'
+                : 'The AI toolbar command could not be applied in the current editor state.',
+              'info',
+              3500,
+            );
+          }
+        } else if (normalizedGenerationAction === 'create_quiz' && normalizedQuizDraft) {
+          setPendingQuiz(normalizedQuizDraft);
+          setPendingFlashcard(null);
+        } else if (normalizedGenerationAction === 'create_flashcard' && normalizedFlashcardDraft) {
+          setPendingFlashcard(normalizedFlashcardDraft);
+          setPendingQuiz(null);
         }
-      } else if (
-        onApplyEditorContent
-        && action === 'replace_editor'
-        && editorContent
-      ) {
-        const replaceResult = onApplyEditorContent(editorContent, 'replace', {
-          sourceMessageId: userMessage.id,
-          clearAllAiSelections: true,
-        });
-        if (replaceResult?.applied === false) {
-          addNotification('The AI\'s response didn\'t produce any changes to the note.', 'info', 3500);
-        }
-      } else if (
-        onApplyEditorContent
-        && action === 'replace_selection'
-        && editorContent
-      ) {
-        const selectionResult = onApplyEditorContent(editorContent, 'replace_selection', {
-          sourceMessageId: userMessage.id,
-          aiSelectionIds: aiSelections.map((selection) => selection.id),
-        });
-        if (selectionResult?.applied === false) {
-          addNotification(
-            selectionResult?.reason === 'no_changes'
-              ? 'The rephrased text is the same as the original — no changes were made.'
-              : 'No text was selected in the editor. Highlight the text you want to change first.',
-            'info',
-            3500,
-          );
-        }
-      } else if (
-        onApplyEditorContent
-        && action === 'replace_ai_selections'
-        && Array.isArray(selectionEdits)
-        && selectionEdits.length > 0
-      ) {
-        const aiSelResult = onApplyEditorContent('', 'replace_ai_selections', {
-          sourceMessageId: userMessage.id,
-          aiSelectionIds: selectionEdits.map((selection) => selection.id),
-          selectionEdits,
-        });
-        if (aiSelResult?.applied === false) {
-          addNotification(
-            'The AI\'s rephrasing didn\'t produce any detectable changes. The selections may already match the result.',
-            'info',
-            3500,
-          );
-        }
-      } else if (
-        onApplyEditorCommands
-        && action === 'apply_editor_commands'
-        && Array.isArray(editorCommands)
-        && editorCommands.length > 0
-      ) {
-        const commandResult = onApplyEditorCommands(editorCommands, {
-          sourceMessageId: userMessage.id,
-        });
-        if (commandResult?.applied === false) {
-          addNotification(
-            commandResult?.reason === 'blocked_by_proposal'
-              ? 'Accept or reject the current AI proposal before applying toolbar commands.'
-              : 'The AI toolbar command could not be applied in the current editor state.',
-            'info',
-            3500,
-          );
-        }
-      } else if (normalizedGenerationAction === 'create_quiz' && normalizedQuizDraft) {
-        setPendingQuiz(normalizedQuizDraft);
-        setPendingFlashcard(null);
-      } else if (normalizedGenerationAction === 'create_flashcard' && normalizedFlashcardDraft) {
-        setPendingFlashcard(normalizedFlashcardDraft);
-        setPendingQuiz(null);
-      }
       } catch (applyError) {
-        console.error('Failed to apply AI response to editor:', applyError);
+        logEditorApplyFailure({ action, editorContent, reply, error: applyError });
         const applyMessage = getEditorApplyFailureMessage();
         setError(applyMessage);
         addNotification(applyMessage, 'error', 3500);

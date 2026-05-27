@@ -20,6 +20,22 @@ const clampChangeIndex = (value, maxLength) => {
   return Math.min(Math.max(value, 0), maxLength - 1);
 };
 
+const normalizeEditorContentForAi = (content) => {
+  try {
+    return {
+      content: normalizeAiGeneratedHtml(content),
+      normalizationError: null,
+    };
+  } catch (error) {
+    const fallbackContent = typeof content === 'string' ? content.trim() : '';
+
+    return {
+      content: fallbackContent,
+      normalizationError: error,
+    };
+  }
+};
+
 const createScopedState = (scopeKey) => ({
   scopeKey,
   aiOriginalContent: null,
@@ -120,7 +136,10 @@ export const useAiProposalState = ({
       return { applied: false, reason: 'editor_unavailable' };
     }
 
-    const normalizedContent = normalizeAiGeneratedHtml(content);
+    const {
+      content: normalizedContent,
+      normalizationError,
+    } = normalizeEditorContentForAi(content);
     const normalizedOptions = {
       ...options,
       selectionEdits: Array.isArray(options?.selectionEdits)
@@ -132,16 +151,26 @@ export const useAiProposalState = ({
     const strippedOriginal = originalContent.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/g, ' ').trim();
 
     if (!normalizedContent && mode !== 'replace_ai_selections') {
-      return { applied: false, reason: 'empty_response' };
+      return {
+        applied: false,
+        reason: normalizationError ? 'editor_rejected_content' : 'empty_response',
+        error: normalizationError,
+      };
     }
 
     // Empty documents do not need a comparison session. Applying directly also
     // avoids scratch-editor parsing failures from blocking first-generation notes.
     if (!strippedOriginal && (mode === 'append' || mode === 'replace')) {
-      const didSetContent = editorRef.current.setContent?.(normalizedContent);
+      let didSetContent = false;
+
+      try {
+        didSetContent = editorRef.current.setContent?.(normalizedContent);
+      } catch (error) {
+        return { applied: false, reason: 'editor_rejected_content', error };
+      }
 
       if (didSetContent === false) {
-        return { applied: false, reason: 'editor_rejected_content' };
+        return { applied: false, reason: 'editor_rejected_content', error: normalizationError };
       }
 
       const appliedContent = editorRef.current.getHTML?.() || normalizedContent;
@@ -152,7 +181,13 @@ export const useAiProposalState = ({
       return { applied: true, direct: true };
     }
 
-    const proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
+    let proposedContent = normalizedContent;
+
+    try {
+      proposedContent = editorRef.current.buildProposal?.(normalizedContent, mode, normalizedOptions) ?? normalizedContent;
+    } catch (error) {
+      return { applied: false, reason: 'editor_rejected_content', error };
+    }
 
     if (proposedContent === originalContent) {
       return { applied: false, reason: 'identical' };
