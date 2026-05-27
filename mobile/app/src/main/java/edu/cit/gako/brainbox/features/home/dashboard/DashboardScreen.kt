@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -59,10 +60,20 @@ internal fun DashboardScreen(
     onOpenFlashcardDeck: (String) -> Unit,
     onPlayNotebook: (NotebookSummary) -> Unit
 ) {
-    val quizzesWithScores = homeData.quizzes.mapNotNull { it.bestScore }
-    val decksWithMastery = homeData.flashcards.mapNotNull { it.bestMastery }
-    val avgQuiz = quizzesWithScores.takeIf { it.isNotEmpty() }?.average()?.toInt()
-    val avgMastery = decksWithMastery.takeIf { it.isNotEmpty() }?.average()?.toInt()
+    val avgQuiz = remember(homeData.quizzes) {
+        homeData.quizzes
+            .mapNotNull { quiz -> if (quiz.attempts > 0) quiz.bestScore else null }
+            .takeIf { scores -> scores.isNotEmpty() }
+            ?.average()
+            ?.toInt()
+    }
+    val avgMastery = remember(homeData.flashcards) {
+        homeData.flashcards
+            .mapNotNull { deck -> if (deck.attempts > 0) deck.bestMastery else null }
+            .takeIf { mastery -> mastery.isNotEmpty() }
+            ?.average()
+            ?.toInt()
+    }
     val displayName = user?.username?.ifBlank { "there" } ?: "there"
 
     // Simple static greeting to avoid time API issues during composition
@@ -70,27 +81,37 @@ internal fun DashboardScreen(
     val todayLabelText = "to Brainbox"
 
     // Calculate top performers for study progress
-    val topDecks = homeData.flashcards
-        .filter { it.attempts > 0 && it.bestMastery != null }
-        .sortedByDescending { it.bestMastery }
-        .take(3)
-        .map { TopPerformer(it.title, it.notebookTitle ?: "Flashcards", it.bestMastery!!) }
+    val topDecks = remember(homeData.flashcards) {
+        homeData.flashcards
+            .filter { it.attempts > 0 && it.bestMastery != null }
+            .sortedByDescending { it.bestMastery }
+            .take(3)
+            .map { TopPerformer(it.title, it.notebookTitle ?: "Flashcards", it.bestMastery!!) }
+    }
 
-    val topQuizzes = homeData.quizzes
-        .filter { it.attempts > 0 && it.bestScore != null }
-        .sortedByDescending { it.bestScore }
-        .take(3)
-        .map { TopPerformer(it.title, it.notebookTitle ?: "Quiz", it.bestScore!!) }
+    val topQuizzes = remember(homeData.quizzes) {
+        homeData.quizzes
+            .filter { it.attempts > 0 && it.bestScore != null }
+            .sortedByDescending { it.bestScore }
+            .take(3)
+            .map { TopPerformer(it.title, it.notebookTitle ?: "Quiz", it.bestScore!!) }
+    }
 
-    val hasQuizAttempts = homeData.quizzes.any { it.attempts > 0 }
-    val hasFlashcardAttempts = homeData.flashcards.any { it.attempts > 0 }
+    val hasQuizAttempts = remember(homeData.quizzes) {
+        homeData.quizzes.any { it.attempts > 0 }
+    }
+    val hasFlashcardAttempts = remember(homeData.flashcards) {
+        homeData.flashcards.any { it.attempts > 0 }
+    }
     val showStudyProgress = hasQuizAttempts || hasFlashcardAttempts
-    val stats = listOf(
-        DashboardStat("Notebooks", homeData.notebooks.size.toString(), Icons.Default.Book),
-        DashboardStat("Avg Quiz Score", avgQuiz?.let { "$it%" } ?: "--", Icons.Default.EmojiEvents),
-        DashboardStat("Avg Mastery", avgMastery?.let { "$it%" } ?: "--", Icons.Default.Psychology),
-        DashboardStat("Flashcard Decks", homeData.flashcards.size.toString(), Icons.Default.AutoAwesome)
-    )
+    val stats = remember(homeData.notebooks.size, homeData.flashcards.size, avgQuiz, avgMastery) {
+        listOf(
+            DashboardStat("Notebooks", homeData.notebooks.size.toString(), Icons.Default.Book),
+            DashboardStat("Avg Quiz Score", avgQuiz?.let { "$it%" } ?: "--", Icons.Default.EmojiEvents),
+            DashboardStat("Avg Mastery", avgMastery?.let { "$it%" } ?: "--", Icons.Default.Psychology),
+            DashboardStat("Flashcard Decks", homeData.flashcards.size.toString(), Icons.Default.AutoAwesome)
+        )
+    }
 
     LazyColumn(
         contentPadding = contentPadding,
@@ -156,7 +177,7 @@ internal fun DashboardScreen(
             }
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(homeData.recentlyReviewed.take(4)) { notebook ->
+                    items(homeData.recentlyReviewed.take(4), key = { it.uuid }) { notebook ->
                         ContinueLearningCard(
                             notebook = notebook.toStudyNotebookCardModel(),
                             isPlaying = playbackState.notebookId == notebook.uuid && playbackState.isPlaying,
@@ -199,7 +220,7 @@ internal fun DashboardScreen(
                 EmptyStateCard("No quizzes yet", "Create quizzes on the web and they will land here in the same visual system.")
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(homeData.quizzes.take(4)) { quiz ->
+                    items(homeData.quizzes.take(4), key = { it.uuid }) { quiz ->
                         StudyCard(
                             title = quiz.title,
                             description = quiz.description,
@@ -226,7 +247,7 @@ internal fun DashboardScreen(
                 EmptyStateCard("No flashcard decks yet", "Decks you create on the web will show up here with the same warm card treatment.")
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(homeData.flashcards.take(4)) { deck ->
+                    items(homeData.flashcards.take(4), key = { it.uuid }) { deck ->
                         StudyCard(
                             title = deck.title,
                             description = deck.description,

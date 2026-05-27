@@ -10,6 +10,7 @@ import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioClient
 import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioResumePoint
 import edu.cit.gako.brainbox.features.playback.model.BrainBoxAudioPlaybackStatus
 import edu.cit.gako.brainbox.features.playback.audio.BrainBoxAudioStore
+import edu.cit.gako.brainbox.features.playback.model.BrainBoxAudioSnapshot
 import edu.cit.gako.brainbox.features.playback.model.BrainBoxTtsRequest
 import edu.cit.gako.brainbox.features.playback.tts.buildNotebookTtsRequest
 import edu.cit.gako.brainbox.features.playback.ui.toPlaybackUiState
@@ -271,11 +272,12 @@ internal class PlaybackCoordinator(
 
             val detail = resolvedNotebook
             runCatching { notebookRepository.markNotebookReviewed(detail.uuid) }
-            withContext(Dispatchers.Default) {
-                val request = buildNotebookTtsRequest(detail, detail.content)
+            val request = withContext(Dispatchers.Default) {
+                buildNotebookTtsRequest(detail, detail.content)
                     .withResumePoint(audioStore.resumePointFor(detail.uuid))
-                audioClient.play(request)
             }
+            publishLoadingPlaybackState(request)
+            audioClient.play(request)
             playlistContext?.let { context ->
                 persistPlaylistCurrentIndex(context, detail.uuid)
             }
@@ -358,6 +360,19 @@ internal class PlaybackCoordinator(
 
     private fun clearPlaylistPlaybackContext() {
         playlistPlaybackContext = null
+    }
+
+    private fun publishLoadingPlaybackState(request: BrainBoxTtsRequest) {
+        val snapshot = BrainBoxAudioSnapshot(
+            request = request,
+            status = BrainBoxAudioPlaybackStatus.LOADING,
+            currentChunkIndex = request.startChunkIndex,
+            currentCharOffset = request.startCharOffset,
+            speechRate = request.speechRate,
+            updatedAtEpochMs = System.currentTimeMillis()
+        )
+        audioStore.publishSnapshot(snapshot)
+        setState(getState().copy(playbackState = snapshot.toPlaybackUiState()))
     }
 }
 

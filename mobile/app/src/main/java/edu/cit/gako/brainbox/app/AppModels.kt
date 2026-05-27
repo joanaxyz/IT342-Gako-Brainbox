@@ -42,7 +42,8 @@ data class HomeData(
 
 data class HomeBundle(
     val user: UserProfile,
-    val homeData: HomeData
+    val homeData: HomeData,
+    val sectionErrors: List<String> = emptyList()
 )
 
 data class AppState(

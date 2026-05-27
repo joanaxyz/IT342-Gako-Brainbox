@@ -43,8 +43,10 @@ class BrainBoxAudioService : MediaSessionService() {
         notificationHelper = BrainBoxAudioNotification(this)
 
         val engine = BrainBoxTtsEngine(this, store, serviceScope) { snapshot ->
-            playerRef?.refreshState()
-            syncForegroundState(snapshot)
+            serviceScope.launch(Dispatchers.Main.immediate) {
+                playerRef?.refreshState()
+                syncForegroundState(snapshot)
+            }
         }
 
         val player = BrainBoxTtsPlayer(this, engine)

@@ -356,10 +356,17 @@ test.describe('NOTEBOOK — AI Features (Detailed)', () => {
   test('WEB-NB-AI-011: Chat history opens and loads previous conversation', async ({ page }) => {
     await mockAiChat(page.context());
     const { editorPage } = await openNotebookAiSidebar(page);
+    await editorPage.setViewportSize({ width: 390, height: 720 });
 
     await editorPage.getByRole('button', { name: /open chat history/i }).click();
     const historyDialog = editorPage.getByRole('dialog', { name: 'Chat history' });
     await expect(historyDialog).toBeVisible({ timeout: 10_000 });
+    const historyDialogBox = await historyDialog.boundingBox();
+    expect(historyDialogBox).not.toBeNull();
+    expect(historyDialogBox.x).toBeGreaterThanOrEqual(0);
+    expect(historyDialogBox.y).toBeGreaterThanOrEqual(0);
+    expect(historyDialogBox.x + historyDialogBox.width).toBeLessThanOrEqual(390);
+    expect(historyDialogBox.y + historyDialogBox.height).toBeLessThanOrEqual(720);
     await expect(historyDialog).toContainText('Photosynthesis study help');
     await historyDialog.locator('input[type="search"]').fill('photosynthesis');
     await expect(historyDialog.locator('.ai-history-item')).toHaveCount(1);

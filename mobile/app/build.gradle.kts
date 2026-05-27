@@ -93,7 +93,16 @@ val webDistDir = webProjectDir.resolve("dist")
 val webViteCli = webProjectDir.resolve("node_modules/vite/bin/vite.js")
 val embeddedEditorAssetsDir = layout.buildDirectory.dir("generated/embeddedEditorAssets")
 val embeddedEditorNodeBin = resolveEmbeddedEditorNodeBinary()
-val androidApiBaseUrl = localProperties.getProperty("BRAINBOX_API_BASE_URL", "http://10.0.2.2:8080/")
+fun configValue(name: String, defaultValue: String): String =
+    localProperties.getProperty(name)
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }
+        ?: System.getenv(name)
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+        ?: defaultValue
+
+val androidApiBaseUrl = configValue("BRAINBOX_API_BASE_URL", "http://10.0.2.2:8080/")
 
 val buildEmbeddedEditorWeb by tasks.registering {
     inputs.files(

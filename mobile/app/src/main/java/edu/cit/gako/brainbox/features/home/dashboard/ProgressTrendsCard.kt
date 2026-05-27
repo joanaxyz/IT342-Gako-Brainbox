@@ -1,11 +1,9 @@
 package edu.cit.gako.brainbox.features.home.dashboard
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,26 +19,28 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import edu.cit.gako.brainbox.features.home.flashcards.data.dto.FlashcardDeckSummary
+import edu.cit.gako.brainbox.features.home.quizzes.data.dto.QuizSummary
 import edu.cit.gako.brainbox.features.notebook.data.dto.NotebookSummary
 import edu.cit.gako.brainbox.shared.ui.theme.Border
 import edu.cit.gako.brainbox.shared.ui.theme.Ink
-import edu.cit.gako.brainbox.shared.ui.theme.Ink2
 import edu.cit.gako.brainbox.shared.ui.theme.Ink3
 import edu.cit.gako.brainbox.shared.ui.theme.White
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.ExperimentalFoundationApi
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 
 enum class TrendType(val label: String, val description: String) {
     QUIZ_PERFORMANCE("Quiz Performance", "Quiz scores & attempts"),
@@ -52,24 +52,14 @@ enum class TrendType(val label: String, val description: String) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun ProgressTrendsCard(
-    quizData: List<Any> = emptyList(),
-    flashcardData: List<Any> = emptyList(),
+    quizData: List<QuizSummary> = emptyList(),
+    flashcardData: List<FlashcardDeckSummary> = emptyList(),
     recentlyReviewed: List<NotebookSummary> = emptyList(),
     recentlyEdited: List<NotebookSummary> = emptyList()
 ) {
-    var selectedTrend by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(pageCount = { TrendType.entries.size })
     val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(selectedTrend) {
-        pagerState.animateScrollToPage(selectedTrend)
-    }
-
-    LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage != selectedTrend) {
-            selectedTrend = pagerState.currentPage
-        }
-    }
+    val selectedTrend = pagerState.currentPage
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -105,9 +95,10 @@ internal fun ProgressTrendsCard(
                     Tab(
                         selected = selectedTrend == index,
                         onClick = {
-                            selectedTrend = index
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
+                            if (selectedTrend != index) {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
                             }
                         },
                         text = {
@@ -141,13 +132,16 @@ internal fun ProgressTrendsCard(
 @Composable
 private fun TrendContent(
     trend: TrendType,
-    quizData: List<Any>,
-    flashcardData: List<Any>,
+    quizData: List<QuizSummary>,
+    flashcardData: List<FlashcardDeckSummary>,
     recentlyReviewed: List<NotebookSummary>,
     recentlyEdited: List<NotebookSummary>
 ) {
     val chartData = remember(trend, quizData, flashcardData, recentlyReviewed, recentlyEdited) {
         generateChartData(trend, quizData, flashcardData, recentlyReviewed, recentlyEdited)
+    }
+    val maxValue = remember(chartData) {
+        chartData.maxOfOrNull { it.value }?.coerceAtLeast(1f) ?: 1f
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -163,12 +157,12 @@ private fun TrendContent(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Bottom
         ) {
-            chartData.forEachIndexed { index, value ->
+            chartData.forEach { point ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val barHeight = (value / (chartData.maxOrNull() ?: 1f)) * 100f
+                    val barHeight = (point.value / maxValue) * 100f
                     Surface(
                         modifier = Modifier
                             .width(24.dp)
@@ -177,7 +171,7 @@ private fun TrendContent(
                         color = Color(0xFFC2410C)
                     ) {}
                     Text(
-                        text = getDayLabel(index),
+                        text = point.label,
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink3,
                         fontSize = 10.sp
@@ -191,8 +185,8 @@ private fun TrendContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            TrendStat(label = "Current", value = chartData.lastOrNull()?.toInt() ?: 0)
-            TrendStat(label = "Average", value = chartData.average().toInt())
+            TrendStat(label = "Current", value = chartData.lastOrNull()?.value?.toInt() ?: 0)
+            TrendStat(label = "Average", value = chartData.map { it.value }.averageFloatOrZero().toInt())
         }
     }
 }
@@ -214,64 +208,59 @@ private fun TrendStat(label: String, value: Int) {
     }
 }
 
-private fun generateChartData(
+internal data class TrendPoint(
+    val label: String,
+    val value: Float
+)
+
+internal fun generateChartData(
     trend: TrendType,
-    quizData: List<Any>,
-    flashcardData: List<Any>,
+    quizData: List<QuizSummary>,
+    flashcardData: List<FlashcardDeckSummary>,
     recentlyReviewed: List<NotebookSummary>,
-    recentlyEdited: List<NotebookSummary>
-): List<Float> {
-    val data = mutableListOf<Float>()
+    recentlyEdited: List<NotebookSummary>,
+    today: LocalDate = LocalDate.now(),
+    zoneId: ZoneId = ZoneId.systemDefault()
+): List<TrendPoint> {
+    val quizScore = quizData
+        .mapNotNull { quiz -> if (quiz.attempts > 0) quiz.bestScore else null }
+        .averageIntOrZero()
+    val flashcardMastery = flashcardData
+        .mapNotNull { deck -> if (deck.attempts > 0) deck.bestMastery else null }
+        .averageIntOrZero()
 
-    // Generate simplified 7-day trend data
-    for (i in 6 downTo 0) {
-        var value = 0f
-
-        when (trend) {
-            TrendType.QUIZ_PERFORMANCE -> {
-                value = if (quizData.isNotEmpty()) {
-                    try {
-                        val scores = quizData.mapNotNull { item ->
-                            try {
-                                (item as? Map<*, *>)?.get("bestScore") as? Int
-                            } catch (e: Exception) { null }
-                        }
-                        if (scores.isNotEmpty()) scores.average().toFloat() else 0f
-                    } catch (e: Exception) { 0f }
-                } else 0f
-            }
-            TrendType.FLASHCARD_MASTERY -> {
-                value = if (flashcardData.isNotEmpty()) {
-                    try {
-                        val mastery = flashcardData.mapNotNull { item ->
-                            try {
-                                (item as? Map<*, *>)?.get("bestMastery") as? Int
-                            } catch (e: Exception) { null }
-                        }
-                        if (mastery.isNotEmpty()) mastery.average().toFloat() else 0f
-                    } catch (e: Exception) { 0f }
-                } else 0f
-            }
-            TrendType.REVIEW_ACTIVITY -> {
-                // Simplified: distribute review count across days
-                value = if (recentlyReviewed.isNotEmpty()) {
-                    (recentlyReviewed.size.toFloat() / 7f) * (1f + (6 - i) * 0.1f)
-                } else 0f
-            }
-            TrendType.EDIT_ACTIVITY -> {
-                // Simplified: distribute edit count across days
-                value = if (recentlyEdited.isNotEmpty()) {
-                    (recentlyEdited.size.toFloat() / 7f) * (1f + (6 - i) * 0.1f)
-                } else 0f
-            }
+    return (6 downTo 0).map { dayOffset ->
+        val date = today.minusDays(dayOffset.toLong())
+        val value = when (trend) {
+            TrendType.QUIZ_PERFORMANCE -> quizScore
+            TrendType.FLASHCARD_MASTERY -> flashcardMastery
+            TrendType.REVIEW_ACTIVITY -> recentlyReviewed.count { notebook ->
+                notebook.lastReviewedAt.isSameLocalDate(date, zoneId)
+            }.toFloat()
+            TrendType.EDIT_ACTIVITY -> recentlyEdited.count { notebook ->
+                notebook.updatedAt.isSameLocalDate(date, zoneId)
+            }.toFloat()
         }
-        data.add(value)
-    }
 
-    return data
+        TrendPoint(
+            label = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
+            value = value
+        )
+    }
 }
 
-private fun getDayLabel(index: Int): String {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    return days[index % days.size]
+private fun List<Int>.averageIntOrZero(): Float =
+    if (isEmpty()) 0f else average().toFloat()
+
+private fun List<Float>.averageFloatOrZero(): Float =
+    if (isEmpty()) 0f else average().toFloat()
+
+private fun String?.isSameLocalDate(date: LocalDate, zoneId: ZoneId): Boolean {
+    if (isNullOrBlank()) {
+        return false
+    }
+
+    return runCatching {
+        Instant.parse(this).atZone(zoneId).toLocalDate() == date
+    }.getOrElse { false }
 }

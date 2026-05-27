@@ -1,6 +1,7 @@
 package edu.cit.gako.brainbox.platform.network
 
 import edu.cit.gako.brainbox.BuildConfig
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -40,15 +41,26 @@ object RetrofitClient {
     }
 
     private fun buildRetrofit(sessionManager: SessionManager): Retrofit {
-        val refreshApiService = createRetrofit(OkHttpClient.Builder().build())
+        val refreshApiService = createRetrofit(
+            OkHttpClient.Builder()
+                .dispatcher(tunedDispatcher())
+                .build()
+        )
             .create(TokenRefreshApiService::class.java)
 
         val authedClient = OkHttpClient.Builder()
+            .dispatcher(tunedDispatcher())
             .addInterceptor(AuthInterceptor(sessionManager, refreshApiService))
             .build()
 
         return createRetrofit(authedClient)
     }
+
+    private fun tunedDispatcher(): Dispatcher =
+        Dispatcher().apply {
+            maxRequests = 16
+            maxRequestsPerHost = 10
+        }
 
     private fun createRetrofit(client: OkHttpClient): Retrofit {
         return Retrofit.Builder()

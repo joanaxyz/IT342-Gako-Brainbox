@@ -53,3 +53,42 @@ data class QuizAttemptRequest(
     @SerializedName("clientMutationId") val clientMutationId: String? = null
 )
 
+data class NetworkQuizSummary(
+    @SerializedName("uuid") val uuid: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("difficulty") val difficulty: String? = null,
+    @SerializedName("notebookUuid") val notebookUuid: String? = null,
+    @SerializedName("notebookTitle") val notebookTitle: String? = null,
+    @SerializedName("questionCount") val questionCount: Int? = null,
+    @SerializedName("estimatedTime") val estimatedTime: String? = null,
+    @SerializedName("bestScore") val bestScore: Int? = null,
+    @SerializedName("attempts") val attempts: Long? = null,
+    @SerializedName("questions") val questions: List<NetworkQuizQuestion?>? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null
+)
+
+data class NetworkQuizQuestion(
+    @SerializedName("type") val type: String? = null,
+    @SerializedName("text") val text: String? = null,
+    @SerializedName("options") val options: List<String?>? = null,
+    @SerializedName("correctIndex") val correctIndex: Int? = null
+)
+
+data class NetworkQuizDetail(
+    @SerializedName("uuid") val uuid: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("difficulty") val difficulty: String? = null,
+    @SerializedName("notebookUuid") val notebookUuid: String? = null,
+    @SerializedName("notebookTitle") val notebookTitle: String? = null,
+    @SerializedName("questionCount") val questionCount: Int? = null,
+    @SerializedName("estimatedTime") val estimatedTime: String? = null,
+    @SerializedName("bestScore") val bestScore: Int? = null,
+    @SerializedName("attempts") val attempts: Long? = null,
+    @SerializedName("questions") val questions: List<NetworkQuizQuestion?>? = null,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null
+)
+

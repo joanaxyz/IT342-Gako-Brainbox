@@ -295,6 +295,16 @@ private fun NotebookWebView(
                                 coroutineScope.launch(Dispatchers.Default) {
                                     val request = payload.toHostNotebookAudioRequest()
                                     if (request != null) {
+                                        appGraph.audioStore.publishSnapshot(
+                                            BrainBoxAudioSnapshot(
+                                                request = request,
+                                                status = BrainBoxAudioPlaybackStatus.LOADING,
+                                                currentChunkIndex = request.startChunkIndex,
+                                                currentCharOffset = request.startCharOffset,
+                                                speechRate = request.speechRate,
+                                                updatedAtEpochMs = System.currentTimeMillis()
+                                            )
+                                        )
                                         audioClient.play(request)
                                     }
                                 }

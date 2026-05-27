@@ -1,12 +1,21 @@
 package edu.cit.gako.brainbox.app
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import edu.cit.gako.brainbox.features.home.HomeDependencies
 import edu.cit.gako.brainbox.features.auth.AuthScene
 import edu.cit.gako.brainbox.features.home.HomeScene
 import edu.cit.gako.brainbox.features.notebook.editor.NotebookEditorScreen
 import edu.cit.gako.brainbox.features.home.flashcards.FlashcardStudyScreen
 import edu.cit.gako.brainbox.features.home.quizzes.QuizStudyScreen
+import edu.cit.gako.brainbox.features.playback.ui.PlaybackOverlay
 
 @Composable
 fun BrainBoxApp(
@@ -53,22 +62,52 @@ fun BrainBoxApp(
             onAuthStageChange = onAuthStageChange,
             onFeatureRequest = onFeatureRequest
         )
-        state.activeNotebookUuid != null -> NotebookEditorScreen(
-            notebookUuid = state.activeNotebookUuid,
-            onClose = onCloseNotebookEditor,
-            onOpenQuiz = onOpenQuizFromNotebook,
-            onOpenFlashcardDeck = onOpenFlashcardDeckFromNotebook
-        )
-        state.activeQuiz != null -> QuizStudyScreen(
-            quiz = state.activeQuiz,
-            onExit = onExitStudySession,
-            onRecordAttempt = onRecordQuizAttempt
-        )
-        state.activeFlashcardDeck != null -> FlashcardStudyScreen(
-            deck = state.activeFlashcardDeck,
-            onExit = onExitStudySession,
-            onRecordAttempt = onRecordFlashcardAttempt
-        )
+        state.activeNotebookUuid != null -> PlaybackScreen(
+            state = state,
+            onSelectQueuePlaylist = onSelectQueuePlaylist,
+            onSkipNext = onSkipNext,
+            onSkipPrevious = onSkipPrevious,
+            onTogglePlaybackLoop = onTogglePlaybackLoop,
+            onTogglePlaybackShuffle = onTogglePlaybackShuffle,
+            onStartQueue = onStartQueue
+        ) {
+            NotebookEditorScreen(
+                notebookUuid = state.activeNotebookUuid,
+                onClose = onCloseNotebookEditor,
+                onOpenQuiz = onOpenQuizFromNotebook,
+                onOpenFlashcardDeck = onOpenFlashcardDeckFromNotebook
+            )
+        }
+        state.activeQuiz != null -> PlaybackScreen(
+            state = state,
+            onSelectQueuePlaylist = onSelectQueuePlaylist,
+            onSkipNext = onSkipNext,
+            onSkipPrevious = onSkipPrevious,
+            onTogglePlaybackLoop = onTogglePlaybackLoop,
+            onTogglePlaybackShuffle = onTogglePlaybackShuffle,
+            onStartQueue = onStartQueue
+        ) {
+            QuizStudyScreen(
+                quiz = state.activeQuiz,
+                onExit = onExitStudySession,
+                onRecordAttempt = onRecordQuizAttempt
+            )
+        }
+        state.activeFlashcardDeck != null -> PlaybackScreen(
+            state = state,
+            onSelectQueuePlaylist = onSelectQueuePlaylist,
+            onSkipNext = onSkipNext,
+            onSkipPrevious = onSkipPrevious,
+            onTogglePlaybackLoop = onTogglePlaybackLoop,
+            onTogglePlaybackShuffle = onTogglePlaybackShuffle,
+            onStartQueue = onStartQueue
+        ) {
+            FlashcardStudyScreen(
+                deck = state.activeFlashcardDeck,
+                onExit = onExitStudySession,
+                onRecordAttempt = onRecordFlashcardAttempt
+            )
+        }
         else -> HomeScene(
             state = state,
             dependencies = homeDependencies,
@@ -90,3 +129,41 @@ fun BrainBoxApp(
     }
 }
 
+@Composable
+private fun PlaybackScreen(
+    state: AppState,
+    onSelectQueuePlaylist: (String) -> Unit,
+    onSkipNext: () -> Unit,
+    onSkipPrevious: () -> Unit,
+    onTogglePlaybackLoop: () -> Unit,
+    onTogglePlaybackShuffle: () -> Unit,
+    onStartQueue: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    var isPlaybarExpanded by rememberSaveable { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
+        PlaybackOverlay(
+            playbackState = state.playbackState,
+            playbackQueue = state.playbackQueue,
+            playlists = state.homeData.playlists,
+            activePlaylistUuid = state.playbackPlaylistUuid,
+            activePlaylistTitle = state.playbackPlaylistTitle,
+            currentQueueIndex = state.playbackPlaylistCurrentIndex,
+            isLooping = state.isPlaybackLooping,
+            isShuffling = state.isPlaybackShuffling,
+            isExpanded = isPlaybarExpanded,
+            onExpandedChange = { isPlaybarExpanded = it },
+            onStartQueue = onStartQueue,
+            onSkipNext = onSkipNext,
+            onSkipPrevious = onSkipPrevious,
+            onToggleLoop = onTogglePlaybackLoop,
+            onToggleShuffle = onTogglePlaybackShuffle,
+            onSelectPlaylist = onSelectQueuePlaylist,
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        )
+    }
+}
