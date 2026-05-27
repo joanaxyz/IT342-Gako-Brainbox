@@ -150,6 +150,24 @@ const getPreviousTableWidth = (tableNode, fallbackWidth) => {
   return storedWidth ?? fallbackWidth;
 };
 
+export const getPreviousTableNodeAt = (previousDoc, pos) => {
+  if (
+    !previousDoc
+    || !Number.isInteger(pos)
+    || pos < 0
+    || pos > previousDoc.content.size
+  ) {
+    return null;
+  }
+
+  try {
+    const node = previousDoc.nodeAt(pos);
+    return node?.type?.name === 'table' ? node : null;
+  } catch {
+    return null;
+  }
+};
+
 const getPairLockedColumnWidths = (currentWidths, previousWidths, previousTableNode, availableWidth, cellMinWidth) => {
   if (!previousTableNode || currentWidths.length !== previousWidths.length || currentWidths.length === 0) {
     return null;
@@ -413,7 +431,24 @@ const getContainerWidth = (editor, fallbackWidth, preferredWidth) => {
   return isFiniteNumber(width) ? Math.round(width) - 2 : fallbackWidth;
 };
 
-const normalizeTablesInDoc = (tr, doc, previousDoc, editor, cellMinWidth) => {
+const shouldLogTableNormalizationWarnings = () => Boolean(import.meta.env?.DEV);
+
+const warnTableNormalizationFailure = (error, pos) => {
+  if (!shouldLogTableNormalizationWarnings()) {
+    return;
+  }
+
+  console.warn('Skipped table normalization for one table.', {
+    pos,
+    error: {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+    },
+  });
+};
+
+export const normalizeTablesInDoc = (tr, doc, previousDoc, editor, cellMinWidth) => {
   const containerWidth = getContainerWidth(editor, null, editor?.extensionStorage?.tableLayout?.containerWidth);
   let didChange = false;
 
@@ -422,11 +457,13 @@ const normalizeTablesInDoc = (tr, doc, previousDoc, editor, cellMinWidth) => {
       return;
     }
 
-    const previousNode = previousDoc?.nodeAt(pos)?.type?.name === 'table'
-      ? previousDoc.nodeAt(pos)
-      : null;
+    const previousNode = getPreviousTableNodeAt(previousDoc, pos);
 
-    didChange = normalizeTableNode(tr, node, previousNode, pos, containerWidth, cellMinWidth) || didChange;
+    try {
+      didChange = normalizeTableNode(tr, node, previousNode, pos, containerWidth, cellMinWidth) || didChange;
+    } catch (error) {
+      warnTableNormalizationFailure(error, pos);
+    }
   });
 
   return didChange;
